@@ -1,0 +1,3 @@
+[submodule "0XX-XXXX (Software)/02X-XXXX (UWB Manager)/uwb-positioning"]
+	path = 0XX-XXXX (Software)/02X-XXXX (UWB Manager)/uwb-positioning
+	url = https://github.com/hen1227/uwb-positioning.git
