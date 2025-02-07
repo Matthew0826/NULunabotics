@@ -34,45 +34,29 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
-            - name: Tester
-              run: pwd && ls -lha
-            - name: Detect package manager
-              id: detect-package-manager
-              run: |
-                  if [ -f "yarn.lock" ]; then
-                    echo "manager=yarn" >> $GITHUB_OUTPUT
-                    echo "command=install" >> $GITHUB_OUTPUT
-                    echo "runner=yarn" >> $GITHUB_OUTPUT
-                    exit 0
-                  elif [ -f "package.json" ]; then
-                    echo "manager=npm" >> $GITHUB_OUTPUT
-                    echo "command=ci" >> $GITHUB_OUTPUT
-                    echo "runner=npx --no-install" >> $GITHUB_OUTPUT
-                    exit 0
-                  else
-                    echo "Unable to determine package manager"
-                    exit 1
-                  fi
-            - name: Setup Node
+            - uses: pnpm/action-setup@v4
+              name: Install pnpm
+              with:
+                  version: 9.1.2
+                  run_install: false
+            - name: Install Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: "20"
-                  cache: ${{ steps.detect-package-manager.outputs.manager }}
-                  cache-dependency-path: Software/NextJS/pnpm-lock.json
+                  node-version: 20.11
+                  cache: "pnpm"
+            - name: Install dependencies
+              run: pnpm install
             - name: Restore cache
               uses: actions/cache@v4
               with:
-                  path: |
-                      Software/NextJS/.next/cache
+                  path: Software/NextJS/.next/cache
                   # Generate a new cache whenever packages or source files change.
-                  key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+                  key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.json', '**/yarn.lock') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
                   # If source files changed but packages didn't, rebuild from a prior cache.
                   restore-keys: |
-                      ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-
-            - name: Install dependencies
-              run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
+                      ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.json', '**/yarn.lock') }}-
             - name: Build with Next.js
-              run: ${{ steps.detect-package-manager.outputs.runner }} next build
+              run: pnpm run build
             - name: Setup Tailscale
               uses: tailscale/github-action@v3
               with:
@@ -85,6 +69,6 @@ jobs:
               uses: FarisZR/tailscale-ssh-deploy@v1
               with:
                   remote_host: selene@100.114.133.21
-                  directory: .next/standalone
+                  directory: Software/NextJS/.next/standalone
                   remote_destination: ~/standalone
                   post_upload_command: ./nodejs_setup.sh
