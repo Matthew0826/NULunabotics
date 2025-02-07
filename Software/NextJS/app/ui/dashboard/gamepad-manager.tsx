@@ -11,14 +11,14 @@ export default function GamepadManager({
     arrowCircle2,
 }: any) {
     useEffect(() => {
-        gamepadLoop(
-            buttonL,
-            buttonR,
-            arrowLine1,
-            arrowCircle1,
-            arrowLine2,
-            arrowCircle2
-        );
+        //     gamepadLoop(
+        //         buttonL,
+        //         buttonR,
+        //         arrowLine1,
+        //         arrowCircle1,
+        //         arrowLine2,
+        //         arrowCircle2
+        //     );
     }, []);
     return <></>;
 }
