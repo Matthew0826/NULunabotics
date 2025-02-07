@@ -43,6 +43,7 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: 20.11
+                  cache-dependency-path: Software/NextJS/pnpm-lock.yaml
                   cache: "pnpm"
             - name: Install dependencies
               run: pnpm install
