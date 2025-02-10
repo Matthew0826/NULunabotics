@@ -32,6 +32,9 @@ importers:
       next-auth:
         specifier: 5.0.0-beta.25
         version: 5.0.0-beta.25(next@15.1.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+      next-ws:
+        specifier: ^2.0.0
+        version: 2.0.0(next@15.1.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@6.0.5))
       postcss:
         specifier: 8.5.1
         version: 8.5.1
@@ -715,6 +718,14 @@ packages:
         optional: true
       nodemailer:
         optional: true
+
+  next-ws@2.0.0:
+    resolution: {integrity: sha512-0ttM/pbDvhz6KoBeJ9qjVVWZUY5iJ4ooFJ5MVOt5lt1eTblxlPPYxde1ASJcAnvEhn7Z5QOWA1QTZZsClzEkqw==}
+    hasBin: true
+    peerDependencies:
+      next: '>=13.1.1'
+      react: '*'
+      ws: '*'
 
   next@15.1.6:
     resolution: {integrity: sha512-Hch4wzbaX0vKQtalpXvUiw5sYivBy4cm5rzUKrBnUB/y436LGrvOUqYvlSeNVCWFO/770gDlltR9gqZH62ct4Q==}
@@ -1723,6 +1734,12 @@ snapshots:
       '@auth/core': 0.37.2
       next: 15.1.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react: 19.0.0
+
+  next-ws@2.0.0(next@15.1.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)):
+    dependencies:
+      next: 15.1.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      react: 19.0.0
+      ws: 8.18.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
 
   next@15.1.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:

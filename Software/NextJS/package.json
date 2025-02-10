@@ -4,7 +4,7 @@
         "build": "next build",
         "dev": "next dev",
         "start": "next start",
-        "prepare": "next-ws patch"
+        "__prepare": "next-ws patch"
     },
     "dependencies": {
         "@heroicons/react": "^2.2.0",
@@ -15,6 +15,7 @@
         "clsx": "^2.1.1",
         "next": "^15.1.6",
         "next-auth": "5.0.0-beta.25",
+        "next-ws": "^2.0.0",
         "postcss": "8.5.1",
         "react": "latest",
         "react-dom": "latest",
