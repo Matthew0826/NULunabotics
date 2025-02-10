@@ -1,5 +1,21 @@
 import DirectionalDisplay from "./ui/dashboard/directional-display";
 import GamepadManager from "./ui/dashboard/gamepad-manager";
+import TesterMessages from "./ui/dashboard/tester-messages";
+
+import { sendMessageEvery3Seconds } from "@/app/lib/temp_messages";
+
+// const url = "ws://localhost:3000/socket";
+// const socket = new WebSocket(url);
+// console.log("hi");
+
+// socket.addEventListener("open", () => {
+//     console.log("WebSocket is open now.");
+//     sendMessageEvery3Seconds(socket);
+// });
+
+// socket.addEventListener("message", (event) => {
+//     console.log(event.data);
+// });
 
 export default function Page() {
     return (
@@ -16,6 +32,7 @@ export default function Page() {
                     <GamepadManager />
                     <DirectionalDisplay />
                     <DirectionalDisplay />
+                    <TesterMessages />
                 </div>
             </div>
         </main>
