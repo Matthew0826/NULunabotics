@@ -1,3 +1,6 @@
+import { IncomingMessage } from "node:http";
+import WebSocket, { WebSocketServer } from "ws";
+
 export function GET() {
     const headers = new Headers();
     headers.set("Connection", "Upgrade");
@@ -6,38 +9,39 @@ export function GET() {
 }
 
 export function SOCKET(
-    client: import("ws").WebSocket,
-    _request: import("node:http").IncomingMessage,
-    server: import("ws").WebSocketServer
+    client: WebSocket,
+    _request: IncomingMessage,
+    server: WebSocketServer
 ) {
-    for (const other of server.clients)
-        if (client !== other && other.readyState === other.OPEN)
-            other.send("A new user joined the chat");
+    // for (const other of server.clients)
+    //     if (client !== other && other.readyState === other.OPEN)
+    //         other.send("A new user joined the chat");
 
-    client.on("message", (message: any) => {
-        // Forward the message to all other clients
-        for (const other of server.clients)
-            if (client !== other && other.readyState === other.OPEN)
-                other.send(message);
-        console.log("received: %s", message);
+    client.on("message", (message: WebSocket.RawData) => {
+        // // Forward the message to all other clients
+        // for (const other of server.clients)
+        //     if (client !== other && other.readyState === other.OPEN)
+        //         other.send(message);
+
+        const messageString = message.toString();
+        console.log("received: ", messageString);
     });
 
-    client.send(
-        `Welcome to the chat! There ${
-            server.clients.size - 1 === 1
-                ? "is 1 other user"
-                : `are ${server.clients.size - 1 || "no"} other users`
-        } online`
-    );
+    // client.send(
+    //     `Welcome to the chat! There ${
+    //         server.clients.size - 1 === 1
+    //             ? "is 1 other user"
+    //             : `are ${server.clients.size - 1 || "no"} other users`
+    //     } online`
+    // );
 
-    // Run code every 3 seconds
     const interval = setInterval(() => {
         client.send("Hello from the server every 3 seconds!");
     }, 3000);
 
     return () => {
-        for (const other of server.clients)
-            if (client !== other && other.readyState === other.OPEN)
-                other.send("A user left the chat");
+        // for (const other of server.clients)
+        //     if (client !== other && other.readyState === other.OPEN)
+        // other.send("A user left the chat");
     };
 }
