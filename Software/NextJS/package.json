@@ -4,7 +4,7 @@
         "build": "next build",
         "dev": "next dev",
         "start": "next start",
-        "__prepare": "next-ws patch"
+        "prepare": "next-ws patch"
     },
     "dependencies": {
         "@heroicons/react": "^2.2.0",
