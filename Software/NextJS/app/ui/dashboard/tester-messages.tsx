@@ -33,7 +33,7 @@ export default function TesterMessages() {
 
         socketRef.current?.addEventListener("message", handleMessage);
         socketRef.current?.addEventListener("open", () => {
-            socketRef.current?.send("hello nerds");
+            socketRef.current?.send("A new page opened to control the robot.");
         });
         return () =>
             socketRef.current?.removeEventListener("message", handleMessage);

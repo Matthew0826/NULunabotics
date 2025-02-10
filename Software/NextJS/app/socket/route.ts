@@ -12,39 +12,32 @@ export function SOCKET(
 ) {
     for (const other of server.clients)
         if (client !== other && other.readyState === other.OPEN)
-            other.send(
-                JSON.stringify({
-                    author: "System",
-                    content: "A new user joined the chat",
-                })
-            );
+            other.send("A new user joined the chat");
 
     client.on("message", (message: any) => {
         // Forward the message to all other clients
         for (const other of server.clients)
             if (client !== other && other.readyState === other.OPEN)
                 other.send(message);
+        console.log("received: %s", message);
     });
 
     client.send(
-        JSON.stringify({
-            author: "System",
-            content: `Welcome to the chat! There ${
-                server.clients.size - 1 === 1
-                    ? "is 1 other user"
-                    : `are ${server.clients.size - 1 || "no"} other users`
-            } online`,
-        })
+        `Welcome to the chat! There ${
+            server.clients.size - 1 === 1
+                ? "is 1 other user"
+                : `are ${server.clients.size - 1 || "no"} other users`
+        } online`
     );
+
+    // Run code every 3 seconds
+    const interval = setInterval(() => {
+        client.send("Hello from the server every 3 seconds!");
+    }, 3000);
 
     return () => {
         for (const other of server.clients)
             if (client !== other && other.readyState === other.OPEN)
-                other.send(
-                    JSON.stringify({
-                        author: "System",
-                        content: "A user left the chat",
-                    })
-                );
+                other.send("A user left the chat");
     };
 }
