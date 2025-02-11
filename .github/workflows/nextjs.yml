@@ -69,10 +69,10 @@ jobs:
                   version: 1.78.1
                   tags: tag:ci
             - name: Run initialization script
-              run: | 
-                sudo apt-get install sshpass
-                sshpass -p admin ssh -v selene@selene.tail83386.ts.net
-                echo "connected to ssh!"
-                sudo ./nodejs_setup.sh
+              uses: JimCronqvist/action-ssh@master
+              with:
+                hosts: 'selene@selene'
+                privateKey: 'admin'
+                command: ls -lah
           
 
