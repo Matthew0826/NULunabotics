@@ -74,4 +74,4 @@ jobs:
                   remote_host: selene@100.114.133.21
                   directory: Software/NextJS/.next/standalone
                   remote_destination: ~/standalone
-                  post_upload_command: ./nodejs_setup.sh
+                  post_upload_command: sudo ./nodejs_setup.sh
