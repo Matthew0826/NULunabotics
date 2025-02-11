@@ -38,7 +38,7 @@ jobs:
                   else
                     echo "TS_OAUTH_CLIENT_ID is set"
                   fi
-                  if [[ -z "${{ OAUTH_CLIENT_SECRET }}" ]]; then
+                  if [[ -z "${{ secrets.OAUTH_CLIENT_SECRET }}" ]]; then
                       echo "::error title=Missing Secret::TS_OAUTH_SECRET is empty"
                       exit 1
                   else
