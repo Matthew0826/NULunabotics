@@ -31,6 +31,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
             - name: Debug Secrets
+              env:
+                  test_secret: ${{ secrets.TEST_SECRET }}
               run: |
                   if [[ -z "${{ secrets.TEST_SECRET }}" ]]; then
                       echo "::error title=Missing Secret::TEST_SECRET is empty"
