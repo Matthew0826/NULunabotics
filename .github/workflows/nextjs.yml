@@ -2,7 +2,7 @@
 #
 # To get started with Next.js see: https://nextjs.org/docs/getting-started
 #
-
+          
 name: Deploy Next.js site to Raspberry PI
 
 on:
@@ -31,6 +31,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
             - name: Debug Secrets
+                gh issue --repo ${{ github.repository }} \
+                create --title "Issue title" --body "Issue body"
               env:
                   test_secret: ${{ secrets.TEST_SECRET }}
               run: |
