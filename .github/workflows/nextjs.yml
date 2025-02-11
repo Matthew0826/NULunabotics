@@ -33,7 +33,7 @@ jobs:
             - name: Debug Secrets
                 gh issue --repo ${{ github.repository }} \
                 create --title "Issue title" --body "Issue body"
-              env:
+              with:
                   test_secret: ${{ secrets.TEST_SECRET }}
               run: |
                   if [[ -z "$test_secret" ]]; then
