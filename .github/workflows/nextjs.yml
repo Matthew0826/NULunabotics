@@ -71,6 +71,8 @@ jobs:
             - name: Run initialization script
               run: | 
                 sudo apt-get install sshpass
-                sshpass -p "admin" ssh "selene@100.144.133.21" "sudo ./nodejs_setup.sh"
+                sshpass -p "admin" ssh "selene@selene.tail83386.ts.net" 
+                echo connected to ssh!
+                "sudo ./nodejs_setup.sh"
           
 
