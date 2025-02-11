@@ -51,8 +51,8 @@ jobs:
                   # If source files changed but packages didn't, rebuild from a prior cache.
                   restore-keys: |
                       ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.json', '**/yarn.lock') }}-
-            # - name: Build with Next.js
-            #   run: pnpm run build
+            - name: Build with Next.js
+              run: pnpm run build
             - name: Setup Tailscale
               uses: tailscale/github-action@v3
               with:
@@ -64,15 +64,3 @@ jobs:
             - name: SSH to Raspberry Pi
               run: |
                   tar cjvf - -C "$GITHUB_WORKSPACE" "Software/NextJS/.next/standalone" | sshpass -p "admin" ssh -o StrictHostKeyChecking=no selene@100.114.133.21 "mkdir standalone && cd standalone && tar -xjvf -"
-            # - name: Zip up build
-            #   run: |
-            #       zip -r build.zip .next/standalone
-            #       mkdir standalone
-            #       mv build.zip standalone
-            # - name: Start Deployment
-            #   uses: FarisZR/tailscale-ssh-deploy@v1
-            #   with:
-            #       remote_host: selene@100.114.133.21
-            #       directory: Software/NextJS/.next/standalone
-            #       remote_destination: ~/standalone
-            #       tar cjvf - -C "$GITHUB_WORKSPACE" "${{ inputs.directory }}" | ssh -o StrictHostKeyChecking=no "${{ inputs.remote_host }}" "cd ${{ inputs.remote_destination }} && tar -xjvf -"
