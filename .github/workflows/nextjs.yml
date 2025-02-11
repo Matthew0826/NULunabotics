@@ -61,9 +61,14 @@ jobs:
                   oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
                   version: 1.78.1
                   tags: tag:ci
+            - name: Zip up build
+              run: |
+                  zip -r build.zip .next/standalone
+                  mkdir standalone
+                  mv build.zip standalone
             - name: Start Deployment
               uses: FarisZR/tailscale-ssh-deploy@v1
               with:
                   remote_host: selene@100.114.133.21
-                  directory: Software/NextJS/.next/standalone
+                  directory: standalone
                   remote_destination: ~/standalone
