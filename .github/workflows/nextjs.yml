@@ -23,11 +23,6 @@ permissions:
 concurrency:
     group: "rpi"
     cancel-in-progress: false
-
-defaults:
-    run:
-        working-directory: Software/NextJS/
-
 jobs:
     # Build job
     build:
@@ -36,11 +31,8 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
             - name: Debug Secrets
-              env:
-                OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-                OAUTH_CLIENT_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
               run: |
-                  if [[ -z "${{ OAUTH_CLIENT_ID }}" ]]; then
+                  if [[ -z "${{ secrets.TEST_SECRET }}" ]]; then
                       echo "::error title=Missing Secret::TS_OAUTH_CLIENT_ID is empty"
                       exit 1
                   else
