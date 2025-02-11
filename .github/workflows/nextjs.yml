@@ -31,7 +31,7 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
             - name: Debug Secrets
-              run: echo ${{secrets.TS_OAUTH_CLIENT_ID}}
+              run: echo ${{secrets.TS_OAUTH_CIENT_ID}}
             - uses: pnpm/action-setup@v4
               name: Install pnpm
               with:
