@@ -71,8 +71,8 @@ jobs:
             - name: Run initialization script
               uses: JimCronqvist/action-ssh@master
               with:
-                hosts: 'selene@selene'
-                privateKey: 'admin'
+                hosts: selene@selene.tail83386.ts.net
+                privateKey: admin
                 command: ls -lah
           
 
