@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Chart from "chart.js/auto";
+import Chart, { ChartConfiguration } from "chart.js/auto";
 import { Dataset } from "@/app/lib/utils";
 
 type GraphProps = {
@@ -33,7 +33,7 @@ export default function Graph({
         }),
     };
 
-    const config = {
+    const config: ChartConfiguration = {
         type: "line",
         data: data,
         options: {
@@ -72,7 +72,7 @@ export default function Graph({
     const chartRef = useRef(null);
 
     useEffect(() => {
-        const myChart = new Chart(chartRef.current, config);
+        const myChart = new Chart(chartRef.current!!, config);
 
         return () => {
             myChart.destroy();
