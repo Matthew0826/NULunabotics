@@ -33,21 +33,20 @@ jobs:
     build:
         runs-on: ubuntu-latest
         steps:
-            
-        - name: Debug Secrets
-            run: |
-                if [[ -z "${{ secrets.TS_OAUTH_CLIENT_ID }}" ]]; then
-                    echo "::error title=Missing Secret::TS_OAUTH_CLIENT_ID is empty"
-                    exit 1
-                else
-                  echo "TS_OAUTH_CLIENT_ID is set"
-                fi
-                if [[ -z "${{ secrets.TS_OAUTH_SECRET }}" ]]; then
-                    echo "::error title=Missing Secret::TS_OAUTH_SECRET is empty"
-                    exit 1
-                else
-                  echo "TS_OAUTH_SECRET is set"
-                fi
+            - name: Debug Secrets
+              run: |
+                  if [[ -z "${{ secrets.TS_OAUTH_CLIENT_ID }}" ]]; then
+                      echo "::error title=Missing Secret::TS_OAUTH_CLIENT_ID is empty"
+                      exit 1
+                  else
+                    echo "TS_OAUTH_CLIENT_ID is set"
+                  fi
+                  if [[ -z "${{ secrets.TS_OAUTH_SECRET }}" ]]; then
+                      echo "::error title=Missing Secret::TS_OAUTH_SECRET is empty"
+                      exit 1
+                  else
+                    echo "TS_OAUTH_SECRET is set"
+                  fi
             - name: Checkout
               uses: actions/checkout@v4
             - uses: pnpm/action-setup@v4
@@ -74,7 +73,7 @@ jobs:
                       ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.json', '**/yarn.lock') }}-
             - name: Build with Next.js
               run: pnpm run build
-              
+
             - name: Setup Tailscale
               uses: tailscale/github-action@v3
               with:
