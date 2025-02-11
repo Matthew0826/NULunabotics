@@ -36,7 +36,13 @@ export function SOCKET(
     // );
 
     const interval = setInterval(() => {
-        client.send("Hello from the server every 3 seconds!");
+        client.send(
+            JSON.stringify({
+                graph: "Graph 1",
+                dataSet: "Test Data",
+                newData: [Math.floor(Math.random() * 30)],
+            })
+        );
     }, 3000);
 
     return () => {

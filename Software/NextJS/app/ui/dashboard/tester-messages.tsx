@@ -1,6 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Graph from "./graph";
+import { Dataset } from "@/app/lib/utils";
+
+type GraphInfo = {
+    name: string;
+    xAxisLabel: string;
+    yAxisLabel: string;
+    dataSets: {
+        [key: string]: Dataset;
+    };
+};
 
 export default function TesterMessages() {
     const socketRef = useRef<WebSocket | null>(null);
@@ -19,8 +30,22 @@ export default function TesterMessages() {
     const [messages, setMessages] = useState<string[]>([]);
     const onMessage = useCallback((message: string) => {
         socketRef.current?.send(message);
-        setMessages((messages) => [...messages, message]);
     }, []);
+
+    const [graphs, setGraphs] = useState<Array<GraphInfo>>([
+        {
+            name: "Graph 1",
+            xAxisLabel: "x-axis",
+            yAxisLabel: "y-axis",
+            dataSets: {
+                "Test Data": {
+                    label: "Test Data",
+                    color: "rgb(0, 0, 0)",
+                    data: [20, 30, 4, 17],
+                },
+            },
+        },
+    ]);
 
     useEffect(() => {
         async function handleMessage(event: MessageEvent) {
@@ -29,6 +54,21 @@ export default function TesterMessages() {
                     ? event.data
                     : await event.data.text();
             setMessages((p) => [...p, payload]);
+            const data = JSON.parse(payload);
+            const graphName = data.graph as string;
+            const dataSetName = data.dataSet as string;
+            const newData = data.newData as number[];
+            const graph = graphs.filter((g) => g.name == graphName)[0];
+            const dataSet = graph.dataSets[dataSetName];
+            dataSet.data.push(...newData);
+            setGraphs((p) =>
+                p.map((g) => {
+                    if (g.name == graphName) {
+                        g.dataSets[dataSetName] = dataSet;
+                    }
+                    return g;
+                })
+            );
         }
 
         socketRef.current?.addEventListener("message", handleMessage);
@@ -50,10 +90,27 @@ export default function TesterMessages() {
     });
 
     return (
-        <div style={{ maxWidth: "50vh" }}>
-            {messages.map((message, index) => (
-                <p key={index}>{message}</p>
-            ))}
-        </div>
+        <>
+            <div style={{ width: 600 }}>
+                {graphs.map((graph) => (
+                    <Graph
+                        key={graph.name}
+                        dataSets={graph.dataSets}
+                        title={graph.name}
+                        xAxisLabel={graph.xAxisLabel}
+                        yAxisLabel={graph.yAxisLabel}
+                    />
+                ))}
+            </div>
+
+            <details>
+                <summary>Incoming Message Logs</summary>
+                <div style={{ maxWidth: "50vh" }}>
+                    {messages.map((message, index) => (
+                        <p key={index}>{message}</p>
+                    ))}
+                </div>
+            </details>
+        </>
     );
 }

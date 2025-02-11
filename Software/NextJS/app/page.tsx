@@ -1,8 +1,7 @@
 import DirectionalDisplay from "./ui/dashboard/directional-display";
 import GamepadManager from "./ui/dashboard/gamepad-manager";
+import Graph from "./ui/dashboard/graph";
 import TesterMessages from "./ui/dashboard/tester-messages";
-
-import { sendMessageEvery3Seconds } from "@/app/lib/temp_messages";
 
 // const url = "ws://localhost:3000/socket";
 // const socket = new WebSocket(url);
@@ -18,6 +17,7 @@ import { sendMessageEvery3Seconds } from "@/app/lib/temp_messages";
 // });
 
 export default function Page() {
+    const handleReceiveData = (data: any) => {};
     return (
         <main className="flex min-h-screen flex-col p-6">
             <div className="mt-4 flex grow flex-col gap-4 md:flex-row">

@@ -103,3 +103,9 @@ export function gamepadLoop(
 
     requestAnimationFrame(step);
 }
+
+export type Dataset = {
+    label: string;
+    color: string;
+    data: number[];
+};
