@@ -62,8 +62,8 @@ jobs:
               uses: tailscale/github-action@v3
               with:
                   hostname: Github-actions
-                  oauth_client_id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-                  oauth_client_secret: ${{ secrets.TS_OAUTH_SECRET }}
+                  oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+                  oauth-client-secret: ${{ secrets.TS_OAUTH_SECRET }}
                   version: 1.78.1
                   tags: tag:ci
             - name: Start Deployment
