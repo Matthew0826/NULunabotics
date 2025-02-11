@@ -33,6 +33,8 @@ jobs:
     build:
         runs-on: ubuntu-latest
         steps:
+            - name: Checkout
+              uses: actions/checkout@v4
             - name: Debug Secrets
               run: |
                   if [[ -z "${{ secrets.TS_OAUTH_CLIENT_ID }}" ]]; then
@@ -47,8 +49,6 @@ jobs:
                   else
                     echo "TS_OAUTH_SECRET is set"
                   fi
-            - name: Checkout
-              uses: actions/checkout@v4
             - uses: pnpm/action-setup@v4
               name: Install pnpm
               with:
