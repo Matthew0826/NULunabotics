@@ -31,23 +31,21 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
             - name: Debug Secrets
-                gh issue --repo ${{ github.repository }} \
-                create --title "Issue title" --body "Issue body"
               with:
                   test_secret: ${{ secrets.TEST_SECRET }}
-              run: |
-                  if [[ -z "$test_secret" ]]; then
-                      echo "::error title=Missing Secret::TEST_SECRET is empty"
-                      exit 1
-                  else
-                    echo "TEST_SECRET is set"
-                  fi
-                  if [[ -z "${{ secrets.OAUTH_CLIENT_SECRET }}" ]]; then
-                      echo "::error title=Missing Secret::TS_OAUTH_SECRET is empty"
-                      exit 1
-                  else
-                    echo "TS_OAUTH_SECRET is set"
-                  fi
+                  run: |
+                            if [[ -z "$test_secret" ]]; then
+                                echo "::error title=Missing Secret::TEST_SECRET is empty"
+                                exit 1
+                            else
+                              echo "TEST_SECRET is set"
+                            fi
+                            if [[ -z "${{ secrets.OAUTH_CLIENT_SECRET }}" ]]; then
+                                echo "::error title=Missing Secret::TS_OAUTH_SECRET is empty"
+                                exit 1
+                            else
+                              echo "TS_OAUTH_SECRET is set"
+                            fi
             - uses: pnpm/action-setup@v4
               name: Install pnpm
               with:
