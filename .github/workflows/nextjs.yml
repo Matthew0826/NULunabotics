@@ -34,7 +34,7 @@ jobs:
               env:
                   test_secret: ${{ secrets.TEST_SECRET }}
               run: |
-                  if [[ -z "${{ test_secret }}" ]]; then
+                  if [[ -z "$test_secret" ]]; then
                       echo "::error title=Missing Secret::TEST_SECRET is empty"
                       exit 1
                   else
