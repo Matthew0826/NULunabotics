@@ -33,10 +33,10 @@ jobs:
             - name: Debug Secrets
               run: |
                   if [[ -z "${{ secrets.TEST_SECRET }}" ]]; then
-                      echo "::error title=Missing Secret::TS_OAUTH_CLIENT_ID is empty"
+                      echo "::error title=Missing Secret::TEST_SECRET is empty"
                       exit 1
                   else
-                    echo "TS_OAUTH_CLIENT_ID is set"
+                    echo "TEST_SECRET is set"
                   fi
                   if [[ -z "${{ secrets.OAUTH_CLIENT_SECRET }}" ]]; then
                       echo "::error title=Missing Secret::TS_OAUTH_SECRET is empty"
