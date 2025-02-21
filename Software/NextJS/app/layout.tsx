@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "@/app/ui/dashboard/global.css";
+import "@/app/ui/global.css";
 import WebSocketProvider from "./socket/web-socket-context";
 
 export const metadata: Metadata = {
