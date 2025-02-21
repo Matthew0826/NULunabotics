@@ -1,8 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+    use,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import Graph from "./graph";
 import { Dataset } from "@/app/lib/utils";
+import { useWebSocketContext } from "@/app/socket/web-socket-context";
 
 type GraphInfo = {
     name: string;
@@ -14,23 +22,38 @@ type GraphInfo = {
 };
 
 export default function TesterMessages() {
-    const socketRef = useRef<WebSocket | null>(null);
+    const { messages, sendToServer } = useWebSocketContext();
+
     useEffect(() => {
-        if (typeof window === "undefined") return;
+        // send a message on key press
+        // temporary!
+        function handleKeyDown(event: KeyboardEvent) {
+            sendToServer(event.key);
+            console.log("sending", event.key);
+        }
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    });
 
-        const url = `ws://${window.location.host}/socket`;
-        console.log(url);
-        socketRef.current = new WebSocket(url);
-        return () => {
-            socketRef.current?.close();
-            socketRef.current = null;
-        };
-    }, []);
-
-    const [messages, setMessages] = useState<string[]>([]);
-    const onMessage = useCallback((message: string) => {
-        socketRef.current?.send(message);
-    }, []);
+    useEffect(() => {
+        if (messages.length == 0) return;
+        const payload = messages[messages.length - 1];
+        const data = JSON.parse(payload);
+        const graphName = data.graph as string;
+        const dataSetName = data.dataSet as string;
+        const newData = data.newData as number[];
+        const graph = graphs.filter((g) => g.name == graphName)[0];
+        const dataSet = graph.dataSets[dataSetName];
+        dataSet.data.push(...newData);
+        setGraphs((p) =>
+            p.map((g) => {
+                if (g.name == graphName) {
+                    g.dataSets[dataSetName] = dataSet;
+                }
+                return g;
+            })
+        );
+    }, [messages]);
 
     const [graphs, setGraphs] = useState<Array<GraphInfo>>([
         {
@@ -47,48 +70,6 @@ export default function TesterMessages() {
         },
     ]);
 
-    useEffect(() => {
-        async function handleMessage(event: MessageEvent) {
-            const payload =
-                typeof event.data === "string"
-                    ? event.data
-                    : await event.data.text();
-            setMessages((p) => [...p, payload]);
-            const data = JSON.parse(payload);
-            const graphName = data.graph as string;
-            const dataSetName = data.dataSet as string;
-            const newData = data.newData as number[];
-            const graph = graphs.filter((g) => g.name == graphName)[0];
-            const dataSet = graph.dataSets[dataSetName];
-            dataSet.data.push(...newData);
-            setGraphs((p) =>
-                p.map((g) => {
-                    if (g.name == graphName) {
-                        g.dataSets[dataSetName] = dataSet;
-                    }
-                    return g;
-                })
-            );
-        }
-
-        socketRef.current?.addEventListener("message", handleMessage);
-        socketRef.current?.addEventListener("open", () => {
-            socketRef.current?.send("A new page opened to control the robot.");
-        });
-        return () =>
-            socketRef.current?.removeEventListener("message", handleMessage);
-    }, []);
-
-    useEffect(() => {
-        // send a message on key press
-        function handleKeyDown(event: KeyboardEvent) {
-            socketRef.current?.send(event.key);
-            console.log("sending", event.key);
-        }
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    });
-
     return (
         <>
             <div style={{ width: 600 }}>
@@ -103,14 +84,14 @@ export default function TesterMessages() {
                 ))}
             </div>
 
-            <details>
+            {/* <details>
                 <summary>Incoming Message Logs</summary>
                 <div style={{ maxWidth: "50vh" }}>
                     {messages.map((message, index) => (
                         <p key={index}>{message}</p>
                     ))}
                 </div>
-            </details>
+            </details> */}
         </>
     );
 }

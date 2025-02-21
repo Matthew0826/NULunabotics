@@ -63,4 +63,4 @@ jobs:
                   tags: tag:ci
             - name: SSH to Raspberry Pi
               run: |
-                  tar cjvf - -C "$GITHUB_WORKSPACE" "Software/NextJS/.next/" | sshpass -p "admin" ssh -o StrictHostKeyChecking=no selene@100.114.133.21 "rm -rf standalone && mkdir standalone && cd standalone && tar -xjvf -"
+                  tar cjvf - -C "$GITHUB_WORKSPACE" "Software/NextJS/.next/" | sshpass -p "admin" ssh -o StrictHostKeyChecking=no selene@100.114.133.21 "rm -rf .next && mkdir .next && cd .next && tar -xjvf -"
