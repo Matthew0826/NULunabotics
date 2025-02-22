@@ -1,0 +1,112 @@
+
+(kicad_symbol_lib (version 20211014) (generator kicad_symbol_editor)
+  (symbol "B6B-PH-K-S" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
+    (property "Reference" "J" (id 0) (at -5.58 10.16 0)
+      (effects (font (size 1.27 1.27)) (justify bottom left))
+    )
+    (property "Value" "B6B-PH-K-S" (id 1) (at -5.08 -10.16 0)
+      (effects (font (size 1.27 1.27)) (justify bottom left))
+    )
+    (property "Footprint" "B6B-PH-K-S:JST_B6B-PH-K-S" (id 2) (at 0 0 0)
+      (effects (font (size 1.27 1.27)) (justify bottom) hide)
+    )
+    (property "MANUFACTURER" "JST" (id 4) (at 0 0 0)
+      (effects (font (size 1.27 1.27)) (justify bottom) hide)
+    )
+    (symbol "B6B-PH-K-S_0_0"
+      (polyline
+        (pts (xy -5.08 7.62) (xy -3.175 7.62)) (stroke (width 0.254))
+      )
+      (rectangle (start -4.445 7.3025) (end -2.8575 7.9375)
+        (stroke (width 0.1)) (fill (type outline))
+      )
+      (polyline
+        (pts (xy -5.08 5.08) (xy -3.175 5.08)) (stroke (width 0.254))
+      )
+      (rectangle (start -4.445 4.7625) (end -2.8575 5.3975)
+        (stroke (width 0.1)) (fill (type outline))
+      )
+      (polyline
+        (pts (xy -5.08 2.54) (xy -3.175 2.54)) (stroke (width 0.254))
+      )
+      (rectangle (start -4.445 2.2225) (end -2.8575 2.8575)
+        (stroke (width 0.1)) (fill (type outline))
+      )
+      (polyline
+        (pts (xy -5.08 0.0) (xy -3.175 0.0)) (stroke (width 0.254))
+      )
+      (rectangle (start -4.445 -0.3175) (end -2.8575 0.3175)
+        (stroke (width 0.1)) (fill (type outline))
+      )
+      (polyline
+        (pts (xy -5.08 -2.54) (xy -3.175 -2.54)) (stroke (width 0.254))
+      )
+      (rectangle (start -4.445 -2.8575) (end -2.8575 -2.2225)
+        (stroke (width 0.1)) (fill (type outline))
+      )
+      (polyline
+        (pts (xy -5.08 -5.08) (xy -3.175 -5.08)) (stroke (width 0.254))
+      )
+      (rectangle (start -4.445 -5.3975) (end -2.8575 -4.7625)
+        (stroke (width 0.1)) (fill (type outline))
+      )
+      (polyline
+        (pts (xy -5.08 -6.35) (xy -3.81 -7.62)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy -5.08 8.89) (xy -3.81 10.16)) (stroke (width 0.254))
+      )
+      (rectangle (start -4.60375 -7.62) (end 5.55625 10.16)
+        (stroke (width 0.254)) (fill (type background))
+      )
+      (pin passive line (at -10.16 7.62 0) (length 5.08)
+        (name "1"
+          (effects (font (size 1.016 1.016)))
+        )
+        (number "1"
+          (effects (font (size 1.016 1.016)))
+        )
+      )
+      (pin passive line (at -10.16 5.08 0) (length 5.08)
+        (name "2"
+          (effects (font (size 1.016 1.016)))
+        )
+        (number "2"
+          (effects (font (size 1.016 1.016)))
+        )
+      )
+      (pin passive line (at -10.16 2.54 0) (length 5.08)
+        (name "3"
+          (effects (font (size 1.016 1.016)))
+        )
+        (number "3"
+          (effects (font (size 1.016 1.016)))
+        )
+      )
+      (pin passive line (at -10.16 0.0 0) (length 5.08)
+        (name "4"
+          (effects (font (size 1.016 1.016)))
+        )
+        (number "4"
+          (effects (font (size 1.016 1.016)))
+        )
+      )
+      (pin passive line (at -10.16 -2.54 0) (length 5.08)
+        (name "5"
+          (effects (font (size 1.016 1.016)))
+        )
+        (number "5"
+          (effects (font (size 1.016 1.016)))
+        )
+      )
+      (pin passive line (at -10.16 -5.08 0) (length 5.08)
+        (name "6"
+          (effects (font (size 1.016 1.016)))
+        )
+        (number "6"
+          (effects (font (size 1.016 1.016)))
+        )
+      )
+    )
+  )
+)
