@@ -64,7 +64,7 @@ jobs:
                     STANDALONE=/var/www/lunabotics/standalone && \
                     rm -rf \$STANDALONE && \
                     mkdir -p \$STANDALONE && \
-                    tar -xjvf - -C \$STANDALONE && \
+                    tar -xjvf - --strip-components=1 -C \$STANDALONE && \
                     chmod +x \$STANDALONE/server.js && \
                     sed -i '1s/^/#!\/usr\/bin\/env node\n/' \$STANDALONE/server.js && \
                     systemctl restart nodejswebsite
