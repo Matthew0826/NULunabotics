@@ -56,15 +56,18 @@ jobs:
                   oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
                   version: 1.78.1
                   tags: tag:ci
-            - name: SSH to Raspberry Pi and copy files
+            - name: SSH to Raspberry Pi
               run: |
                   tar cjvf - \
-                      -C "$GITHUB_WORKSPACE/Software/NextJS/.next/" "standalone" | \
-                    sshpass -p "admin" ssh -o StrictHostKeyChecking=no selene@100.114.133.21 "
-                      sudo rm -rf /var/www/lunabotics/standalone && \
-                      sudo mkdir -p /var/www/lunabotics/standalone && \
-                      sudo tar -xjvf - -C /var/www/lunabotics/standalone && \
-                      sudo chmod +x /var/www/lunabotics/standalone/server.js && \
-                      sudo sed -i '1s/^/#!\/usr\/bin\/env node\n/' /var/www/lunabotics/standalone/server.js && \
-                      sudo systemctl restart nodejswebsite
-                    "
+                    -C "$GITHUB_WORKSPACE/Software/NextJS/.next/" "standalone" | \
+                  sshpass -p "admin" ssh -o StrictHostKeyChecking=no selene@100.114.133.21 "
+                    echo 'admin' | sudo -S bash -c '
+                      STANDALONE=/var/www/lunabotics/standalone && \
+                      rm -rf \$STANDALONE && \
+                      mkdir -p \$STANDALONE && \
+                      tar -xjvf - -C \$STANDALONE && \
+                      chmod +x \$STANDALONE/server.js && \
+                      sed -i \"1s/^/#!\/usr\/bin\/env node\n/\" \$STANDALONE/server.js && \
+                      systemctl restart nodejswebsite
+                    '
+                  "
