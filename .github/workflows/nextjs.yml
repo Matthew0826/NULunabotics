@@ -66,4 +66,5 @@ jobs:
                       rm -rf \$STANDALONE && \
                       mkdir -p \$STANDALONE && \
                       tar -xjvf - -C \$STANDALONE
+                    '
                   "
