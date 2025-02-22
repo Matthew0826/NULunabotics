@@ -5,6 +5,243 @@
 	(uuid "3ae76082-8f81-4543-ada7-6461846461ce")
 	(paper "A4")
 	(lib_symbols
+		(symbol "2025-02-22_17-10-12:TLV2370IDBVR"
+			(pin_names
+				(offset 0.254)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "U"
+				(at 30.48 10.16 0)
+				(effects
+					(font
+						(size 1.524 1.524)
+					)
+				)
+			)
+			(property "Value" "TLV2370IDBVR"
+				(at 30.48 7.62 0)
+				(effects
+					(font
+						(size 1.524 1.524)
+					)
+				)
+			)
+			(property "Footprint" "DBV6"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+						(italic yes)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "TLV2370IDBVR"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+						(italic yes)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_locked" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "TLV2370IDBVR"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "DBV6 DBV6-M DBV6-L"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "TLV2370IDBVR_0_1"
+				(polyline
+					(pts
+						(xy 7.62 -10.16) (xy 53.34 -10.16)
+					)
+					(stroke
+						(width 0.127)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 7.62 5.08) (xy 7.62 -10.16)
+					)
+					(stroke
+						(width 0.127)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 53.34 -10.16) (xy 53.34 5.08)
+					)
+					(stroke
+						(width 0.127)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 53.34 5.08) (xy 7.62 5.08)
+					)
+					(stroke
+						(width 0.127)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin output line
+					(at 0 0 0)
+					(length 7.62)
+					(name "OUT"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 0 -2.54 0)
+					(length 7.62)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 0 -5.08 0)
+					(length 7.62)
+					(name "IN+"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 60.96 -5.08 180)
+					(length 7.62)
+					(name "IN-"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at 60.96 -2.54 180)
+					(length 7.62)
+					(name "*SHDN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 60.96 0 180)
+					(length 7.62)
+					(name "VDD"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "Device:R"
 			(pin_numbers hide)
 			(pin_names
@@ -126,301 +363,6 @@
 				)
 			)
 		)
-		(symbol "TLV2370IDBVR:TLV2370IDBVR"
-			(pin_names
-				(offset 1.016)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "U"
-				(at -12.7 13.7 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left bottom)
-				)
-			)
-			(property "Value" "TLV2370IDBVR"
-				(at -12.7 -16.7 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left bottom)
-				)
-			)
-			(property "Footprint" "TLV2370IDBVR:SOT95P280X145-6N"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "TLV2370IDBVR_0_0"
-				(rectangle
-					(start -12.7 -12.7)
-					(end 12.7 12.7)
-					(stroke
-						(width 0.41)
-						(type default)
-					)
-					(fill
-						(type background)
-					)
-				)
-				(pin output line
-					(at 17.78 5.08 180)
-					(length 5.08)
-					(name "OUT"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin power_in line
-					(at 17.78 -7.62 180)
-					(length 5.08)
-					(name "GND"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at -17.78 2.54 0)
-					(length 5.08)
-					(name "IN+"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at -17.78 0 0)
-					(length 5.08)
-					(name "IN-"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at -17.78 5.08 0)
-					(length 5.08)
-					(name "~{SHDN}"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "5"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin power_in line
-					(at 17.78 10.16 180)
-					(length 5.08)
-					(name "VDD"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "6"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-			)
-		)
-		(symbol "power:+5V"
-			(power)
-			(pin_numbers hide)
-			(pin_names
-				(offset 0) hide)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "#PWR"
-				(at 0 -3.81 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Value" "+5V"
-				(at 0 3.556 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "Power symbol creates a global label with name \"+5V\""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_keywords" "global power"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "+5V_0_1"
-				(polyline
-					(pts
-						(xy -0.762 1.27) (xy 0 2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 0) (xy 0 2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 2.54) (xy 0.762 1.27)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "+5V_1_1"
-				(pin power_in line
-					(at 0 0 90)
-					(length 0)
-					(name "~"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-		)
 		(symbol "power:GND"
 			(power)
 			(pin_numbers hide)
@@ -525,30 +467,70 @@
 		(uuid "30acb410-18a8-40bf-b773-d8345ea6e17c")
 	)
 	(junction
-		(at 167.64 93.98)
+		(at 129.54 82.55)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "3897270d-2f01-449f-94f4-2d9ebbcca99f")
+		(uuid "deeae1bd-c60f-4dce-afc9-58920e2a29fc")
 	)
 	(wire
 		(pts
-			(xy 119.38 99.06) (xy 121.92 99.06)
+			(xy 127 95.25) (xy 124.46 95.25)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "23ad6c27-3bde-4c17-af42-5d2f4ae3307a")
+		(uuid "01456916-b56f-4b09-9a8b-cc3015b9586f")
 	)
 	(wire
 		(pts
-			(xy 167.64 93.98) (xy 167.64 118.11)
+			(xy 204.47 100.33) (xy 204.47 76.2)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "3a97b781-5879-4444-88dc-565938b40e94")
+		(uuid "0226146f-bf0c-442f-9b17-e2d865d0a4ef")
+	)
+	(wire
+		(pts
+			(xy 124.46 95.25) (xy 124.46 82.55)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3fa853f3-06bf-4f80-b989-22677d3a173a")
+	)
+	(wire
+		(pts
+			(xy 187.96 95.25) (xy 191.77 95.25)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "47e5dc7c-68a8-4788-bdcb-fa6f30960d16")
+	)
+	(wire
+		(pts
+			(xy 204.47 76.2) (xy 129.54 76.2)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "596d4c47-5dd3-4861-9474-5c4806eee594")
+	)
+	(wire
+		(pts
+			(xy 129.54 76.2) (xy 129.54 82.55)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5fd4a211-5010-4921-b792-3dd14817f9c5")
 	)
 	(wire
 		(pts
@@ -562,23 +544,33 @@
 	)
 	(wire
 		(pts
-			(xy 167.64 93.98) (xy 177.8 93.98)
+			(xy 187.96 100.33) (xy 204.47 100.33)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "6abc108e-419e-44dc-a386-32702920629e")
+		(uuid "6bc6d5e8-6acd-48c6-9b06-a98c952f901a")
 	)
 	(wire
 		(pts
-			(xy 157.48 93.98) (xy 167.64 93.98)
+			(xy 124.46 82.55) (xy 129.54 82.55)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "6ac2681a-1bc0-4bbe-bd3c-38e675f3881b")
+		(uuid "6f867759-746a-416a-813e-d924224986c4")
+	)
+	(wire
+		(pts
+			(xy 129.54 82.55) (xy 139.7 82.55)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6fc6b9da-2ed5-47ab-bd72-128051b0bbdf")
 	)
 	(wire
 		(pts
@@ -592,13 +584,43 @@
 	)
 	(wire
 		(pts
-			(xy 119.38 118.11) (xy 119.38 99.06)
+			(xy 121.92 100.33) (xy 121.92 96.52)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "954d695b-1bc1-4f49-9bd2-0f30d1296f2b")
+		(uuid "a3817c13-34ae-4ef7-9085-4c48f9696964")
+	)
+	(wire
+		(pts
+			(xy 124.46 107.95) (xy 124.46 97.79)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a866aebf-fb12-4743-bcc1-5cb827aa17d3")
+	)
+	(wire
+		(pts
+			(xy 124.46 97.79) (xy 127 97.79)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b0bf23de-d6b2-4417-8728-4175fc00c9fc")
+	)
+	(wire
+		(pts
+			(xy 127 100.33) (xy 121.92 100.33)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b0ee2ef9-39cf-4848-b5d9-7e8782a1946b")
 	)
 	(wire
 		(pts
@@ -632,13 +654,13 @@
 	)
 	(wire
 		(pts
-			(xy 119.38 118.11) (xy 167.64 118.11)
+			(xy 127 107.95) (xy 124.46 107.95)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "f70cecf3-1e58-441c-8200-8e3ed4fe43d9")
+		(uuid "f9a7f1b9-5d9b-4571-b5bc-6f949895fdda")
 	)
 	(wire
 		(pts
@@ -649,6 +671,18 @@
 			(type default)
 		)
 		(uuid "fc3d7cad-262a-4e55-9c57-415019d69009")
+	)
+	(hierarchical_label "Vcc"
+		(shape input)
+		(at 191.77 95.25 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "2d7ea105-cf54-4d63-a15b-0f32f86a7e2d")
 	)
 	(hierarchical_label "IN"
 		(shape input)
@@ -664,7 +698,7 @@
 	)
 	(hierarchical_label "OUT"
 		(shape output)
-		(at 177.8 93.98 0)
+		(at 139.7 82.55 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -676,7 +710,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 157.48 106.68 90)
+		(at 127 107.95 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -685,7 +719,7 @@
 		(fields_autoplaced yes)
 		(uuid "11817563-c6b8-438e-92f7-39178443ab8a")
 		(property "Reference" "#PWR010"
-			(at 163.83 106.68 0)
+			(at 133.35 107.95 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -694,7 +728,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 161.29 106.6799 90)
+			(at 130.81 107.9499 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -703,7 +737,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 157.48 106.68 0)
+			(at 127 107.95 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -712,7 +746,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 157.48 106.68 0)
+			(at 127 107.95 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -721,7 +755,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 157.48 106.68 0)
+			(at 127 107.95 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -878,52 +912,53 @@
 		)
 	)
 	(symbol
-		(lib_id "TLV2370IDBVR:TLV2370IDBVR")
-		(at 139.7 99.06 0)
+		(lib_id "2025-02-22_17-10-12:TLV2370IDBVR")
+		(at 127 95.25 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced yes)
-		(uuid "d4a7962e-c624-4b1e-bb24-b1f29304d317")
+		(uuid "d9b00582-62ba-4d2a-a134-dc79b548f85b")
 		(property "Reference" "U3"
-			(at 139.7 81.28 0)
+			(at 157.48 85.09 0)
 			(effects
 				(font
-					(size 1.27 1.27)
+					(size 1.524 1.524)
 				)
 			)
 		)
 		(property "Value" "TLV2370IDBVR"
-			(at 139.7 83.82 0)
+			(at 157.48 87.63 0)
 			(effects
 				(font
-					(size 1.27 1.27)
+					(size 1.524 1.524)
 				)
 			)
 		)
-		(property "Footprint" "TLV2370IDBVR:SOT95P280X145-6N"
-			(at 139.7 99.06 0)
+		(property "Footprint" "DBV6"
+			(at 127 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
+					(italic yes)
 				)
-				(justify bottom)
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
-			(at 139.7 99.06 0)
+		(property "Datasheet" "TLV2370IDBVR"
+			(at 127 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
+					(italic yes)
 				)
 				(hide yes)
 			)
 		)
 		(property "Description" ""
-			(at 139.7 99.06 0)
+			(at 127 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -931,23 +966,23 @@
 				(hide yes)
 			)
 		)
-		(pin "5"
-			(uuid "8d37988d-58e5-4ada-9715-52aa2a4a0753")
+		(pin "2"
+			(uuid "50f165b6-0d99-465f-9bff-71d5e1e7cfc9")
 		)
-		(pin "6"
-			(uuid "f877ebe5-bd31-4b9e-9e13-a7e26da2fffe")
+		(pin "5"
+			(uuid "c12de5b5-2b0e-4d22-9b4b-f70cc30a4f29")
 		)
 		(pin "3"
-			(uuid "fc9a9f54-cd21-4234-965c-a22182ba6563")
-		)
-		(pin "2"
-			(uuid "80a4d1ee-b580-44ea-bd13-15d5a761efd0")
+			(uuid "c1c09713-b0fd-48ae-971e-53acc4740c88")
 		)
 		(pin "1"
-			(uuid "e3df9061-2b96-4c4b-ad5f-28f202458d75")
+			(uuid "3f153853-d103-418f-8867-ad6d4a8d0423")
+		)
+		(pin "6"
+			(uuid "2559772a-30bc-4fb8-baf1-1d4179c7356c")
 		)
 		(pin "4"
-			(uuid "abd70175-4808-474b-b164-3b9b7eb29579")
+			(uuid "22f98a3d-b799-4696-87c6-797ad540e372")
 		)
 		(instances
 			(project ""
@@ -1023,73 +1058,6 @@
 			(project "Electrical schematic"
 				(path "/f95f296f-a4bf-4952-bdc7-66087a6cc347/3a70a2bc-721e-442a-a054-b13b147c0577"
 					(reference "R6")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:+5V")
-		(at 157.48 88.9 270)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "dfb9ec43-5bfd-4b58-9d71-39f8ca48db00")
-		(property "Reference" "#PWR012"
-			(at 153.67 88.9 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "+5V"
-			(at 161.29 88.8999 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" ""
-			(at 157.48 88.9 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 157.48 88.9 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"+5V\""
-			(at 157.48 88.9 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "18990d96-fbbb-47e1-91e0-5d80dba06097")
-		)
-		(instances
-			(project ""
-				(path "/f95f296f-a4bf-4952-bdc7-66087a6cc347/3a70a2bc-721e-442a-a054-b13b147c0577"
-					(reference "#PWR012")
 					(unit 1)
 				)
 			)
