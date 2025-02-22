@@ -38,12 +38,28 @@ export function SOCKET(
     const interval = setInterval(() => {
         client.send(
             JSON.stringify({
-                graph: "Graph 1",
+                graph: "Power",
                 dataSet: "Test Data",
                 newData: [Math.floor(Math.random() * 30)],
             })
         );
-    }, 3000);
+        const time = new Date();
+        const seconds = time.getSeconds();
+        client.send(
+            JSON.stringify({
+                graph: "Other Graph",
+                dataSet: "Sin",
+                newData: [Math.sin(seconds) * 25],
+            })
+        );
+        // client.send(
+        //     JSON.stringify({
+        //         graph: "Other Graph",
+        //         dataSet: "Cos",
+        //         newData: [Math.cos(seconds) * 30],
+        //     })
+        // );
+    }, 1000);
 
     return () => {
         // for (const other of server.clients)
