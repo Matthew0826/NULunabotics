@@ -21,8 +21,42 @@ type GraphInfo = {
     };
 };
 
-export default function TesterMessages() {
+const tempGraphPower = {
+    name: "Power",
+    xAxisLabel: "time (s)",
+    yAxisLabel: "watts (W)",
+    dataSets: {
+        "Test Data": {
+            label: "Test Data",
+            color: "rgb(0, 0, 0)",
+            data: [],
+        },
+    },
+};
+const tempGraphOther = {
+    name: "Other Graph",
+    xAxisLabel: "time (s)",
+    yAxisLabel: "Beasts",
+    dataSets: {
+        Sin: {
+            label: "Unicorns",
+            color: "rgb(193, 71, 71)",
+            data: [],
+        },
+        Cos: {
+            label: "Dragons",
+            color: "rgb(93, 71, 193)",
+            data: [],
+        },
+    },
+};
+
+export default function TesterMessages({ graph }: { graph: string }) {
     const { messages, sendToServer } = useWebSocketContext();
+
+    const [graphs, setGraphs] = useState<Array<GraphInfo>>(
+        graph == "Power" ? [tempGraphPower] : [tempGraphOther]
+    );
 
     useEffect(() => {
         // send a message on key press
@@ -32,6 +66,7 @@ export default function TesterMessages() {
             console.log("sending", event.key);
         }
         window.addEventListener("keydown", handleKeyDown);
+
         return () => window.removeEventListener("keydown", handleKeyDown);
     });
 
@@ -43,6 +78,7 @@ export default function TesterMessages() {
         const dataSetName = data.dataSet as string;
         const newData = data.newData as number[];
         const graph = graphs.filter((g) => g.name == graphName)[0];
+        if (!graph) return;
         const dataSet = graph.dataSets[dataSetName];
         dataSet.data.push(...newData);
         setGraphs((p) =>
@@ -55,24 +91,9 @@ export default function TesterMessages() {
         );
     }, [messages]);
 
-    const [graphs, setGraphs] = useState<Array<GraphInfo>>([
-        {
-            name: "Graph 1",
-            xAxisLabel: "x-axis",
-            yAxisLabel: "y-axis",
-            dataSets: {
-                "Test Data": {
-                    label: "Test Data",
-                    color: "rgb(0, 0, 0)",
-                    data: [20, 30, 4, 17],
-                },
-            },
-        },
-    ]);
-
     return (
         <>
-            <div style={{ width: 600 }}>
+            <div style={{ width: 375 }}>
                 {graphs.map((graph) => (
                     <Graph
                         key={graph.name}
@@ -84,14 +105,14 @@ export default function TesterMessages() {
                 ))}
             </div>
 
-            {/* <details>
+            <details>
                 <summary>Incoming Message Logs</summary>
                 <div style={{ maxWidth: "50vh" }}>
                     {messages.map((message, index) => (
                         <p key={index}>{message}</p>
                     ))}
                 </div>
-            </details> */}
+            </details>
         </>
     );
 }

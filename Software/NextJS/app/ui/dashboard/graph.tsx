@@ -18,13 +18,15 @@ export default function Graph({
     yAxisLabel,
 }: GraphProps) {
     const dataSetsArray = Object.values(dataSets);
-    const labels = dataSetsArray[0].data.map((_, i) => i);
+    const labels = dataSetsArray[0].data
+        .slice(-10)
+        .map((_, i) => i + dataSetsArray[0].data.length);
     const data = {
         labels: labels,
         datasets: dataSetsArray.map((dataSet) => {
             return {
                 label: dataSet.label,
-                data: dataSet.data,
+                data: dataSet.data.slice(-10),
                 borderColor: dataSet.color,
                 fill: false,
                 cubicInterpolationMode: "monotone",
