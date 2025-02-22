@@ -103,7 +103,7 @@
 		(at 150 90)
 		(tags "ERJ-6ENF5621V ")
 		(property "Reference" "R1"
-			(at 0 0 0)
+			(at 0 -1.5 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "7632c86e-23da-4223-b2d0-b79a9b875a27")
@@ -853,7 +853,7 @@
 		(at 132 78 180)
 		(tags "ACS715LLCTR-30A-T ")
 		(property "Reference" "U2"
-			(at 0 0 180)
+			(at 0 3.5 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "13afbc0c-d9e1-467f-98c3-b232c0bb6119")
@@ -1933,10 +1933,10 @@
 	(footprint "_Footprints:CONN4_USB-A1VSB6_OST"
 		(layer "F.Cu")
 		(uuid "3d40b498-4daf-4feb-b27f-1a0de166f565")
-		(at 136.430001 97.669349)
+		(at 136.430001 99.169349)
 		(tags "USB-A1VSB6 ")
 		(property "Reference" "J4"
-			(at 3.499999 1.850001 0)
+			(at 3.069999 -2.669349 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "e4205fe8-ad3e-4fa8-b489-57408d6d1fb4")
@@ -2279,7 +2279,7 @@
 		(at 150 86)
 		(tags "ERJ-6ENF5621V ")
 		(property "Reference" "R2"
-			(at 0 0 0)
+			(at 0 -1.5 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "f97471d4-f070-4740-b8f0-181124b7ed6b")
@@ -3102,7 +3102,7 @@
 			(uuid "277c74d8-5b83-4a70-b22b-4c6446a7b3a7")
 		)
 		(fp_text user "*"
-			(at -1.60655 -2.5502 0)
+			(at -1.60655 -1.549999 0)
 			(layer "F.SilkS")
 			(uuid "70bb729a-179e-49a3-8b23-9514ee68ffae")
 			(effects
@@ -3113,7 +3113,7 @@
 			)
 		)
 		(fp_text user "*"
-			(at -1.60655 -2.5502 0)
+			(at -1.60655 -1.549999 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "f68ecebd-42a4-495d-aee0-944e9a37ebe6")
@@ -3220,7 +3220,7 @@
 		(at 135.5 57)
 		(tags "S4B-XH-SM4-TB ")
 		(property "Reference" "J1"
-			(at 0 4.549501 0)
+			(at -6 5.5 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "78d93fed-445f-46c8-9441-4e0630cc9839")
@@ -3545,7 +3545,7 @@
 		(descr "Connector XT60 Horizontal PCB Male, https://www.tme.eu/Document/a5efb91801d38c85c7a1f61518cd6048/XT60IPW-M.pdf")
 		(tags "RC Connector XT60")
 		(property "Reference" "J3"
-			(at 3.6 -17.5 360)
+			(at 3.6 1.85 0)
 			(layer "F.SilkS")
 			(uuid "a695511d-8318-4e2f-bfee-a1bcc133d1c4")
 			(effects
@@ -3556,7 +3556,7 @@
 			)
 		)
 		(property "Value" "XT60PW-M"
-			(at 3.6 4 360)
+			(at 3.6 4 0)
 			(layer "F.Fab")
 			(uuid "90a1a7e4-168b-4fe9-ba79-75b8956a0db7")
 			(effects
@@ -3950,7 +3950,7 @@
 			(uuid "75dccffe-fe69-4352-a768-ef021e8139e9")
 		)
 		(fp_text user "+"
-			(at 9.5 1.9 360)
+			(at 9.5 1.9 0)
 			(layer "F.SilkS")
 			(uuid "043db4e0-b18d-4064-b632-e316a6c860c4")
 			(effects
@@ -3961,7 +3961,7 @@
 			)
 		)
 		(fp_text user "-"
-			(at -2.8 1.9 360)
+			(at -2.8 1.9 0)
 			(layer "F.SilkS")
 			(uuid "11b8f2e0-1262-4803-99bb-859ffd11b940")
 			(effects
@@ -3972,7 +3972,7 @@
 			)
 		)
 		(fp_text user "${REFERENCE}"
-			(at 3.6 -11 360)
+			(at 3.6 -11 0)
 			(layer "F.Fab")
 			(uuid "6f688442-308f-4a9b-999d-ba8a1af902d7")
 			(effects
@@ -4048,7 +4048,7 @@
 		(descr "Connector XT60 Horizontal PCB Male, https://www.tme.eu/Document/a5efb91801d38c85c7a1f61518cd6048/XT60IPW-M.pdf")
 		(tags "RC Connector XT60")
 		(property "Reference" "J5"
-			(at 3.6 -17.5 0)
+			(at 3.6 1.85 0)
 			(layer "F.SilkS")
 			(uuid "e464aa6f-b264-4ace-8564-f68ac65e5f03")
 			(effects
@@ -5014,7 +5014,7 @@
 		(descr "Capacitor SMD 0805 (2012 Metric), square (rectangular) end terminal, IPC_7351 nominal with elongated pad for handsoldering. (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf, https://docs.google.com/spreadsheets/d/1BsfQQcO9C6DZCsRaXUlFlo91Tg2WpOkGARC1WS5S8t0/edit?usp=sharing), generated with kicad-footprint-generator")
 		(tags "capacitor handsolder")
 		(property "Reference" "C11"
-			(at 0 -1.68 0)
+			(at -0.0375 1.5 0)
 			(layer "F.SilkS")
 			(uuid "a593e999-8690-4daa-8253-af3e799f5508")
 			(effects
@@ -5226,7 +5226,7 @@
 		(at 143 78 180)
 		(tags "TLV2370IDBVR ")
 		(property "Reference" "U3"
-			(at 0 0 180)
+			(at 0 2.5 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "5806ea26-2156-4a27-b415-9d2adbf1878e")
@@ -5250,7 +5250,7 @@
 			)
 		)
 		(property "Footprint" "DBV6"
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "e77609ff-983e-4ff5-912c-7c5a5027cc8b")
@@ -5262,7 +5262,7 @@
 			)
 		)
 		(property "Datasheet" "TLV2370IDBVR"
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "452da6fc-d20e-4490-9086-25ca76f791f6")
@@ -5274,7 +5274,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "85ec0584-ba6f-443a-8737-e0cec461cee0")
@@ -5642,7 +5642,7 @@
 			(uuid "4ae4ead8-84ed-439d-8b8e-ba7ae27b6151")
 		)
 		(fp_text user "*"
-			(at -1.3716 -2.6518 360)
+			(at -1.3716 -2.5 0)
 			(layer "F.SilkS")
 			(uuid "28ccbcde-eaea-48de-b6da-84417560c52c")
 			(effects
@@ -5653,7 +5653,7 @@
 			)
 		)
 		(fp_text user "*"
-			(at -1.3716 -2.6518 180)
+			(at -1.3716 -2 180)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "f555dbae-0123-4d6b-a54c-0cf25b7d5781")
@@ -5677,7 +5677,7 @@
 			)
 		)
 		(fp_text user "*"
-			(at -1.3716 -2.6518 360)
+			(at -1.3716 -2.6518 0)
 			(layer "F.Fab")
 			(uuid "a1bf3786-774f-4773-8f6e-cebbafa015be")
 			(effects
@@ -5761,7 +5761,7 @@
 		(descr "Capacitor SMD 0805 (2012 Metric), square (rectangular) end terminal, IPC_7351 nominal with elongated pad for handsoldering. (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf, https://docs.google.com/spreadsheets/d/1BsfQQcO9C6DZCsRaXUlFlo91Tg2WpOkGARC1WS5S8t0/edit?usp=sharing), generated with kicad-footprint-generator")
 		(tags "capacitor handsolder")
 		(property "Reference" "C10"
-			(at 0 -1.68 0)
+			(at 0 1.5 0)
 			(layer "F.SilkS")
 			(uuid "16c19157-87b9-4123-8c4f-65300bb27485")
 			(effects
@@ -6186,7 +6186,7 @@
 		(at 136.9101 87.81 90)
 		(tags "LMZ22005TZ/NOPB ")
 		(property "Reference" "U1"
-			(at 0 0 90)
+			(at 5.81 0 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "41fefa52-028f-41db-adb7-7d4ad7dab280")
@@ -6888,7 +6888,7 @@
 		(descr "Connector XT60 Horizontal PCB Male, https://www.tme.eu/Document/a5efb91801d38c85c7a1f61518cd6048/XT60IPW-M.pdf")
 		(tags "RC Connector XT60")
 		(property "Reference" "J2"
-			(at 3.6 -17.5 90)
+			(at 3.6 1.85 90)
 			(layer "F.SilkS")
 			(uuid "98317cff-acbe-46b2-ac9a-5ed70981d956")
 			(effects
@@ -7396,6 +7396,14 @@
 		(uuid "07a4f88f-7d9d-4bb5-8987-baf51511e5ec")
 	)
 	(segment
+		(start 143.429999 96.070001)
+		(end 143.429999 99.169349)
+		(width 0.2)
+		(layer "F.Cu")
+		(net 1)
+		(uuid "02607e93-4b1e-4e08-873a-1f0f2db3934d")
+	)
+	(segment
 		(start 161.4528 95.381022)
 		(end 161.4528 88.618978)
 		(width 0.2)
@@ -7442,14 +7450,6 @@
 		(layer "F.Cu")
 		(net 1)
 		(uuid "35e66536-b5b4-4221-ac8e-f9390af61f24")
-	)
-	(segment
-		(start 143.429999 96.070001)
-		(end 144.4 95.1)
-		(width 0.2)
-		(layer "F.Cu")
-		(net 1)
-		(uuid "413eb652-9c88-4c97-a4a0-75d31426c4ab")
 	)
 	(segment
 		(start 161.4528 88.618978)
@@ -7596,20 +7596,20 @@
 		(uuid "8a6486a1-0cfa-4208-976c-27c7dac9a811")
 	)
 	(segment
-		(start 144.4 95.1)
-		(end 145.5 95.1)
-		(width 0.2)
-		(layer "F.Cu")
-		(net 1)
-		(uuid "8d7d017d-d648-4f1d-9890-43f9c8dbbdc6")
-	)
-	(segment
 		(start 143.9428 87.81)
 		(end 143.3665 87.2337)
 		(width 0.2)
 		(layer "F.Cu")
 		(net 1)
 		(uuid "a336b8a7-459d-487e-835c-8d64bd61a110")
+	)
+	(segment
+		(start 145.5 95.1)
+		(end 144.4 95.1)
+		(width 0.2)
+		(layer "F.Cu")
+		(net 1)
+		(uuid "a960ac8c-2a14-4139-9b08-53a6a8056e61")
 	)
 	(segment
 		(start 161.4528 80.618978)
@@ -7642,6 +7642,14 @@
 		(layer "F.Cu")
 		(net 1)
 		(uuid "b7c4dc38-e8f5-4e76-bfca-397e6905e882")
+	)
+	(segment
+		(start 144.4 95.1)
+		(end 143.429999 96.070001)
+		(width 0.2)
+		(layer "F.Cu")
+		(net 1)
+		(uuid "b819c931-8c88-4191-9b44-e350880a044d")
 	)
 	(segment
 		(start 148.6 95.1)
@@ -7698,14 +7706,6 @@
 		(layer "F.Cu")
 		(net 1)
 		(uuid "f33df8fe-51ae-4c74-b32f-99b6c88b50dd")
-	)
-	(segment
-		(start 143.429999 96.070001)
-		(end 143.429999 97.669349)
-		(width 0.2)
-		(layer "F.Cu")
-		(net 1)
-		(uuid "f470f613-52f7-4323-ac99-47a02d74c1f4")
 	)
 	(segment
 		(start 147.35 90.35)
@@ -8740,28 +8740,20 @@
 		(uuid "f71f584f-de7f-4692-8eb0-6120b634a0c5")
 	)
 	(segment
+		(start 151.5 93.5)
+		(end 151 94)
+		(width 0.4)
+		(layer "B.Cu")
+		(net 11)
+		(uuid "3c347a66-e7d9-4021-9fb3-78f0d3e7b142")
+	)
+	(segment
 		(start 138 80)
 		(end 139.049999 78.950001)
 		(width 0.4)
 		(layer "B.Cu")
 		(net 11)
 		(uuid "3f3ee572-a6f0-4a33-987a-631282d29cec")
-	)
-	(segment
-		(start 138.5 94)
-		(end 136.430001 96.069999)
-		(width 0.4)
-		(layer "B.Cu")
-		(net 11)
-		(uuid "3f42a650-d160-4c87-98ab-b9e163fb4b5e")
-	)
-	(segment
-		(start 151 94)
-		(end 138.5 94)
-		(width 0.4)
-		(layer "B.Cu")
-		(net 11)
-		(uuid "4458937a-6974-4d6b-8862-e4621ed7f5d2")
 	)
 	(segment
 		(start 141 72.5)
@@ -8778,6 +8770,14 @@
 		(layer "B.Cu")
 		(net 11)
 		(uuid "60b36e0b-9e4c-43ec-abe8-4d5512382da7")
+	)
+	(segment
+		(start 138.5 94)
+		(end 136.430001 96.069999)
+		(width 0.4)
+		(layer "B.Cu")
+		(net 11)
+		(uuid "7203e9c5-b87d-4183-831a-1d55c6adc312")
 	)
 	(segment
 		(start 138 80)
@@ -8804,20 +8804,20 @@
 		(uuid "bb075e04-0350-45c8-ab7b-ebcf22c82281")
 	)
 	(segment
+		(start 151 94)
+		(end 138.5 94)
+		(width 0.4)
+		(layer "B.Cu")
+		(net 11)
+		(uuid "bb37e50c-5c92-4078-92e6-f539a714bc43")
+	)
+	(segment
 		(start 133 81)
 		(end 137 81)
 		(width 0.4)
 		(layer "B.Cu")
 		(net 11)
 		(uuid "ca93b873-0654-4882-bf83-d5051c2bf64c")
-	)
-	(segment
-		(start 136.430001 96.069999)
-		(end 136.430001 97.669349)
-		(width 0.4)
-		(layer "B.Cu")
-		(net 11)
-		(uuid "ca98bcee-49a9-435a-b526-d60b3760f07a")
 	)
 	(segment
 		(start 138 75.5)
@@ -8828,12 +8828,12 @@
 		(uuid "e686f698-2c7b-47b8-aaf8-62ae2b33e0cc")
 	)
 	(segment
-		(start 151.5 93.5)
-		(end 151 94)
+		(start 136.430001 96.069999)
+		(end 136.430001 99.169349)
 		(width 0.4)
 		(layer "B.Cu")
 		(net 11)
-		(uuid "f4f6524a-357f-40f0-a783-013b7e9dd5c5")
+		(uuid "f86c1409-bdde-4910-8373-5c231c47b00c")
 	)
 	(segment
 		(start 136.7051 71)
