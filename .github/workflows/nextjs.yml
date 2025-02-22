@@ -67,5 +67,5 @@ jobs:
                     tar -xjvf - --strip-components=1 -C \$STANDALONE && \
                     chmod +x \$STANDALONE/server.js && \
                     sed -i '1s/^/#!\/usr\/bin\/env node\n/' \$STANDALONE/server.js && \
-                    /usr/local/bin/restart_nodejswebsite.sh
+                    echo 'admin' | sudo -S systemctl restart nodejswebsite
                   "
