@@ -60,14 +60,10 @@ jobs:
               run: |
                   tar cjvf - \
                     -C "$GITHUB_WORKSPACE/Software/NextJS/.next/" "standalone" | \
-                  sshpass -p "admin" ssh -o StrictHostKeyChecking=no selene@100.114.133.21 "
+                  sshpass -p "admin" ssh -o StrictHostKeyChecking=no -o TCPKeepAlive=yes -o ConnectTimeout=30 -o ServerAliveInterval=60 selene@100.114.133.21 "
                     echo 'admin' | sudo -S bash -c '
                       STANDALONE=/var/www/lunabotics/standalone && \
                       rm -rf \$STANDALONE && \
                       mkdir -p \$STANDALONE && \
-                      tar -xjvf - -C \$STANDALONE && \
-                      chmod +x \$STANDALONE/server.js && \
-                      sed -i \"1s/^/#!\/usr\/bin\/env node\n/\" \$STANDALONE/server.js && \
-                      systemctl restart nodejswebsite
-                    '
+                      tar -xjvf - -C \$STANDALONE
                   "
