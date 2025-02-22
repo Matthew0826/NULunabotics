@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { gamepadLoop } from "@/app/lib/utils";
+import { useEffect, useRef } from "react";
+import WebSocket from "ws";
 
 export default function GamepadManager({
     buttonL,
@@ -10,15 +12,17 @@ export default function GamepadManager({
     arrowLine2,
     arrowCircle2,
 }: any) {
+    const socketRef = useRef<WebSocket | null>(null);
     useEffect(() => {
-        //     gamepadLoop(
-        //         buttonL,
-        //         buttonR,
-        //         arrowLine1,
-        //         arrowCircle1,
-        //         arrowLine2,
-        //         arrowCircle2
-        //     );
+        gamepadLoop(
+            buttonL,
+            buttonR,
+            arrowLine1,
+            arrowCircle1,
+            arrowLine2,
+            arrowCircle2,
+            socketRef
+        );
     }, []);
     return <></>;
 }

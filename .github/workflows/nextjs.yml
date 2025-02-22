@@ -1,7 +1,3 @@
-# Sample workflow for building and deploying a Next.js site to GitHub Pages
-#
-# To get started with Next.js see: https://nextjs.org/docs/getting-started
-#
 name: Deploy Next.js site to Raspberry PI
 
 on:
@@ -17,16 +13,15 @@ permissions:
     contents: read
     id-token: write
 
+defaults:
+    run:
+        working-directory: Software/NextJS/
+
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
     group: "rpi"
     cancel-in-progress: false
-
-defaults:
-    run:
-        working-directory: Software/NextJS/
-
 jobs:
     # Build job
     build:
@@ -34,8 +29,8 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
-              name: Install pnpm
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
               with:
                   version: 9.1.2
                   run_install: false
@@ -47,17 +42,12 @@ jobs:
                   cache: "pnpm"
             - name: Install dependencies
               run: pnpm install
-            - name: Restore cache
-              uses: actions/cache@v4
-              with:
-                  path: Software/NextJS/.next/cache
-                  # Generate a new cache whenever packages or source files change.
-                  key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.json', '**/yarn.lock') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
-                  # If source files changed but packages didn't, rebuild from a prior cache.
-                  restore-keys: |
-                      ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.json', '**/yarn.lock') }}-
             - name: Build with Next.js
               run: pnpm run build
+            - name: Hack fix since we aren't using a CDN to send static and public files
+              run: |
+                  cp -r public .next/standalone/
+                  cp -r .next/static .next/standalone/.next/
             - name: Setup Tailscale
               uses: tailscale/github-action@v3
               with:
@@ -66,10 +56,16 @@ jobs:
                   oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
                   version: 1.78.1
                   tags: tag:ci
-            - name: Start Deployment
-              uses: FarisZR/tailscale-ssh-deploy@v1
-              with:
-                  remote_host: selene@100.114.133.21
-                  directory: Software/NextJS/.next/standalone
-                  remote_destination: ~/standalone
-                  post_upload_command: ./nodejs_setup.sh
+            - name: SSH to Raspberry Pi
+              run: |
+                  tar cjvf - \
+                    -C "$GITHUB_WORKSPACE/Software/NextJS/.next/" "standalone" | \
+                  sshpass -p "admin" ssh -o StrictHostKeyChecking=no -o TCPKeepAlive=yes -o ConnectTimeout=30 -o ServerAliveInterval=60 selene@100.114.133.21 "
+                    STANDALONE=/var/www/lunabotics/standalone && \
+                    rm -rf \$STANDALONE && \
+                    mkdir -p \$STANDALONE && \
+                    tar -xjvf - --strip-components=1 -C \$STANDALONE && \
+                    chmod +x \$STANDALONE/server.js && \
+                    sed -i '1s/^/#!\/usr\/bin\/env node\n/' \$STANDALONE/server.js && \
+                    echo 'admin' | sudo -S systemctl restart nodejswebsite
+                  "

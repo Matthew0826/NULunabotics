@@ -1,3 +1,6 @@
+import { Reference, RefObject } from "react";
+import WebSocket from "ws";
+
 function setupGamePad() {
     window.addEventListener("gamepadconnected", (event) => {
         console.log("A gamepad connected:");
@@ -24,15 +27,19 @@ function moveArrow(arrowLine: any, arrowCircle: any, x: number, y: number) {
     arrowCircle.setAttribute("cy", endY);
 }
 
-function gamepadLoop(
+export var gamepadData = {};
+
+export function gamepadLoop(
     buttonL: any,
     buttonR: any,
     arrowLine1: any,
     arrowCircle1: any,
     arrowLine2: any,
-    arrowCircle2: any
+    arrowCircle2: any,
+    socketRef: RefObject<WebSocket | null>
 ) {
     let start: number;
+    console.log("Beginning gamepad loop.");
     function step(timestamp: number) {
         if (start === undefined) {
             start = timestamp;
@@ -77,6 +84,18 @@ function gamepadLoop(
         var y = gamepad.axes[1];
         var x2 = gamepad.axes[2];
         var y2 = gamepad.axes[3];
+
+        var newData = {
+            leftStick: { x, y },
+            rightStick: { x2, y2 },
+            buttonL: gamepad.buttons[4].pressed,
+            buttonR: gamepad.buttons[5].pressed,
+        };
+        if (gamepadData !== newData) {
+            gamepadData = newData;
+        }
+        socketRef.current?.send(JSON.stringify(gamepadData));
+
         moveArrow(arrowLine2, arrowCircle1, x, y);
         moveArrow(arrowLine1, arrowCircle2, x2, y2);
         requestAnimationFrame(step);
@@ -84,3 +103,9 @@ function gamepadLoop(
 
     requestAnimationFrame(step);
 }
+
+export type Dataset = {
+    label: string;
+    color: string;
+    data: number[];
+};
