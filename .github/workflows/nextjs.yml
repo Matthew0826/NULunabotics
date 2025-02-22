@@ -29,30 +29,23 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
-              name: Install pnpm
-              with:
-                  version: 9.1.2
-                  run_install: false
             - name: Install Node.js
               uses: actions/setup-node@v4
               with:
                   node-version: 20.11
                   cache-dependency-path: Software/NextJS/pnpm-lock.yaml
                   cache: "pnpm"
-            - name: Install dependencies
-              run: pnpm install
-            - name: Restore cache
-              uses: actions/cache@v4
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
               with:
-                  path: Software/NextJS/.next/cache
-                  # Generate a new cache whenever packages or source files change.
-                  key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
-                  # If source files changed but packages didn't, rebuild from a prior cache.
-                  restore-keys: |
-                      ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.json', '**/yarn.lock') }}-
+                  version: 9.1.2
+                  run_install: true
             - name: Build with Next.js
               run: pnpm run build
+            - name: Hack fix since we aren't using a CDN to send static and public files
+              run: |
+                  cp -r public .next/standalone/
+                  cp -r .next/static .next/standalone/.next/
             - name: Setup Tailscale
               uses: tailscale/github-action@v3
               with:
@@ -61,6 +54,15 @@ jobs:
                   oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
                   version: 1.78.1
                   tags: tag:ci
-            - name: SSH to Raspberry Pi
+            - name: SSH to Raspberry Pi and copy files
               run: |
-                  tar cjvf - -C "$GITHUB_WORKSPACE" "Software/NextJS/.next/" | sshpass -p "admin" ssh -o StrictHostKeyChecking=no selene@100.114.133.21 "rm -rf .next && mkdir .next && cd .next && tar -xjvf -"
+                  tar cjvf - \
+                      -C "$GITHUB_WORKSPACE/Software/NextJS/.next/" "standalone" | \
+                    sshpass -p "admin" ssh -o StrictHostKeyChecking=no selene@100.114.133.21 "
+                      sudo rm -rf /var/www/lunabotics/standalone && \
+                      sudo mkdir -p /var/www/lunabotics/standalone && \
+                      sudo tar -xjvf - -C /var/www/lunabotics/standalone && \
+                      sudo chmod +x /var/www/lunabotics/standalone/server.js && \
+                      sudo sed -i '1s/^/#!\/usr\/bin\/env node\n/' /var/www/lunabotics/standalone/server.js && \
+                      sudo systemctl restart nodejswebsite
+                    "
