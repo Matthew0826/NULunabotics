@@ -35,33 +35,33 @@ export function SOCKET(
     //     } online`
     // );
 
+    let counter = 0;
+
     const interval = setInterval(() => {
         client.send(
-            JSON.stringify({
-                graph: "Power",
-                dataSet: "Test Data",
-                newData: [Math.floor(Math.random() * 30)],
-            })
+            JSON.stringify([
+                {
+                    graph: "Power",
+                    dataSet: "Test Data",
+                    newData: [Math.floor(Math.random() * 30)],
+                },
+                {
+                    graph: "Other Graph",
+                    dataSet: "Sin",
+                    newData: [Math.sin(counter / 3.1415) * 25],
+                },
+                {
+                    graph: "Other Graph",
+                    dataSet: "Cos",
+                    newData: [Math.cos(counter / 3.1415) * 25],
+                },
+            ])
         );
-        const time = new Date();
-        const seconds = time.getSeconds();
-        client.send(
-            JSON.stringify({
-                graph: "Other Graph",
-                dataSet: "Sin",
-                newData: [Math.sin(seconds) * 25],
-            })
-        );
-        // client.send(
-        //     JSON.stringify({
-        //         graph: "Other Graph",
-        //         dataSet: "Cos",
-        //         newData: [Math.cos(seconds) * 30],
-        //     })
-        // );
+        counter++;
     }, 1000);
 
     return () => {
+        clearInterval(interval);
         // for (const other of server.clients)
         //     if (client !== other && other.readyState === other.OPEN)
         // other.send("A user left the chat");

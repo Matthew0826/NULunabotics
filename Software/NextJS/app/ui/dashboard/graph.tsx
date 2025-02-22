@@ -41,12 +41,7 @@ export default function Graph({
         options: {
             animation: false,
             responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: title,
-                },
-            },
+            aspectRatio: 1.5,
             interaction: {
                 intersect: false,
             },

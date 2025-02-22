@@ -1,0 +1,72 @@
+"use client";
+
+import {
+    use,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
+import Graph from "./graph";
+import { Dataset } from "@/app/lib/utils";
+import { useWebSocketContext } from "@/app/socket/web-socket-context";
+
+export type GraphInfo = {
+    name: string;
+    xAxisLabel: string;
+    yAxisLabel: string;
+    dataSets: {
+        [key: string]: Dataset;
+    };
+};
+
+export default function WebSocketGraph({
+    graphInfo,
+}: {
+    graphInfo: GraphInfo;
+}) {
+    const { messages, sendToServer } = useWebSocketContext();
+
+    const [graph, setGraph] = useState<GraphInfo>(graphInfo);
+
+    useEffect(() => {
+        // send a message on key press
+        // temporary!
+        function handleKeyDown(event: KeyboardEvent) {
+            sendToServer(event.key);
+            console.log("sending", event.key);
+        }
+        window.addEventListener("keydown", handleKeyDown);
+
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    });
+
+    useEffect(() => {
+        if (messages.length == 0) return;
+        const payload = messages[messages.length - 1];
+        const data = JSON.parse(payload);
+        for (const dataPoint of data) {
+            const graphName = dataPoint.graph as string;
+            if (graph.name != graphName) {
+                continue;
+            }
+            const dataSetName = dataPoint.dataSet as string;
+            const newData = dataPoint.newData as number[];
+            const dataSet = graph.dataSets[dataSetName];
+            dataSet.data.push(...newData);
+            graph.dataSets[dataSetName] = dataSet;
+            setGraph({ ...graph });
+        }
+    }, [messages]);
+
+    return (
+        <Graph
+            key={graph.name}
+            dataSets={graph.dataSets}
+            title={graph.name}
+            xAxisLabel={graph.xAxisLabel}
+            yAxisLabel={graph.yAxisLabel}
+        />
+    );
+}
