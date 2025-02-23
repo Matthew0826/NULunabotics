@@ -1,4 +1,4 @@
-24248420633722605
+24250160914431003
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -98178,6 +98178,13 @@ _Footprints
 TZA07A-M
 
 LMZ22005TZ/NOPB 
+0
+8
+8
+_Footprints
+USB-A-S-RA-TSMT_ADM
+
+USB-A-S-RA-TSMT 
 0
 8
 8
