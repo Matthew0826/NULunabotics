@@ -103,7 +103,7 @@
 		(at 150 90)
 		(tags "ERJ-6ENF5761V ")
 		(property "Reference" "R1"
-			(at 0 0 0)
+			(at 3 0 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "99922450-275b-4f77-bb59-0c00cc720c8e")
@@ -499,7 +499,7 @@
 		(at 158 96)
 		(tags "20SVPF120M ")
 		(property "Reference" "C3"
-			(at 0 0 0)
+			(at -7 0 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "1eed92ec-cefb-4628-a676-648c02f4193f")
@@ -962,7 +962,7 @@
 		(at 132 78 180)
 		(tags "ACS715LLCTR-30A-T ")
 		(property "Reference" "U2"
-			(at 0 0 180)
+			(at 0 3.5 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "6f943dbe-67b0-4925-becb-f92480ba0bf6")
@@ -1582,7 +1582,7 @@
 		(at 158 88)
 		(tags "20SVPF120M ")
 		(property "Reference" "C2"
-			(at 0 0 0)
+			(at -7 0 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "a7c68e1a-2227-41b4-8a7e-2c3b6a385f12")
@@ -2045,7 +2045,7 @@
 		(at 150.147201 86)
 		(tags "ERJ-6ENF5761V ")
 		(property "Reference" "R2"
-			(at 0 0 0)
+			(at 2.852799 0 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "b2efdfb3-9a38-47a3-8fbb-f3ab4767c2f3")
@@ -2332,7 +2332,7 @@
 		(at 135.35255 70.049999)
 		(tags "74LVC1G157GV_125 ")
 		(property "Reference" "U4"
-			(at 0 0 0)
+			(at 0.14745 -2.549999 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "e9104ca2-7ff0-4800-af82-ce9f02a7f944")
@@ -3095,7 +3095,7 @@
 		(at 136 97.5)
 		(tags "USB-A-S-RA-TSMT ")
 		(property "Reference" "U5"
-			(at 2.999999 0 0)
+			(at 2.999999 -2 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "ef19efc6-428c-4b65-9f32-43f47911b28f")
@@ -3435,7 +3435,7 @@
 		(at 135.5 57)
 		(tags "S4B-XH-SM4-TB ")
 		(property "Reference" "J1"
-			(at 0 4.549501 0)
+			(at 0 8 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "89249b03-a96b-4c82-b94b-8e8914dcebfb")
@@ -3760,7 +3760,7 @@
 		(descr "Connector XT60 Horizontal PCB Male, https://www.tme.eu/Document/a5efb91801d38c85c7a1f61518cd6048/XT60IPW-M.pdf")
 		(tags "RC Connector XT60")
 		(property "Reference" "J3"
-			(at 3.6 1.85 0)
+			(at 3.6 3.35 0)
 			(layer "F.SilkS")
 			(uuid "a695511d-8318-4e2f-bfee-a1bcc133d1c4")
 			(effects
@@ -4263,7 +4263,7 @@
 		(descr "Connector XT60 Horizontal PCB Male, https://www.tme.eu/Document/a5efb91801d38c85c7a1f61518cd6048/XT60IPW-M.pdf")
 		(tags "RC Connector XT60")
 		(property "Reference" "J5"
-			(at 3.6 1.85 0)
+			(at 3.6 3.35 0)
 			(layer "F.SilkS")
 			(uuid "e464aa6f-b264-4ace-8564-f68ac65e5f03")
 			(effects
@@ -4765,7 +4765,7 @@
 		(at 158 80)
 		(tags "20SVPF120M ")
 		(property "Reference" "C1"
-			(at 0 0 0)
+			(at -7 0 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "bb7c0182-f4ee-4af3-b591-f1af35264f7a")
@@ -5550,7 +5550,7 @@
 		(at 143 78 180)
 		(tags "TLV2370IDBVR ")
 		(property "Reference" "U3"
-			(at 0 0 180)
+			(at 0 2.5 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "0bd9648a-94bf-4ae4-9a98-54f16b2ba08a")
@@ -7212,7 +7212,7 @@
 		(descr "Connector XT60 Horizontal PCB Male, https://www.tme.eu/Document/a5efb91801d38c85c7a1f61518cd6048/XT60IPW-M.pdf")
 		(tags "RC Connector XT60")
 		(property "Reference" "J2"
-			(at 3.6 1.85 90)
+			(at 3.6 3.35 90)
 			(layer "F.SilkS")
 			(uuid "98317cff-acbe-46b2-ac9a-5ed70981d956")
 			(effects
