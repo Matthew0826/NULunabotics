@@ -1,4 +1,4 @@
-24272735022022768
+24250160914431003
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -91545,13 +91545,6 @@ Logo WEEE
 0
 0
 0
-TLV2370IDBVR
-SOT95P280X145-6N
-
-
-0
-6
-6
 TerminalBlock
 TerminalBlock_Altech_AK300-2_P5.00mm
 Altech AK300 terminal block, pitch 5.0mm, 45 degree angled, see http://www.mouser.com/ds/2/16/PCBMETRC-24178.pdf
@@ -98000,12 +97993,40 @@ S4B-XH-SM4-TB
 6
 6
 _Footprints
+CONN4_USB-A1VSB6_OST
+
+USB-A1VSB6 
+0
+6
+6
+_Footprints
 CONN_B2B-XH-A_JST
 
 B2B-XH-A 
 0
 2
 2
+_Footprints
+DBV6
+
+TLV2370IDBVR 
+0
+6
+6
+_Footprints
+DBV6-L
+
+TLV2370IDBVR 
+0
+6
+6
+_Footprints
+DBV6-M
+
+TLV2370IDBVR 
+0
+6
+6
 _Footprints
 DGS0010A-IPC_A
 
@@ -98058,21 +98079,28 @@ PCAP_SVP_C6_PAN-M
 _Footprints
 RC0805N_PAN
 
-ERJ-6ENF5621V 
+ERJ-6ENF5761V 
 0
 2
 2
 _Footprints
 RC0805N_PAN-L
 
-ERJ-6ENF5621V 
+ERJ-6ENF5761V 
 0
 2
 2
 _Footprints
 RC0805N_PAN-M
 
-ERJ-6ENF5621V 
+ERJ-6ENF5761V 
+0
+2
+2
+_Footprints
+RES_ERJ6ENF5761V
+
+
 0
 2
 2
@@ -98112,6 +98140,27 @@ SOT95P280X145-6N
 6
 6
 _Footprints
+TSOP6_SOT457_NEX
+
+74LVC1G157GV_125 
+0
+6
+6
+_Footprints
+TSOP6_SOT457_NEX-L
+
+74LVC1G157GV_125 
+0
+6
+6
+_Footprints
+TSOP6_SOT457_NEX-M
+
+74LVC1G157GV_125 
+0
+6
+6
+_Footprints
 TZA07A
 
 LMZ22005TZ/NOPB 
@@ -98132,24 +98181,10 @@ LMZ22005TZ/NOPB
 0
 8
 8
-footprints
-SOT-5X3-8_DRL_TEX
+_Footprints
+USB-A-S-RA-TSMT_ADM
 
-TPS62933DRLR 
-0
-8
-8
-footprints
-SOT-5X3-8_DRL_TEX-L
-
-TPS62933DRLR 
-0
-8
-8
-footprints
-SOT-5X3-8_DRL_TEX-M
-
-TPS62933DRLR 
+USB-A-S-RA-TSMT 
 0
 8
 8
@@ -98181,129 +98216,3 @@ ACS715LLCTR-30A-T
 0
 9
 9
-footprints 3
-PCAP_SVP_C6_PAN
-
-20SVPF120M 
-0
-2
-2
-footprints 3
-PCAP_SVP_C6_PAN-L
-
-20SVPF120M 
-0
-2
-2
-footprints 3
-PCAP_SVP_C6_PAN-M
-
-20SVPF120M 
-0
-2
-2
-footprints 4
-PCAP_SVP_C6_PAN
-
-25SVPF47M 
-0
-2
-2
-footprints 4
-PCAP_SVP_C6_PAN-L
-
-25SVPF47M 
-0
-2
-2
-footprints 4
-PCAP_SVP_C6_PAN-M
-
-25SVPF47M 
-0
-2
-2
-footprints 5
-PCAP_SVP_C6_PAN
-
-25SVPF47M 
-0
-2
-2
-footprints 5
-PCAP_SVP_C6_PAN-L
-
-25SVPF47M 
-0
-2
-2
-footprints 5
-PCAP_SVP_C6_PAN-M
-
-25SVPF47M 
-0
-2
-2
-footprints 6
-RC0805N_PAN
-
-ERJ-6ENF1071V 
-0
-2
-2
-footprints 6
-RC0805N_PAN-L
-
-ERJ-6ENF1071V 
-0
-2
-2
-footprints 6
-RC0805N_PAN-M
-
-ERJ-6ENF1071V 
-0
-2
-2
-footprints 7
-RC0805N_PAN
-
-ERJ-6ENF5621V 
-0
-2
-2
-footprints 7
-RC0805N_PAN-L
-
-ERJ-6ENF5621V 
-0
-2
-2
-footprints 7
-RC0805N_PAN-M
-
-ERJ-6ENF5621V 
-0
-2
-2
-footprints 8
-TZA07A
-
-LMZ22005TZ/NOPB 
-0
-8
-8
-footprints 8
-TZA07A-L
-
-LMZ22005TZ/NOPB 
-0
-8
-8
-footprints 8
-TZA07A-M
-
-LMZ22005TZ/NOPB 
-0
-8
-8
