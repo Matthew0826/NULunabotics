@@ -41,7 +41,7 @@ export default function Graph({
         options: {
             animation: false,
             responsive: true,
-            aspectRatio: 1.5,
+            aspectRatio: 1.7,
             interaction: {
                 intersect: false,
             },

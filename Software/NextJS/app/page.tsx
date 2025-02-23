@@ -39,7 +39,10 @@ const tempGraphOther = {
 export default function Page() {
     const handleReceiveData = (data: any) => {};
     return (
-        <main className="flex flex-col h-screen p-6">
+        <main
+            className="flex h-screen items-center"
+            style={{ justifySelf: "center" }}
+        >
             {/* <p
                         className={`text-xl text-gray-800 md:text-3xl md:leading-normal`}
                     >
@@ -50,7 +53,7 @@ export default function Page() {
             <GamepadManager />
             {/* <DirectionalDisplay />
                     <DirectionalDisplay /> */}
-            <div className="flex flex-row gap-4 w-full">
+            <div className="flex flex-row gap-4 p-6 h-full">
                 <div className="flex flex-col gap-4 grow-1">
                     <Panel title="Timer">
                         <p>Hello, timer goes here!</p>
@@ -62,11 +65,9 @@ export default function Page() {
                         <WebSocketGraph graphInfo={tempGraphOther} />
                     </Panel>
                 </div>
-                <div className="w-full">
-                    <Panel title="Map">
-                        <Map />
-                    </Panel>
-                </div>
+                <Panel title="Map">
+                    <Map />
+                </Panel>
             </div>
         </main>
     );
