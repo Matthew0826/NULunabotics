@@ -31,18 +31,6 @@ export default function WebSocketGraph({
     const [graph, setGraph] = useState<GraphInfo>(graphInfo);
 
     useEffect(() => {
-        // send a message on key press
-        // temporary!
-        function handleKeyDown(event: KeyboardEvent) {
-            sendToServer(event.key);
-            console.log("sending", event.key);
-        }
-        window.addEventListener("keydown", handleKeyDown);
-
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    });
-
-    useEffect(() => {
         if (messages.length == 0) return;
         const payload = messages[messages.length - 1];
         const data = JSON.parse(payload);
