@@ -48,12 +48,12 @@ export function SOCKET(
                 {
                     graph: "Other Graph",
                     dataSet: "Sin",
-                    newData: [Math.sin(counter / 3.1415) * 25],
+                    newData: [Math.sin(counter / Math.PI) * 25],
                 },
                 {
                     graph: "Other Graph",
                     dataSet: "Cos",
-                    newData: [Math.cos(counter / 3.1415) * 25],
+                    newData: [Math.cos(counter / Math.PI) * 25],
                 },
             ])
         );
