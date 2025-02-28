@@ -19,7 +19,7 @@ export function SOCKET(
     client.on("message", (message: WebSocket.RawData) => {
         const messageString = message.toString();
         console.log("received: ", messageString);
-        publishToROS2(messageString);
+        // publishToROS2(messageString);
     });
 
     let counter = 0;

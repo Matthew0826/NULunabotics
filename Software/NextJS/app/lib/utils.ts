@@ -91,7 +91,7 @@ export function gamepadLoop(
         };
         if (gamepadData !== newData) {
             gamepadData = newData;
-            sendToServer(JSON.stringify(gamepadData));
+            sendToServer(JSON.stringify(newData));
             const end1 = moveArrow(x1, y1);
             const end2 = moveArrow(x2, y2);
             newData.x1 = end1.endX;

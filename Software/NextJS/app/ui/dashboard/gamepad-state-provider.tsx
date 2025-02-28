@@ -21,15 +21,25 @@ type GamepadManagerContextType = {
     setState: React.Dispatch<React.SetStateAction<GamepadState>>;
 };
 
+const defaults = {
+    x1: 100,
+    y1: 100,
+    x2: 100,
+    y2: 100,
+    buttonL: false,
+    buttonR: false,
+};
+const defaultsNormalized = {
+    x1: 0,
+    y1: 0,
+    x2: 0,
+    y2: 0,
+    buttonL: false,
+    buttonR: false,
+};
+
 const GamepadManagerContext = createContext<GamepadManagerContextType>({
-    state: {
-        x1: 100,
-        y1: 100,
-        x2: 100,
-        y2: 100,
-        buttonL: false,
-        buttonR: false,
-    },
+    state: defaults,
     setState: () => {},
 });
 
@@ -55,14 +65,7 @@ export default function GamepadStateProvider({
 
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent) {
-            const newState = {
-                x1: state.x1 > 0 ? 1 : state.x1 < 0 ? -1 : 0,
-                y1: state.y1 > 0 ? 1 : state.y1 < 0 ? -1 : 0,
-                x2: 100,
-                y2: 100,
-                buttonL: false,
-                buttonR: false,
-            };
+            const newState = defaultsNormalized;
             if (event.key === "ArrowUp" || event.key === "w") {
                 newState.y1 = -1;
             }
@@ -81,21 +84,23 @@ export default function GamepadStateProvider({
             if (event.key === "x" || event.key === "e") {
                 newState.buttonR = !newState.buttonR;
             }
-            const { endX, endY } = moveArrow(newState.x1, newState.y1);
-            newState.x1 = endX;
-            newState.y1 = endY;
+            if (newState !== state) {
+                sendToServer(JSON.stringify(newState));
+            }
+            const end1 = moveArrow(newState.x1, newState.y1);
+            const end2 = moveArrow(newState.x2, newState.y2);
+            newState.x1 = end1.endX;
+            newState.y1 = end1.endY;
+            newState.x2 = end2.endX;
+            newState.y2 = end2.endY;
             setState(newState);
         }
 
         function handleKeyUp(event: KeyboardEvent) {
-            setState({
-                x1: 100,
-                y1: 100,
-                x2: 100,
-                y2: 100,
-                buttonL: false,
-                buttonR: false,
-            });
+            if (defaults !== state) {
+                sendToServer(JSON.stringify(newState));
+            }
+            setState();
         }
         window.addEventListener("keydown", handleKeyDown);
         window.addEventListener("keyup", handleKeyUp);
