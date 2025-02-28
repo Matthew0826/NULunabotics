@@ -4,6 +4,11 @@ import { tempGraphOther, tempGraphPower } from "@/app/lib/temp-graph-info";
 import Map from "../map/map";
 import Panel from "./panel";
 import WebSocketGraph from "./web-socket-graph";
+import BatteryIndicator from "./battery-indicator";
+import Timer from "./timer";
+
+
+
 
 export default function DashboardPanels() {
     const mapPanel = (
@@ -16,10 +21,14 @@ export default function DashboardPanels() {
         <div className="flex flex-row gap-4 p-6 h-full w-full">
             <div className="flex flex-col gap-4 w-full flex-1">
                 <div className="xl:hidden">{mapPanel}</div>
+
+                <BatteryIndicator/>
+
                 <Panel title="Timer">
-                    <p>Hello, timer goes here!</p>
+                    <Timer startTime={0} />
                 </Panel>
                 <Panel title="Power">
+                    <BatteryIndicator/>
                     <WebSocketGraph graphInfo={tempGraphPower} />
                 </Panel>
                 <Panel title="Other Graph">
