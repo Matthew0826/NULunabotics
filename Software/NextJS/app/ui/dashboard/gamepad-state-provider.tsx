@@ -65,7 +65,7 @@ export default function GamepadStateProvider({
 
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent) {
-            const newState = defaultsNormalized;
+            const newState = { ...defaultsNormalized };
             if (event.key === "ArrowUp" || event.key === "w") {
                 newState.y1 = -1;
             }
@@ -84,23 +84,19 @@ export default function GamepadStateProvider({
             if (event.key === "x" || event.key === "e") {
                 newState.buttonR = !newState.buttonR;
             }
-            if (newState !== state) {
-                sendToServer(JSON.stringify(newState));
+            const newStateString = JSON.stringify(newState);
+            if (newStateString != JSON.stringify(state)) {
+                sendToServer(newStateString);
             }
-            const end1 = moveArrow(newState.x1, newState.y1);
-            const end2 = moveArrow(newState.x2, newState.y2);
-            newState.x1 = end1.endX;
-            newState.y1 = end1.endY;
-            newState.x2 = end2.endX;
-            newState.y2 = end2.endY;
             setState(newState);
         }
 
         function handleKeyUp(event: KeyboardEvent) {
             if (defaults !== state) {
-                sendToServer(JSON.stringify(newState));
+                sendToServer(JSON.stringify(defaultsNormalized));
             }
-            setState();
+            console.log("resetting");
+            setState(defaults);
         }
         window.addEventListener("keydown", handleKeyDown);
         window.addEventListener("keyup", handleKeyUp);

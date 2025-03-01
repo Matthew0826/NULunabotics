@@ -19,7 +19,9 @@ export default function BatteryIndicator() {
                     setIsSupported(false);
                 }
             } else {
-                console.warn("Battery Status API not supported in this browser.");
+                console.warn(
+                    "Battery Status API not supported in this browser."
+                );
                 setIsSupported(false);
             }
         };
@@ -28,7 +30,7 @@ export default function BatteryIndicator() {
     }, []);
 
     return (
-        <div className="absolute top-4 right-4 flex items-center bg-white p-2 rounded-lg shadow-lg">
+        <div className="fixed top-4 right-4 flex items-center bg-white p-2 rounded-lg shadow-lg">
             <div className="w-14 h-6 border-2 border-gray-700 rounded flex items-center relative">
                 {/* Battery Fill (Only if batteryLevel is available) */}
                 {batteryLevel !== null ? (
@@ -36,7 +38,7 @@ export default function BatteryIndicator() {
                         className={`h-full transition-all duration-300 ${
                             batteryLevel > 20 ? "bg-green-500" : "bg-red-500"
                         }`}
-                        style={{ width: `${batteryLevel}%` }}
+                        style={{ width: `${Math.floor(batteryLevel)}%` }}
                     ></div>
                 ) : (
                     <div className="h-full w-full bg-gray-300"></div> // Default empty state
@@ -45,7 +47,11 @@ export default function BatteryIndicator() {
                 <div className="absolute right-[-6px] w-1.5 h-3 bg-gray-700"></div>
             </div>
             <span className="ml-2 text-sm font-semibold text-gray-700">
-                {isSupported ? (batteryLevel !== null ? `${batteryLevel}%` : "Loading...") : "N/A"}
+                {isSupported
+                    ? batteryLevel !== null
+                        ? `${batteryLevel}%`
+                        : "Loading..."
+                    : "N/A"}
             </span>
         </div>
     );

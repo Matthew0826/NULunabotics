@@ -7,9 +7,6 @@ import WebSocketGraph from "./web-socket-graph";
 import BatteryIndicator from "./battery-indicator";
 import Timer from "./timer";
 
-
-
-
 export default function DashboardPanels() {
     const mapPanel = (
         <Panel title="Map">
@@ -22,13 +19,13 @@ export default function DashboardPanels() {
             <div className="flex flex-col gap-4 w-full flex-1">
                 <div className="xl:hidden">{mapPanel}</div>
 
-                <BatteryIndicator/>
+                <BatteryIndicator />
 
                 <Panel title="Timer">
                     <Timer startTime={0} />
                 </Panel>
                 <Panel title="Power">
-                    <BatteryIndicator/>
+                    {/* <BatteryIndicator /> */}
                     <WebSocketGraph graphInfo={tempGraphPower} />
                 </Panel>
                 <Panel title="Other Graph">
