@@ -21,6 +21,8 @@ const WebSocketContext = createContext<WebSocketMessages>({
 
 export const useWebSocketContext = () => useContext(WebSocketContext);
 
+// This is like the client of the web socket
+// It lets the user send and receive messages to/from the server
 export default function WebSocketProvider({
     children,
 }: {
