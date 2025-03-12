@@ -1,0 +1,132 @@
+// Basic demo for accelerometer readings from Adafruit MPU6050
+
+// ESP32 Guide: https://RandomNerdTutorials.com/esp32-mpu-6050-accelerometer-gyroscope-arduino/
+// ESP8266 Guide: https://RandomNerdTutorials.com/esp8266-nodemcu-mpu-6050-accelerometer-gyroscope-arduino/
+// Arduino Guide: https://RandomNerdTutorials.com/arduino-mpu-6050-accelerometer-gyroscope/
+
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <Wire.h>
+
+
+
+//Function to handle the request from the master
+
+#include <SoftwareSerial.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <Wire.h>
+
+// Define the RX and TX pins
+#define RX_PIN D2  // Change according to your wiring
+#define TX_PIN D1  // Change according to your wiring
+
+/*
+This is the code that manages the processing of the LiDAR data
+Eventually, this code should send cartesian coordinates of points via I2C
+*/
+
+// Create SoftwareSerial object
+SoftwareSerial mySerial(RX_PIN, TX_PIN); // RX, TX
+
+void setup() {
+  // Start the first Serial for debugging (optional)
+  Serial.begin(230400);
+  mySerial.begin(9600);
+  mySerial.println("Starting Serial Communications...");
+}
+#define POINT_PER_PACK 12
+#define BYTES_PER_PACK 44
+#define READINGS_FOR_ROT 56
+
+struct reading {
+  int distance_mm;
+  float angle;
+  int strength;
+};
+
+struct processed_packet {
+  float rot_speed;
+  float start_angle;
+  float end_angle;
+  reading readings[POINT_PER_PACK];
+};
+
+
+// The previous byte
+byte prevByte;
+
+//This stores the packet
+byte packet[BYTES_PER_PACK];
+int currIndex = 0;
+bool reading_packet = false;
+
+processed_packet process_packet(byte curr_packet[BYTES_PER_PACK]){
+  // Start with processing the speed.
+  processed_packet output_packet;
+  int degPerSecond = int(curr_packet[3]) * 256 + int(curr_packet[2]);
+  output_packet.rot_speed = (float)degPerSecond / 360;
+  
+  // Now get the start angle
+  int startAngle = int(curr_packet[5]) * 256 + int(curr_packet[4]);
+  output_packet.start_angle = float(startAngle) / 100.0;
+
+  // Get the end angle
+  int endAngle = int(curr_packet[43]) * 256 + int(curr_packet[42]);
+  output_packet.end_angle = float(endAngle) / 100.0;
+
+  // Get the angle step
+  float step = (output_packet.end_angle - output_packet.start_angle) / (POINT_PER_PACK-1);
+  
+  // Get the readings
+  for (int i = 0; i < POINT_PER_PACK; i++ ){
+    int measurement_reading = int(curr_packet[i+7]) * 256 + int(curr_packet[i+6]);
+    output_packet.readings[i].strength = int(curr_packet[i+8]);
+    output_packet.readings[i].distance_mm = measurement_reading;
+    output_packet.readings[i].angle = output_packet.start_angle + step*i;
+  }
+
+  return output_packet;
+}
+
+
+int num_pkts = 0;
+processed_packet pk[READINGS_FOR_ROT];
+
+// The loop
+void loop() {
+ 
+  // Check if data is available on the Serial
+  if( Serial.available() ){
+    // Get the next byte that we read from the LiDAR
+    byte nextByte = (byte)Serial.read();
+
+    // Check if we detected the start of a packet
+    if( nextByte == 0x2C && prevByte == 0x54 && !reading_packet ){
+      currIndex = 1;
+      packet[0] = prevByte;
+      reading_packet = true;
+    }
+
+    if( reading_packet ){
+      packet[currIndex] = nextByte;
+      currIndex++;
+      if( currIndex >= BYTES_PER_PACK ){
+        reading_packet = false;
+        processed_packet pkt = process_packet(packet);
+        pk[num_pkts] = pkt;
+        num_pkts++;
+        if( num_pkts >= READINGS_FOR_ROT ){
+          num_pkts = 0;
+          for( int i = 0; i < READINGS_FOR_ROT; i++ ){
+            mySerial.print("Start: "); mySerial.print(pk[i].start_angle); mySerial.print("; End: "); mySerial.println(pk[i].end_angle);
+          }
+        }
+      }
+    }
+    prevByte = nextByte;
+  }
+  //You can also send data back on SoftwareSerial if needed
+}
+
