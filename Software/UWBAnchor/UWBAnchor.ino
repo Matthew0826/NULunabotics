@@ -1,5 +1,3 @@
-// This was working, but then it just stopped and idk why!
-// TODO: Make sure it works and enable UART communication
 #include <SoftwareSerial.h>
 
 // Create a SoftwareSerial interface on pins RX:13, TX:15 (D7 and D8)
@@ -7,8 +5,8 @@ SoftwareSerial uwbSerial(13, 15);  // (RX, TX)
 
 //–– Configuration ––//
 const String TAG_ADDRESS = "TAG00010";      // Tag's unique address (8 bytes)
-const String ANCHOR_ADDRESS = "ANCH0010";  // This anchor’s address (8 bytes)
-const String NETWORK_ID = "NEULUNAB";      // Must match on both sides
+const String ANCHOR_ADDRESS = "ANCH0010";   // This anchor’s address (8 bytes)
+const String NETWORK_ID = "NEULUNAB";       // Must match on both sides
 
 // Fixed anchor location (assumed to be two-digit values for compact payload)
 const int anchorX = 10;  // e.g. coordinate X = 10
@@ -16,10 +14,10 @@ const int anchorY = 20;  // e.g. coordinate Y = 20
 
 // Sends an AT command to the module and prints it to Serial
 void sendCommand(const String &cmd) {
-  uwbSerial.println(cmd);
+  uwbSerial.write(cmd);
   Serial.print("Sent command: ");
   Serial.println(cmd);
-  delay(100);  // wait a bit for module to process
+  delay(500);  // wait a bit for module to process
 }
 
 void setup() {
@@ -31,7 +29,7 @@ void setup() {
   sendCommand("AT+MODE=1");  // set module to ANCHOR mode
   sendCommand("AT+NETWORKID=" + NETWORK_ID);
   sendCommand("AT+ADDRESS=" + ANCHOR_ADDRESS);
-  // (Optionally set the network password with AT+CPIN if required)
+  sendCommand("AT+CPIN=FABC0002EEDCAA90FABC0002EEDCAA90\r\n");
 
   Serial.println("Anchor module configured.");
 }
@@ -40,7 +38,7 @@ void setup() {
 void performRanging() {
   // 1. Perform ranging using a matching payload ("PING")
   String rangingCmd = "AT+ANCHOR_SEND=" + TAG_ADDRESS + ",4,PING";
-  uwbSerial.println(rangingCmd);
+  uwbSerial.write(rangingCmd);
   Serial.println("Sent ranging command: " + rangingCmd);
 
   // Wait for the response from the module (expected format similar to:
@@ -84,7 +82,7 @@ void performRanging() {
   // 4. Send the custom message.
   // Using a payload length (here, 9) that is different from the ranging phase to avoid a new measurement.
   String sendCmd = "AT+ANCHOR_SEND=" + TAG_ADDRESS + ",9," + payloadStr;
-  uwbSerial.println(sendCmd);
+  uwbSerial.write(sendCmd);
   Serial.println("Sent custom message: " + sendCmd);
 
   delay(200);
@@ -92,5 +90,5 @@ void performRanging() {
 
 void loop() {
   performRanging();
-  delay(1000);  // repeat every second (adjust as needed)
+  delay(1000);  // repeat every second
 }

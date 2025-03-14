@@ -9,15 +9,23 @@ const String NETWORK_ID = "NEULUNAB";
 
 // Structure to hold recent measurements from an anchor.
 struct AnchorData {
-  String id;           // e.g. "A1"
-  int anchorX;         // fixed X coordinate (for reference)
-  int anchorY;         // fixed Y coordinate (for reference)
+  String id;            // e.g. "A1"
+  int anchorX;          // fixed X coordinate (for reference)
+  int anchorY;          // fixed Y coordinate (for reference)
   int measurements[20]; // last 20 distance measurements in cm
-  int index;           // next write position (circular buffer)
+  int index;            // next write position (circular buffer)
 };
 
 // For simplicity, assume three anchors (A1, A2, A3)
 AnchorData anchors[3];
+
+// Sends an AT command to the module and prints it to Serial
+void sendCommand(const String &cmd) {
+  uwbSerial.write(cmd);
+  Serial.print("Sent command: ");
+  Serial.println(cmd);
+  delay(500);
+}
 
 void setup() {
   Serial.begin(9600);
@@ -25,14 +33,10 @@ void setup() {
   delay(1000);
 
   // Configure UWB module for TAG mode
-  uwbSerial.println("AT+MODE=0"); // TAG mode
-  Serial.println("Sent: AT+MODE=0");
-  delay(100);
-  uwbSerial.println("AT+NETWORKID=" + NETWORK_ID);
-  Serial.println("Sent: AT+NETWORKID=" + NETWORK_ID);
-  delay(100);
-  uwbSerial.println("AT+ADDRESS=" + TAG_ADDRESS);
-  Serial.println("Sent: AT+ADDRESS=" + TAG_ADDRESS);
+  sendCommand("AT+MODE=0"); // TAG mode
+  sendCommand("AT+NETWORKID=" + NETWORK_ID);
+  sendCommand("AT+ADDRESS=" + TAG_ADDRESS);
+  sendCommand("AT+CPIN=FABC0002EEDCAA90FABC0002EEDCAA90\r\n");
 
   // Initialize anchor data for three anchors.
   anchors[0].id = "A1";
