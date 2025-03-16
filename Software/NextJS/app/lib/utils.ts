@@ -14,7 +14,7 @@ function setupGamePad() {
     });
 }
 
-export function moveArrow(
+export function normalizedVectorToPixels(
     x: number,
     y: number
 ): { endX: number; endY: number } {
@@ -92,8 +92,8 @@ export function gamepadLoop(
         if (gamepadData !== newData) {
             gamepadData = newData;
             sendToServer(JSON.stringify(newData));
-            const end1 = moveArrow(x1, y1);
-            const end2 = moveArrow(x2, y2);
+            const end1 = normalizedVectorToPixels(x1, y1);
+            const end2 = normalizedVectorToPixels(x2, y2);
             newData.x1 = end1.endX;
             newData.y1 = end1.endY;
             newData.x2 = end2.endX;
