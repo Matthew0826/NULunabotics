@@ -66,6 +66,30 @@ def plot_cartesian_points(x_points, y_points):
 
     plt.show()
 
+def plot_simulated_ground(theta, height):
+    distances = []
+    for i in range(-89, 89):
+        # Calculate the x, y, and z components
+        x = height * np.tan(np.deg2rad(theta))
+        y = height
+        z = height * np.tan(np.deg2rad(i))
+        distance = np.sqrt(x*x + y*y + z*z)
+
+        print(distance)
+        distances.append(distance)
+    r = np.arange(0, 2, 0.01)
+    theta = 2 * np.pi * r
+
+    fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+    ax.plot(np.deg2rad([i + 90 for i in range(-89, 89)]), distances, '*')
+    ax.set_rmax(2)
+    ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+    ax.grid(True)
+
+    ax.set_title("A line plot on a polar axis", va='bottom')
+    plt.show()
+
+plot_simulated_ground(0, 1)
 x_points = [-4, -3, -2, -1, 0, 1, 2, 3, 4]
 print(x_points)
 y_points = [2, 2, 2, 2, 2, 2, 2, 2, 2]
