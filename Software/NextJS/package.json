@@ -30,6 +30,10 @@
         "@types/node": "22.10.7",
         "@types/react": "19.0.7",
         "@types/react-dom": "19.0.3",
-        "@types/ws": "^8.5.14"
+        "@types/ws": "^8.5.14",
+        "@types/webpack": "^5.28.5",
+        "critters": "^0.0.25",
+        "source-map-loader": "^5.0.0",
+        "webpack": "^5.98.0"
     }
 }
