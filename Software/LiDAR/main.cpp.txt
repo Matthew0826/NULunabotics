@@ -16,11 +16,30 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <Wire.h>
 
+// length of origin to reading (vector point)
+#define POINT_PER_PACK 12
+
+// 
+#define BYTES_PER_PACK 44
+#define READINGS_FOR_ROT 56
 // Define the RX and TX pins
 #define RX_PIN D2  // Change according to your wiring
 #define TX_PIN D1  // Change according to your wiring
+
+typedef struct {
+    int distance_mm;
+    float angle;
+    int strength;
+} reading_t;
+  
+typedef struct {
+  float rot_speed;
+  float start_angle;
+  float end_angle;
+  reading_t readings[POINT_PER_PACK];
+} processed_packet_t;
+  
 
 /*
 This is the code that manages the processing of the LiDAR data
@@ -36,23 +55,6 @@ void setup() {
   mySerial.begin(9600);
   mySerial.println("Starting Serial Communications...");
 }
-#define POINT_PER_PACK 12
-#define BYTES_PER_PACK 44
-#define READINGS_FOR_ROT 56
-
-struct reading {
-  int distance_mm;
-  float angle;
-  int strength;
-};
-
-struct processed_packet {
-  float rot_speed;
-  float start_angle;
-  float end_angle;
-  reading readings[POINT_PER_PACK];
-};
-
 
 // The previous byte
 byte prevByte;
@@ -62,9 +64,9 @@ byte packet[BYTES_PER_PACK];
 int currIndex = 0;
 bool reading_packet = false;
 
-processed_packet process_packet(byte curr_packet[BYTES_PER_PACK]){
+processed_packet_t process_packet(byte curr_packet[BYTES_PER_PACK]){
   // Start with processing the speed.
-  processed_packet output_packet;
+  processed_packet_t output_packet;
   int degPerSecond = int(curr_packet[3]) * 256 + int(curr_packet[2]);
   output_packet.rot_speed = (float)degPerSecond / 360;
   
@@ -92,7 +94,7 @@ processed_packet process_packet(byte curr_packet[BYTES_PER_PACK]){
 
 
 int num_pkts = 0;
-processed_packet pk[READINGS_FOR_ROT];
+processed_packet_t pk[READINGS_FOR_ROT];
 
 // The loop
 void loop() {
@@ -114,13 +116,20 @@ void loop() {
       currIndex++;
       if( currIndex >= BYTES_PER_PACK ){
         reading_packet = false;
-        processed_packet pkt = process_packet(packet);
+        processed_packet_t pkt = process_packet(packet);
         pk[num_pkts] = pkt;
         num_pkts++;
         if( num_pkts >= READINGS_FOR_ROT ){
           num_pkts = 0;
           for( int i = 0; i < READINGS_FOR_ROT; i++ ){
-            mySerial.print("Start: "); mySerial.print(pk[i].start_angle); mySerial.print("; End: "); mySerial.println(pk[i].end_angle);
+            //mySerial.print("Start: "); mySerial.print(pk[i].start_angle); mySerial.print("; End: "); mySerial.println(pk[i].end_angle);
+            
+            for (int r = 0; r < POINT_PER_PACK; r++) {
+              // print the distance of a reading
+              mySerial.print(pk[i].readings[r].distance_mm); 
+              mySerial.print(","); 
+              mySerial.println(pk[i].readings[r].angle);
+            }
           }
         }
       }
@@ -129,4 +138,3 @@ void loop() {
   }
   //You can also send data back on SoftwareSerial if needed
 }
-
