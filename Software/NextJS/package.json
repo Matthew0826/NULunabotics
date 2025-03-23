@@ -4,7 +4,8 @@
         "build": "next build",
         "dev": "next dev",
         "start": "next start",
-        "prepare": "next-ws patch"
+        "prepare": "next-ws patch",
+        "deploy": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/"
     },
     "dependencies": {
         "@heroicons/react": "^2.2.0",
