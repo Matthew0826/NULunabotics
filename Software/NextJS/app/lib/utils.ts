@@ -88,10 +88,12 @@ export function gamepadLoop(
             y2,
             buttonL: gamepad.buttons[4].pressed,
             buttonR: gamepad.buttons[5].pressed,
+            timestamp: 0,
         };
+
         if (gamepadData !== newData) {
             gamepadData = newData;
-            sendToServer(JSON.stringify(newData));
+            sendToServer(JSON.stringify({ ...newData, timestamp: Date.now() }));
             const end1 = normalizedVectorToPixels(x1, y1);
             const end2 = normalizedVectorToPixels(x2, y2);
             newData.x1 = end1.endX;

@@ -2,6 +2,7 @@
 
 import { gamepadLoop, normalizedVectorToPixels } from "@/app/lib/utils";
 import { useWebSocketContext } from "@/app/socket/web-socket-context";
+import { time } from "node:console";
 import { useContext, useState } from "react";
 import { createContext } from "react";
 import { useEffect, useRef } from "react";
@@ -14,6 +15,7 @@ export type GamepadState = {
     y2: number;
     buttonL: boolean;
     buttonR: boolean;
+    timestamp: number;
 };
 
 type GamepadManagerContextType = {
@@ -28,6 +30,7 @@ const defaults = {
     y2: 100,
     buttonL: false,
     buttonR: false,
+    timestamp: 0,
 };
 const defaultsNormalized = {
     x1: 0,
@@ -36,6 +39,7 @@ const defaultsNormalized = {
     y2: 0,
     buttonL: false,
     buttonR: false,
+    timestamp: 0,
 };
 
 const GamepadManagerContext = createContext<GamepadManagerContextType>({
@@ -58,6 +62,7 @@ export default function GamepadStateProvider({
         y2: 0,
         buttonL: false,
         buttonR: false,
+        timestamp: 0,
     });
     useEffect(() => {
         gamepadLoop(sendToServer, setState);
@@ -84,6 +89,7 @@ export default function GamepadStateProvider({
             if (event.key === "x" || event.key === "e") {
                 newState.buttonR = !newState.buttonR;
             }
+            newState.timestamp = Date.now();
             const newStateString = JSON.stringify(newState);
             if (newStateString != JSON.stringify(state)) {
                 sendToServer(newStateString);
@@ -93,7 +99,12 @@ export default function GamepadStateProvider({
 
         function handleKeyUp(event: KeyboardEvent) {
             if (defaults !== state) {
-                sendToServer(JSON.stringify(defaultsNormalized));
+                sendToServer(
+                    JSON.stringify({
+                        ...defaultsNormalized,
+                        timestamp: Date.now(),
+                    })
+                );
             }
             console.log("resetting");
             setState(defaults);
