@@ -52,7 +52,7 @@ SoftwareSerial mySerial(RX_PIN, TX_PIN); // RX, TX
 void setup() {
   // Start the first Serial for debugging (optional)
   Serial.begin(230400);
-  mySerial.begin(9600);
+  mySerial.begin(230400);
   mySerial.println("Starting Serial Communications...");
 }
 
@@ -82,7 +82,7 @@ processed_packet_t process_packet(byte curr_packet[BYTES_PER_PACK]){
   float step = (output_packet.end_angle - output_packet.start_angle) / (POINT_PER_PACK-1);
   
   // Get the readings
-  for (int i = 0; i < POINT_PER_PACK; i++ ){
+  for (int i = 0; i < POINT_PER_PACK; i++) {
     int measurement_reading = int(curr_packet[i+7]) * 256 + int(curr_packet[i+6]);
     output_packet.readings[i].strength = int(curr_packet[i+8]);
     output_packet.readings[i].distance_mm = measurement_reading;
@@ -122,13 +122,12 @@ void loop() {
         if( num_pkts >= READINGS_FOR_ROT ){
           num_pkts = 0;
           for( int i = 0; i < READINGS_FOR_ROT; i++ ){
-            //mySerial.print("Start: "); mySerial.print(pk[i].start_angle); mySerial.print("; End: "); mySerial.println(pk[i].end_angle);
-            
             for (int r = 0; r < POINT_PER_PACK; r++) {
-              // print the distance of a reading
-              mySerial.print(pk[i].readings[r].distance_mm); 
-              mySerial.print(","); 
-              mySerial.println(pk[i].readings[r].angle);
+              mySerial.write(pk[i].readings[r].distance_mm);
+              mySerial.write((int)(pk[i].readings[r].angle * 100));
+            }
+            if (i == READINGS_FOR_ROT - 1) {
+              mySerial.print("\r\n");
             }
           }
         }
@@ -136,5 +135,4 @@ void loop() {
     }
     prevByte = nextByte;
   }
-  //You can also send data back on SoftwareSerial if needed
 }
