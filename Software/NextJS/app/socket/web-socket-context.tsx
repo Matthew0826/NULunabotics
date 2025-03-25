@@ -66,7 +66,7 @@ export default function WebSocketProvider({
                 typeof event.data === "string"
                     ? event.data
                     : await event.data.text();
-            setMessages((p) => [...p, payload]);
+            setMessages((p) => [...p, payload].slice(-10)); // Keep only the last 10 messages
         }
 
         socketRef.current?.addEventListener("message", handleMessage);
