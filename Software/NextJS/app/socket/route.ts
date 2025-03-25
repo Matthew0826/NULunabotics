@@ -1,6 +1,6 @@
 import { IncomingMessage } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
-import { lidarPoints, publishToROS2 } from "../lib/ros2";
+import { fullLidarData, publishToROS2 } from "../lib/ros2";
 
 export function GET() {
     const headers = new Headers();
@@ -39,12 +39,12 @@ export function SOCKET(
                 {
                     graph: "Lidar",
                     dataSet: "Points",
-                    newData: lidarPoints,
+                    newData: fullLidarData,
                 },
             ])
         );
         counter++;
-    }, 1000);
+    }, 250);
 
     return () => clearInterval(interval);
 }

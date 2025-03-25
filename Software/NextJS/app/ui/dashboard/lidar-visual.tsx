@@ -9,12 +9,10 @@ export default function LidarVisual() {
     >([]);
     useEffect(() => {
         if (messages.length == 0) return;
-        const lidarMessage = messages.findLast(
-            (message) => JSON.parse(message)[0].graph === "Lidar"
+        const lidarMessage = JSON.parse(messages[messages.length - 1]).find(
+            (message: any) => message.graph === "Lidar"
         );
-        setLidarData(
-            (lidarMessage ? JSON.parse(lidarMessage)[0] : null)?.newData || []
-        );
+        setLidarData(lidarMessage?.newData || []);
     }, [messages]);
     const getMaxDistance = () => {
         return Math.max(...lidarData.map((point) => point.distance));

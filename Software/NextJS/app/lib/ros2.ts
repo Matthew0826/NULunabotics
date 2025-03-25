@@ -6,7 +6,8 @@ const ROS2_FLOAT32_MULTI_ARRAY_TYPE = "std_msgs/msg/Float32MultiArray";
 let rosPublisher: rclnodejs.Publisher<typeof ROS2_STRING_TYPE>;
 let rosSubscriber: rclnodejs.Subscription;
 
-export const lidarPoints: { distance: number; angle: number }[] = [];
+const lidarPoints: { distance: number; angle: number }[] = [];
+export let fullLidarData: { distance: number; angle: number }[] = [];
 
 export function publishToROS2(message: string) {
     const stringMsgObject = rclnodejs.createMessageObject(ROS2_STRING_TYPE);
@@ -26,9 +27,9 @@ rclnodejs.init().then(() => {
             const distance = data[0];
             const angle = (Math.PI * data[1]) / 180;
             lidarPoints.push({ distance, angle });
-            if (lidarPoints.length >= 360) {
-                // Moving window
-                lidarPoints.shift();
+            if (Math.PI * 2 - angle < 0.03) {
+                fullLidarData = [...lidarPoints];
+                lidarPoints.length = 0; // Clear the array when a full rotation is detected
             }
         }
     );
