@@ -1,6 +1,6 @@
 import { IncomingMessage } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
-// import { lidarPoints } from "../lib/ros2";
+import { lidarPoints, publishToROS2 } from "../lib/ros2";
 
 export function GET() {
     const headers = new Headers();
@@ -23,7 +23,7 @@ export function SOCKET(
             const messageJson = JSON.parse(messageString);
             console.log("in " + (Date.now() - messageJson?.timestamp) + "ms");
         } catch (error) {}
-        // publishToROS2(messageString);
+        publishToROS2(messageString);
     });
 
     let counter = 0;
@@ -36,11 +36,11 @@ export function SOCKET(
                     dataSet: "Test Data",
                     newData: [Math.floor(Math.random() * 30)],
                 },
-                // {
-                //     graph: "Lidar",
-                //     dataSet: "Points",
-                //     newData: lidarPoints,
-                // },
+                {
+                    graph: "Lidar",
+                    dataSet: "Points",
+                    newData: lidarPoints,
+                },
             ])
         );
         counter++;
