@@ -1,4 +1,4 @@
-import { Reference, RefObject } from "react";
+import { RefObject } from "react";
 import WebSocket from "ws";
 import { GamepadState } from "../ui/dashboard/gamepad-state-provider";
 

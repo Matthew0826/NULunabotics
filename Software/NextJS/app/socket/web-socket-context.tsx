@@ -41,7 +41,24 @@ export default function WebSocketProvider({
         };
     }, []);
 
-    const [messages, setMessages] = useState<string[]>([]);
+    const [messages, setMessages] = useState<string[]>([
+        JSON.stringify([
+            {
+                graph: "Lidar",
+                dataSet: "Points",
+                newData: [
+                    { distance: 2000, angle: (7 * Math.PI) / 4 },
+                    { distance: 1000, angle: (6 * Math.PI) / 4 },
+                    { distance: 2000, angle: (5 * Math.PI) / 4 },
+                    { distance: 1200, angle: Math.PI },
+                    { distance: 2000, angle: (3 * Math.PI) / 4 },
+                    { distance: 2000, angle: (2 * Math.PI) / 4 },
+                    { distance: 2000, angle: Math.PI / 4 },
+                    { distance: 2000, angle: 0 },
+                ],
+            },
+        ]),
+    ]);
 
     useEffect(() => {
         async function handleMessage(event: MessageEvent) {
