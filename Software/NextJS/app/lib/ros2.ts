@@ -1,7 +1,7 @@
 import * as rclnodejs from "rclnodejs";
 
 const ROS2_STRING_TYPE = "std_msgs/msg/String";
-const ROS2_FLOAT32_MULTI_ARRAY_TYPE = "std_msgs/msg/Float32MultiArray";
+const ROS2_UINT16_MULTI_ARRAY_TYPE = "std_msgs/msg/UInt16MultiArray";
 
 let rosPublisher: rclnodejs.Publisher<typeof ROS2_STRING_TYPE>;
 let rosSubscriber: rclnodejs.Subscription;
@@ -19,7 +19,7 @@ rclnodejs.init().then(() => {
     const node = new rclnodejs.Node("website_backend");
     rosPublisher = node.createPublisher(ROS2_STRING_TYPE, "website/controller");
     rosSubscriber = node.createSubscription(
-        ROS2_FLOAT32_MULTI_ARRAY_TYPE,
+        ROS2_UINT16_MULTI_ARRAY_TYPE,
         "sensors/lidar",
         (msg: any) => {
             const data = msg.data;
