@@ -10,20 +10,3 @@ export const tempGraphPower = {
         },
     },
 };
-export const tempGraphOther = {
-    name: "Other Graph",
-    xAxisLabel: "time (s)",
-    yAxisLabel: "Beasts",
-    dataSets: {
-        Sin: {
-            label: "Unicorns",
-            color: "rgb(193, 71, 71)",
-            data: [],
-        },
-        Cos: {
-            label: "Dragons",
-            color: "rgb(93, 71, 193)",
-            data: [],
-        },
-    },
-};

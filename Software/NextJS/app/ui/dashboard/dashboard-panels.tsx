@@ -1,11 +1,12 @@
 "use client";
 
-import { tempGraphOther, tempGraphPower } from "@/app/lib/temp-graph-info";
+import { tempGraphPower } from "@/app/lib/temp-graph-info";
 import Map from "../map/map";
 import Panel from "./panel";
 import WebSocketGraph from "./web-socket-graph";
 import BatteryIndicator from "./battery-indicator";
 import Timer from "./timer";
+import LidarVisual from "./lidar-visual";
 
 export default function DashboardPanels() {
     const mapPanel = (
@@ -28,8 +29,8 @@ export default function DashboardPanels() {
                     {/* <BatteryIndicator /> */}
                     <WebSocketGraph graphInfo={tempGraphPower} />
                 </Panel>
-                <Panel title="Other Graph">
-                    <WebSocketGraph graphInfo={tempGraphOther} />
+                <Panel title="LiDAR">
+                    <LidarVisual />
                 </Panel>
             </div>
             <div className="w-full hidden xl:block flex-2">{mapPanel}</div>

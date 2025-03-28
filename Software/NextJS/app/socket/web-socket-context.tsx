@@ -41,7 +41,24 @@ export default function WebSocketProvider({
         };
     }, []);
 
-    const [messages, setMessages] = useState<string[]>([]);
+    const [messages, setMessages] = useState<string[]>([
+        JSON.stringify([
+            {
+                graph: "Lidar",
+                dataSet: "Points",
+                newData: [
+                    { distance: 2000, angle: (7 * Math.PI) / 4 },
+                    { distance: 1000, angle: (6 * Math.PI) / 4 },
+                    { distance: 2000, angle: (5 * Math.PI) / 4 },
+                    { distance: 1200, angle: Math.PI },
+                    { distance: 2000, angle: (3 * Math.PI) / 4 },
+                    { distance: 2000, angle: (2 * Math.PI) / 4 },
+                    { distance: 2000, angle: Math.PI / 4 },
+                    { distance: 2000, angle: 0 },
+                ],
+            },
+        ]),
+    ]);
 
     useEffect(() => {
         async function handleMessage(event: MessageEvent) {
@@ -49,7 +66,7 @@ export default function WebSocketProvider({
                 typeof event.data === "string"
                     ? event.data
                     : await event.data.text();
-            setMessages((p) => [...p, payload]);
+            setMessages((p) => [...p, payload].slice(-10)); // Keep only the last 10 messages
         }
 
         socketRef.current?.addEventListener("message", handleMessage);
