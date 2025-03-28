@@ -4,6 +4,7 @@ cd Software/NextJS
 npm install
 npm run deploy
 cd ~/ros2_stuff
+rm -rf install/website/share/website/.next
 colcon build --packages-select website
 cp -r src/NULunabotics/Software/NextJS/.next install/website/share/website/.next
 source install/setup.bash

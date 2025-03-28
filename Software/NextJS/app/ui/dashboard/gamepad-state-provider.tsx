@@ -2,7 +2,6 @@
 
 import { gamepadLoop, normalizedVectorToPixels } from "@/app/lib/utils";
 import { useWebSocketContext } from "@/app/socket/web-socket-context";
-import { time } from "node:console";
 import { useContext, useState } from "react";
 import { createContext } from "react";
 import { useEffect, useRef } from "react";
@@ -106,7 +105,6 @@ export default function GamepadStateProvider({
                     })
                 );
             }
-            console.log("resetting");
             setState(defaults);
         }
         window.addEventListener("keydown", handleKeyDown);
