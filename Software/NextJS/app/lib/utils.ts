@@ -1,4 +1,4 @@
-import { Reference, RefObject } from "react";
+import { RefObject } from "react";
 import WebSocket from "ws";
 import { GamepadState } from "../ui/dashboard/gamepad-state-provider";
 
@@ -14,7 +14,7 @@ function setupGamePad() {
     });
 }
 
-export function moveArrow(
+export function normalizedVectorToPixels(
     x: number,
     y: number
 ): { endX: number; endY: number } {
@@ -88,12 +88,14 @@ export function gamepadLoop(
             y2,
             buttonL: gamepad.buttons[4].pressed,
             buttonR: gamepad.buttons[5].pressed,
+            timestamp: 0,
         };
+
         if (gamepadData !== newData) {
             gamepadData = newData;
-            sendToServer(JSON.stringify(gamepadData));
-            const end1 = moveArrow(x1, y1);
-            const end2 = moveArrow(x2, y2);
+            sendToServer(JSON.stringify({ ...newData, timestamp: Date.now() }));
+            const end1 = normalizedVectorToPixels(x1, y1);
+            const end2 = normalizedVectorToPixels(x2, y2);
             newData.x1 = end1.endX;
             newData.y1 = end1.endY;
             newData.x2 = end2.endX;

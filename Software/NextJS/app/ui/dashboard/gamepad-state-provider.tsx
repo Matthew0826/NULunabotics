@@ -1,6 +1,6 @@
 "use client";
 
-import { gamepadLoop, moveArrow } from "@/app/lib/utils";
+import { gamepadLoop, normalizedVectorToPixels } from "@/app/lib/utils";
 import { useWebSocketContext } from "@/app/socket/web-socket-context";
 import { useContext, useState } from "react";
 import { createContext } from "react";
@@ -14,6 +14,7 @@ export type GamepadState = {
     y2: number;
     buttonL: boolean;
     buttonR: boolean;
+    timestamp: number;
 };
 
 type GamepadManagerContextType = {
@@ -21,15 +22,27 @@ type GamepadManagerContextType = {
     setState: React.Dispatch<React.SetStateAction<GamepadState>>;
 };
 
+const defaults = {
+    x1: 100,
+    y1: 100,
+    x2: 100,
+    y2: 100,
+    buttonL: false,
+    buttonR: false,
+    timestamp: 0,
+};
+const defaultsNormalized = {
+    x1: 0,
+    y1: 0,
+    x2: 0,
+    y2: 0,
+    buttonL: false,
+    buttonR: false,
+    timestamp: 0,
+};
+
 const GamepadManagerContext = createContext<GamepadManagerContextType>({
-    state: {
-        x1: 100,
-        y1: 100,
-        x2: 100,
-        y2: 100,
-        buttonL: false,
-        buttonR: false,
-    },
+    state: defaults,
     setState: () => {},
 });
 
@@ -48,6 +61,7 @@ export default function GamepadStateProvider({
         y2: 0,
         buttonL: false,
         buttonR: false,
+        timestamp: 0,
     });
     useEffect(() => {
         gamepadLoop(sendToServer, setState);
@@ -55,14 +69,7 @@ export default function GamepadStateProvider({
 
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent) {
-            const newState = {
-                x1: state.x1 > 0 ? 1 : state.x1 < 0 ? -1 : 0,
-                y1: state.y1 > 0 ? 1 : state.y1 < 0 ? -1 : 0,
-                x2: 100,
-                y2: 100,
-                buttonL: false,
-                buttonR: false,
-            };
+            const newState = { ...defaultsNormalized };
             if (event.key === "ArrowUp" || event.key === "w") {
                 newState.y1 = -1;
             }
@@ -81,21 +88,24 @@ export default function GamepadStateProvider({
             if (event.key === "x" || event.key === "e") {
                 newState.buttonR = !newState.buttonR;
             }
-            const { endX, endY } = moveArrow(newState.x1, newState.y1);
-            newState.x1 = endX;
-            newState.y1 = endY;
+            newState.timestamp = Date.now();
+            const newStateString = JSON.stringify(newState);
+            if (newStateString != JSON.stringify(state)) {
+                sendToServer(newStateString);
+            }
             setState(newState);
         }
 
         function handleKeyUp(event: KeyboardEvent) {
-            setState({
-                x1: 100,
-                y1: 100,
-                x2: 100,
-                y2: 100,
-                buttonL: false,
-                buttonR: false,
-            });
+            if (defaults !== state) {
+                sendToServer(
+                    JSON.stringify({
+                        ...defaultsNormalized,
+                        timestamp: Date.now(),
+                    })
+                );
+            }
+            setState(defaults);
         }
         window.addEventListener("keydown", handleKeyDown);
         window.addEventListener("keyup", handleKeyUp);

@@ -55,16 +55,16 @@ jobs:
                   oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
                   version: 1.78.1
                   tags: tag:ci
-            - name: SSH to Raspberry Pi
-              run: |
-                  tar cjvf - \
-                    -C "$GITHUB_WORKSPACE/Software/NextJS/.next/" "standalone" | \
-                  sshpass -p "admin" ssh -o StrictHostKeyChecking=no -o TCPKeepAlive=yes -o ConnectTimeout=30 -o ServerAliveInterval=60 selene@100.114.133.21 "
-                    STANDALONE=/var/www/lunabotics/standalone && \
-                    rm -rf \$STANDALONE && \
-                    mkdir -p \$STANDALONE && \
-                    tar -xjvf - --strip-components=1 -C \$STANDALONE && \
-                    chmod +x \$STANDALONE/server.js && \
-                    sed -i '1s/^/#!\/usr\/bin\/env node\n/' \$STANDALONE/server.js && \
-                    echo 'admin' | sudo -S systemctl restart nodejswebsite
-                  "
+            # - name: SSH to Raspberry Pi
+            #   run: |
+            #       tar cjvf - \
+            #         -C "$GITHUB_WORKSPACE/Software/NextJS/.next/" "standalone" | \
+            #       sshpass -p "admin" ssh -o StrictHostKeyChecking=no -o TCPKeepAlive=yes -o ConnectTimeout=30 -o ServerAliveInterval=60 selene@100.114.133.21 "
+            #         STANDALONE=/var/www/lunabotics/standalone && \
+            #         rm -rf \$STANDALONE && \
+            #         mkdir -p \$STANDALONE && \
+            #         tar -xjvf - --strip-components=1 -C \$STANDALONE && \
+            #         chmod +x \$STANDALONE/server.js && \
+            #         sed -i '1s/^/#!\/usr\/bin\/env node\n/' \$STANDALONE/server.js && \
+            #         echo 'admin' | sudo -S systemctl restart nodejswebsite
+            #       "

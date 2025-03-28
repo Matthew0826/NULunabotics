@@ -18,7 +18,7 @@ export default function Obstacle({
 }) {
     return (
         <div
-            className={`absolute rounded-full transform -translate-y-1/2 -translate-x-1/2 ${
+            className={`absolute rounded-full -translate-y-1/2 -translate-x-1/2 ${
                 isHole
                     ? "shadow-[inset_4px_4px_3px_3px_rgba(0,0,0,0.25)] bg-zinc-800"
                     : "drop-shadow-[3px_3px_rgba(0,0,0,0.25)] bg-slate-600"
