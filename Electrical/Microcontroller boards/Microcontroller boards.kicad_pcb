@@ -637,7 +637,7 @@
 		(property "Reference" "2.5mm"
 			(at 0.0762 -3.5306 0)
 			(layer "F.SilkS")
-			(uuid "c58eed31-fc08-442a-afee-a26ade2491fb")
+			(uuid "a72487be-0772-4142-9107-75d2279d634f")
 			(effects
 				(font
 					(size 1 1)
@@ -648,7 +648,7 @@
 		(property "Value" "MountingHole_2.5mm"
 			(at 0 3.5 0)
 			(layer "F.Fab")
-			(uuid "4db742b6-a113-434b-8953-837871192e6a")
+			(uuid "0f8802d4-cb07-4638-9238-949037f3bcaf")
 			(effects
 				(font
 					(size 1 1)
@@ -705,7 +705,7 @@
 			)
 			(fill none)
 			(layer "Cmts.User")
-			(uuid "81c67771-e53c-48d1-93c5-1b59de9290eb")
+			(uuid "69a367ed-60f0-4605-8327-607e49bc391e")
 		)
 		(fp_circle
 			(center 0 0)
@@ -716,12 +716,12 @@
 			)
 			(fill none)
 			(layer "F.CrtYd")
-			(uuid "88c60e57-e9d4-4970-8da4-d9cc11abfd3f")
+			(uuid "799d0d45-81e2-4ac8-9c84-6818217e6559")
 		)
 		(fp_text user "${REFERENCE}"
 			(at 0 0 0)
 			(layer "F.Fab")
-			(uuid "78f72875-ba41-4773-8d98-f0631ff6e9d2")
+			(uuid "136c8aa7-5240-4f67-9763-9e326a14d498")
 			(effects
 				(font
 					(size 1 1)
@@ -734,7 +734,7 @@
 			(size 2.5 2.5)
 			(drill 2.5)
 			(layers "*.Cu" "*.Mask")
-			(uuid "eeeb709d-eeb6-48d6-b462-364a1a6256e8")
+			(uuid "52bf5e55-2b0c-4fc5-9263-f06e61c7272b")
 		)
 	)
 	(footprint "Connector_Wuerth:Wuerth_WR-WTB_64800311622_1x03_P1.50mm_Vertical"
@@ -2048,7 +2048,7 @@
 		(descr "Wuerth WR-WTB series connector, 64800311622 (https://katalog.we-online.com/em/datasheet/6480xx11622.pdf), generated with kicad-footprint-generator")
 		(tags "connector Wuerth WR-WTB vertical")
 		(property "Reference" "J4"
-			(at 1.5 -2.5 360)
+			(at 1.5 -2.5 0)
 			(layer "F.SilkS")
 			(uuid "df4d2918-7232-4769-99b2-08abc1eb1314")
 			(effects
@@ -2059,7 +2059,7 @@
 			)
 		)
 		(property "Value" "Conn_01x03_Pin"
-			(at 1.5 3.4 360)
+			(at 1.5 3.4 0)
 			(layer "F.Fab")
 			(uuid "3e128869-6dd6-4f76-b526-659aa84fa246")
 			(effects
@@ -2394,7 +2394,7 @@
 			(uuid "8ada6a74-eaad-4cc9-8467-df9304b760ab")
 		)
 		(fp_text user "${REFERENCE}"
-			(at 1.5 1.5 360)
+			(at 1.5 1.5 0)
 			(layer "F.Fab")
 			(uuid "0157f88f-fa5d-4b7c-bcf2-01636abb52d7")
 			(effects
@@ -2868,7 +2868,7 @@
 		(property "Reference" "2.5mm"
 			(at 0.0762 -3.5306 0)
 			(layer "F.SilkS")
-			(uuid "c58eed31-fc08-442a-afee-a26ade2491fb")
+			(uuid "4c14898b-a5a1-407f-b748-e03282debfe8")
 			(effects
 				(font
 					(size 1 1)
@@ -2879,7 +2879,7 @@
 		(property "Value" "MountingHole_2.5mm"
 			(at 0 3.5 0)
 			(layer "F.Fab")
-			(uuid "4db742b6-a113-434b-8953-837871192e6a")
+			(uuid "f7acf7a5-759c-4866-ad6e-62539957c259")
 			(effects
 				(font
 					(size 1 1)
@@ -2936,7 +2936,7 @@
 			)
 			(fill none)
 			(layer "Cmts.User")
-			(uuid "81c67771-e53c-48d1-93c5-1b59de9290eb")
+			(uuid "79f6ad04-7850-4c88-bd53-e12da592493c")
 		)
 		(fp_circle
 			(center 0 0)
@@ -2947,12 +2947,12 @@
 			)
 			(fill none)
 			(layer "F.CrtYd")
-			(uuid "88c60e57-e9d4-4970-8da4-d9cc11abfd3f")
+			(uuid "3eecf937-1b0b-4c16-b34e-2cc31c0b750f")
 		)
 		(fp_text user "${REFERENCE}"
 			(at 0 0 0)
 			(layer "F.Fab")
-			(uuid "78f72875-ba41-4773-8d98-f0631ff6e9d2")
+			(uuid "100127ce-1b8b-4323-a8c9-2777f8d175ee")
 			(effects
 				(font
 					(size 1 1)
@@ -2965,7 +2965,7 @@
 			(size 2.5 2.5)
 			(drill 2.5)
 			(layers "*.Cu" "*.Mask")
-			(uuid "eeeb709d-eeb6-48d6-b462-364a1a6256e8")
+			(uuid "62567ae8-3f33-4870-a8c1-ef0749114186")
 		)
 	)
 	(footprint "S4B_PH_K_S_LF__SN_:CONN_S4B-PH-K-S_JST"
@@ -3577,8 +3577,8 @@
 				)
 			)
 		)
-		(fp_text user "G"
-			(at -11.43 15.24 0)
+		(fp_text user "swab"
+			(at -11.0098 15.2258 0)
 			(layer "F.SilkS")
 			(uuid "320252c8-f924-496c-a5e3-b9018d20f6ae")
 			(effects
@@ -4898,7 +4898,7 @@
 		(layer "F.Cu")
 		(uuid "d59365ae-d46a-4677-a7f1-cf33035ddbd6")
 		(at 117.039133 82.114134)
-		(property "Reference" "G***"
+		(property "Reference" "swab"
 			(at 0.8382 13.6144 0)
 			(layer "F.SilkS")
 			(uuid "8b7fe3f3-6952-436f-9cc0-14ba30b6b61b")
@@ -6314,7 +6314,7 @@
 		(property "Reference" "2.5mm"
 			(at 0.1778 -3.6068 0)
 			(layer "F.SilkS")
-			(uuid "c58eed31-fc08-442a-afee-a26ade2491fb")
+			(uuid "0e34cf2f-443a-4bc1-ac19-51f0359ad700")
 			(effects
 				(font
 					(size 1 1)
@@ -6325,7 +6325,7 @@
 		(property "Value" "MountingHole_2.5mm"
 			(at 0 3.5 0)
 			(layer "F.Fab")
-			(uuid "4db742b6-a113-434b-8953-837871192e6a")
+			(uuid "4ba201d8-cb80-4ac7-a2fb-063b18a39365")
 			(effects
 				(font
 					(size 1 1)
@@ -6382,7 +6382,7 @@
 			)
 			(fill none)
 			(layer "Cmts.User")
-			(uuid "81c67771-e53c-48d1-93c5-1b59de9290eb")
+			(uuid "27999777-7bb4-4b6b-b0c5-98cb77655de6")
 		)
 		(fp_circle
 			(center 0 0)
@@ -6393,12 +6393,12 @@
 			)
 			(fill none)
 			(layer "F.CrtYd")
-			(uuid "88c60e57-e9d4-4970-8da4-d9cc11abfd3f")
+			(uuid "457a3041-b65d-4db6-b8cb-015736b8174d")
 		)
 		(fp_text user "${REFERENCE}"
 			(at 0 0 0)
 			(layer "F.Fab")
-			(uuid "78f72875-ba41-4773-8d98-f0631ff6e9d2")
+			(uuid "544fcce4-a20a-44b8-881a-88024411ab40")
 			(effects
 				(font
 					(size 1 1)
@@ -6411,7 +6411,7 @@
 			(size 2.5 2.5)
 			(drill 2.5)
 			(layers "*.Cu" "*.Mask")
-			(uuid "eeeb709d-eeb6-48d6-b462-364a1a6256e8")
+			(uuid "9a78a6d9-e67d-4484-a333-0ff8809326b6")
 		)
 	)
 	(gr_rect
