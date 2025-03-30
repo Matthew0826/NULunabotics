@@ -1,22 +1,13 @@
 import { IncomingMessage } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
 import { lidarPoints, publishToROS2 } from "../lib/ros2";
+import { sockets } from "../lib/sockets";
 
 export function GET() {
     const headers = new Headers();
     headers.set("Connection", "Upgrade");
     headers.set("Upgrade", "websocket");
     return new Response("Upgrade Required", { status: 426, headers });
-}
-
-const sockets = new Set<WebSocket>();
-
-export function sendToClient(message: string) {
-    sockets.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(message);
-        }
-    });
 }
 
 // This is like the server of the web socket

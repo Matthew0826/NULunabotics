@@ -1,5 +1,5 @@
 import * as rclnodejs from "rclnodejs";
-import { sendToClient } from "../socket/route";
+import { sendToClient } from "./sockets";
 
 const ROS2_STRING_TYPE = "std_msgs/msg/String";
 const ROS2_UINT16_MULTI_ARRAY_TYPE = "std_msgs/msg/UInt16MultiArray";
