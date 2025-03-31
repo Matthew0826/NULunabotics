@@ -1,4 +1,4 @@
-24250160914431003
+24255381763813766
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -97978,6 +97978,27 @@ AMASS_XT60PW-M
 0
 4
 4
+_Footprints
+CAPC220145_88N_KEM
+
+C0805C102K5HACAUTO 
+0
+2
+2
+_Footprints
+CAPC220145_88N_KEM-L
+
+C0805C102K5HACAUTO 
+0
+2
+2
+_Footprints
+CAPC220145_88N_KEM-M
+
+C0805C102K5HACAUTO 
+0
+2
+2
 _Footprints
 CONN3_S3B-XH_JST
 

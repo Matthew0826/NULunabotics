@@ -1,6 +1,7 @@
 import { IncomingMessage } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
 import { lidarPoints, publishToROS2 } from "../lib/ros2";
+import { sockets } from "../lib/sockets";
 
 export function GET() {
     const headers = new Headers();
@@ -16,6 +17,10 @@ export function SOCKET(
     _request: IncomingMessage,
     server: WebSocketServer
 ) {
+    client.on("close", () => {
+        console.log("Client disconnected");
+        sockets.delete(client);
+    });
     client.on("message", (message: WebSocket.RawData) => {
         const messageString = message.toString();
         console.log("received: ", messageString);
@@ -26,25 +31,19 @@ export function SOCKET(
         publishToROS2(messageString);
     });
 
-    let counter = 0;
+    console.log("Client connected");
+    sockets.add(client);
+    // const interval = setInterval(() => {
+    //     client.send(
+    //         JSON.stringify([
+    //             {
+    //                 graph: "Power",
+    //                 dataSet: "Test Data",
+    //                 newData: [Math.floor(Math.random() * 30)],
+    //             }
+    //         ])
+    //     );
+    // }, 1000);
 
-    const interval = setInterval(() => {
-        client.send(
-            JSON.stringify([
-                {
-                    graph: "Power",
-                    dataSet: "Test Data",
-                    newData: [Math.floor(Math.random() * 30)],
-                },
-                {
-                    graph: "Lidar",
-                    dataSet: "Points",
-                    newData: lidarPoints,
-                },
-            ])
-        );
-        counter++;
-    }, 250);
-
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
 }

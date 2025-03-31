@@ -47,14 +47,14 @@ export default function WebSocketProvider({
                 graph: "Lidar",
                 dataSet: "Points",
                 newData: [
-                    { distance: 2000, angle: (7 * Math.PI) / 4 },
-                    { distance: 1000, angle: (6 * Math.PI) / 4 },
-                    { distance: 2000, angle: (5 * Math.PI) / 4 },
-                    { distance: 1200, angle: Math.PI },
-                    { distance: 2000, angle: (3 * Math.PI) / 4 },
-                    { distance: 2000, angle: (2 * Math.PI) / 4 },
-                    { distance: 2000, angle: Math.PI / 4 },
-                    { distance: 2000, angle: 0 },
+                    { distance: 2000, angle: (7 * Math.PI) / 4, weight: 0 },
+                    { distance: 1000, angle: (6 * Math.PI) / 4, weight: 0 },
+                    { distance: 2000, angle: (5 * Math.PI) / 4, weight: 0 },
+                    { distance: 1200, angle: Math.PI, weight: 0 },
+                    { distance: 2000, angle: (3 * Math.PI) / 4, weight: 0 },
+                    { distance: 2000, angle: (2 * Math.PI) / 4, weight: 0 },
+                    { distance: 2000, angle: Math.PI / 4, weight: 0 },
+                    { distance: 2000, angle: 0, weight: 0 },
                 ],
             },
         ]),
@@ -71,7 +71,7 @@ export default function WebSocketProvider({
 
         socketRef.current?.addEventListener("message", handleMessage);
         socketRef.current?.addEventListener("open", () => {
-            socketRef.current?.send("A new page opened to control the robot.");
+            console.log("WebSocket connection opened");
         });
         return () =>
             socketRef.current?.removeEventListener("message", handleMessage);
