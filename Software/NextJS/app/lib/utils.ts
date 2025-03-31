@@ -1,5 +1,3 @@
-import { RefObject } from "react";
-import WebSocket from "ws";
 import { GamepadState } from "../ui/dashboard/gamepad-state-provider";
 
 function setupGamePad() {
@@ -40,7 +38,6 @@ export function gamepadLoop(
         if (start === undefined) {
             start = timestamp;
         }
-        const elapsed = timestamp - start;
 
         var gamepads = navigator.getGamepads();
         // console.log(gamepads);
@@ -51,13 +48,10 @@ export function gamepadLoop(
             requestAnimationFrame(step);
             return;
         }
-        // buttonL.classList.remove("black-bg");
-        // buttonR.classList.remove("black-bg");
         gamepad.buttons.forEach((button, index) => {
             if (button.pressed) {
                 console.log("Button " + index + " pressed");
                 if (index === 4) {
-                    // buttonL.classList.add("black-bg");
                     gamepad?.vibrationActuator.playEffect("dual-rumble", {
                         startDelay: 0,
                         duration: 100,
@@ -65,7 +59,6 @@ export function gamepadLoop(
                         strongMagnitude: 1.0,
                     });
                 } else if (index === 5) {
-                    // buttonR.classList.add("black-bg");
                     gamepad?.vibrationActuator.playEffect("dual-rumble", {
                         startDelay: 0,
                         duration: 100,

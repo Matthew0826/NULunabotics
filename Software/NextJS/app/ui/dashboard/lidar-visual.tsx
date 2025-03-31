@@ -33,9 +33,11 @@ export default function LidarVisual() {
         return 1000; //Math.max(...lidarData.map((point) => point.distance));
     };
 
-    const getAveragePreviousPoint = (index: number) => {
+    const getAveragePreviousPoint = (angle: number) => {
         const points = previousLidarData
-            .map((data) => data[index])
+            .map((data) =>
+                data.find((point) => Math.floor(point.angle) == angle)
+            ) // Does floating point rounding weirdness mess this up?
             .filter((point) => point !== undefined);
         const averageDistance =
             points.reduce((sum, point) => sum + point.distance, 0) /
@@ -80,15 +82,13 @@ export default function LidarVisual() {
                 getDivFromLidar(point, index, true)
             )}
             {previousLidarData.length > 0 ? (
-                previousLidarData[0]
-                    .filter((_, index) => index % 3 == 0)
-                    .map((_, index) =>
-                        getDivFromLidar(
-                            getAveragePreviousPoint(index),
-                            index,
-                            false
-                        )
+                Array.from({ length: 360 }).map((_, index) =>
+                    getDivFromLidar(
+                        getAveragePreviousPoint(index),
+                        index,
+                        false
                     )
+                )
             ) : (
                 <></>
             )}
