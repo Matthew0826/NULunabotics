@@ -12,6 +12,8 @@
 #include <math.h>
 #include <string.h>
 
+#define LIDAR_PWM_PIN D3
+
 // To keep track of how many bytes are in each rotation of the LiDAR
 #define POINT_PER_PACK 12
 #define BYTES_PER_PACK 44
@@ -19,12 +21,12 @@
 #define POINTS_PER_ROTATION (READINGS_FOR_ROT * POINT_PER_PACK)
 
 // To filter out low confidence points
-#define STRENGTH_THRESHOLD 100
+#define STRENGTH_THRESHOLD 80
 #define DISTANCE_MAX 15000 // for the competition, we aren't using points further than 15 meters away
 
 // Serial to communicate with the Raspberry Pi
 #define LIDAR_BAUD 230400
-#define USB_BAUD 9600
+#define USB_BAUD 19200
 #define RX_PIN D2
 #define TX_PIN D1
 SoftwareSerial raspberryPiSerial(RX_PIN, TX_PIN);
@@ -79,11 +81,11 @@ void processPacket(byte currentPacket[BYTES_PER_PACK]) {
   float step = (endAngle - startAngle) / (POINT_PER_PACK-1);
   
   // Read each point in the packet
-  for (int i = 0; i < POINT_PER_PACK; i++) {
-    if (i >= POINTS_PER_ROTATION) return;
+  for (int i = 0; i < POINT_PER_PACK; i += 3) {
+    if (pointIndex >= POINTS_PER_ROTATION) return;
     unsigned short distance = (unsigned short)(int(currentPacket[i+7]) * 256 + int(currentPacket[i+6]));
     byte strength = currentPacket[i+8];
-    if (strength < STRENGTH_THRESHOLD || distance > DISTANCE_MAX) continue;
+    // if (strength < STRENGTH_THRESHOLD || distance > DISTANCE_MAX) continue;
     point_t point;
     point.distance = distance;
     point.angle = (unsigned short)(startAngle + step*i);
@@ -111,6 +113,7 @@ void proccessFullRotation() {
   for (int i = 0; i < POINTS_PER_ROTATION; i++) {
     sendUnsignedShort(points[i].angle);
     sendUnsignedShort(points[i].distance);
+    sendUnsignedShort(points[i].weight);
   }
 }
 
@@ -135,9 +138,10 @@ void setup() {
 
 void loop() {
   // Check if data is available on the Serial
-  if (Serial.available()) {
+  int available = Serial.available();
+  if (available) {
     // Get the next byte that we read from the LiDAR
-    byte nextByte = (byte)Serial.read();
+    byte nextByte = (byte)Serial.readBytes();
 
     // Check if we detected the start of a packet
     if (nextByte == 0x2C && previousByte == 0x54 && !isReadingPacket) {
