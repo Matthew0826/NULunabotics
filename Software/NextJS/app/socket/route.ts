@@ -14,9 +14,13 @@ export function GET() {
 // It can talk to all the clients and receive messages from them
 export function SOCKET(
     client: WebSocket,
-    _request: IncomingMessage,
-    server: WebSocketServer
+    request: IncomingMessage,
+    server: WebSocketServer,
+    context: { params: Record<string, string | string[]> }
 ) {
+    console.log(request);
+    console.log(server);
+    console.log(context.params);
     client.on("close", () => {
         console.log("Client disconnected");
         sockets.delete(client);
@@ -45,5 +49,5 @@ export function SOCKET(
     //     );
     // }, 1000);
 
-    // return () => clearInterval(interval);
+    return () => {}; //clearInterval(interval);
 }

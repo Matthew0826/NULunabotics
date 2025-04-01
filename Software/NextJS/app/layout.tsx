@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "@/app/ui/global.css";
-import WebSocketProvider from "./socket/web-socket-context";
+import WebSocketProvider from "./lib/web-socket-context";
 import GamepadStateProvider from "./ui/dashboard/gamepad-state-provider";
 
 export const metadata: Metadata = {

@@ -1,5 +1,5 @@
 import { Point } from "@/app/lib/ros2";
-import { useWebSocketContext } from "@/app/socket/web-socket-context";
+import { useWebSocketContext } from "@/app/lib/web-socket-context";
 import Image from "next/image";
 import { JSX, useEffect } from "react";
 import { useState } from "react";

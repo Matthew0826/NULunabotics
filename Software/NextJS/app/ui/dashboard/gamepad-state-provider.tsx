@@ -1,7 +1,7 @@
 "use client";
 
 import { gamepadLoop, normalizedVectorToPixels } from "@/app/lib/utils";
-import { useWebSocketContext } from "@/app/socket/web-socket-context";
+import { useWebSocketContext } from "@/app/lib/web-socket-context";
 import { useContext, useState } from "react";
 import { createContext } from "react";
 import { useEffect, useRef } from "react";
