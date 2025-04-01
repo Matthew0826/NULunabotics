@@ -1,16 +1,7 @@
-// ESP32 Guide: https://RandomNerdTutorials.com/esp32-mpu-6050-accelerometer-gyroscope-arduino/
-// ESP8266 Guide: https://RandomNerdTutorials.com/esp8266-nodemcu-mpu-6050-accelerometer-gyroscope-arduino/
-// Arduino Guide: https://RandomNerdTutorials.com/arduino-mpu-6050-accelerometer-gyroscope/
-
 // Lidar wiki: https://wiki.youyeetoo.com/en/Lidar/LD20
 
-#include <Adafruit_MPU6050.h>
-#include <Adafruit_Sensor.h>
 #include <Wire.h>
 #include <SoftwareSerial.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
 
 #define LIDAR_PWM_PIN D3
 
@@ -19,10 +10,7 @@
 #define BYTES_PER_PACK 44
 #define READINGS_FOR_ROT 56
 #define POINTS_PER_ROTATION (READINGS_FOR_ROT * POINT_PER_PACK)
-
-// To filter out low confidence points
-#define STRENGTH_THRESHOLD 80
-#define DISTANCE_MAX 15000 // for the competition, we aren't using points further than 15 meters away
+#define BYTES_PER_ROTATION (POINTS_PER_ROTATION * BYTES_PER_PACK)
 
 // Serial to communicate with the Raspberry Pi
 #define LIDAR_BAUD 230400
@@ -53,13 +41,13 @@ typedef struct {
 // } feature_t;
 
 
-// Keep track of currently proccessing packet
+// Keep track of currently processing packet
 byte previousByte;
-byte packet[BYTES_PER_PACK];
+byte packets[BYTES_PER_ROTATION];
 int packetByteIndex = 0;
 bool isReadingPacket = false;
 
-// Keep track of a rull rotation's worth of points
+// Keep track of a full rotation's worth of points
 int pointIndex = 0;
 point_t points[POINTS_PER_ROTATION];
 
@@ -85,7 +73,6 @@ void processPacket(byte currentPacket[BYTES_PER_PACK]) {
     if (pointIndex >= POINTS_PER_ROTATION) return;
     unsigned short distance = (unsigned short)(int(currentPacket[i+7]) * 256 + int(currentPacket[i+6]));
     byte strength = currentPacket[i+8];
-    // if (strength < STRENGTH_THRESHOLD || distance > DISTANCE_MAX) continue;
     point_t point;
     point.distance = distance;
     point.angle = (unsigned short)(startAngle + step*i);
@@ -105,6 +92,8 @@ void sendUnsignedShort(unsigned short val) {
 
 
 void proccessFullRotation() {
+  pointIndex = 0;
+
   // Send the delimiter FFFFFFFF (4 bytes) using a loop
   for (int i = 0; i < 4; i++)
     raspberryPiSerial.write(0xFF);
@@ -138,33 +127,24 @@ void setup() {
 
 void loop() {
   // Check if data is available on the Serial
-  int available = Serial.available();
-  if (available) {
+  if (Serial.available()) {
     // Get the next byte that we read from the LiDAR
-    byte nextByte = (byte)Serial.readBytes();
+    byte nextByte = (byte)Serial.read();
 
     // Check if we detected the start of a packet
-    if (nextByte == 0x2C && previousByte == 0x54 && !isReadingPacket) {
+    if (nextByte == 0x2C && previousByte == 0x54) {
       packetByteIndex = 1;
-      packet[0] = previousByte;
-      isReadingPacket = true;
-    }
-
-    if (isReadingPacket) {
-      packet[packetByteIndex] = nextByte;
-      packetByteIndex++;
-      // Check if packet is finished
-      if (packetByteIndex >= BYTES_PER_PACK) {
-        isReadingPacket = false;
-        processPacket(packet);
-        
-        if (pointIndex >= POINTS_PER_ROTATION) {
-          pointIndex = 0;
-          proccessFullRotation();
-        }
+      packets[0] = previousByte;
+      packets[1] = nextByte;
+      // Wait for enough bytes to come in
+      while (Serial.available() < (BYTES_PER_ROTATION-2)) {}
+      // Proccess all packets
+      Serial.readBytes(packets+2, BYTES_PER_ROTATION-2); // -2 due to the header bytes
+      for (int i = 0; i < POINTS_PER_ROTATION; i++) {
+        processPacket(packets + i*BYTES_PER_PACK + 1); // +1 due to the header (only 1 is unexpected) (this is because I don't want to change the indexes in the old code)
       }
+      proccessFullRotation();
     }
     previousByte = nextByte;
   }
-
 }
