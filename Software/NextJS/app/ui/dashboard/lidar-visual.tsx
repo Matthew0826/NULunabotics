@@ -64,9 +64,16 @@ export default function LidarVisual() {
                     height: 4,
                     backgroundColor: doInterpolateColor
                         ? interpolateColor(
-                              [255, 0, 0],
                               [0, 255, 0],
-                              point.weight / 256
+                              [255, 0, 0],
+                              //   point.weight / 256
+                              // how far away from moving average
+                              Math.min(
+                                  1.0,
+                                  getAveragePreviousPoint(
+                                      Math.floor(point.angle)
+                                  ).distance / 200.0
+                              )
                           )
                         : "blue",
                     left: `${50 + 50 * (point.distance / getMaxDistance()) * Math.cos(point.angle)}%`,

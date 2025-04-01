@@ -44,10 +44,10 @@ function Timer({ startTime }: TimerProps) {
             </div>
             <div>
                 <button
-                    className={`p-2 border border-black-800 bg-${isRunning ? "rose" : "emerald"}-400 rounded-l-lg`}
+                    className={`p-2 border border-black-800 ${isRunning ? "bg-rose-300" : "bg-emerald-400"} rounded-l-lg`}
                     onClick={isRunning ? stopTimer : startTimer}
                 >
-                    {isRunning ? "Stop!" : "Start"}
+                    {isRunning ? "Pause" : "Start"}
                 </button>
                 <button
                     className="p-2 border border-black-800 bg-slate-500 rounded-r-lg"
