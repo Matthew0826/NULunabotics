@@ -10,7 +10,7 @@ import {
 } from "react";
 import Graph from "./graph";
 import { Dataset } from "@/app/lib/utils";
-import { useWebSocketContext } from "@/app/socket/web-socket-context";
+import { useWebSocketContext } from "@/app/lib/web-socket-context";
 
 export type GraphInfo = {
     name: string;

@@ -1,6 +1,7 @@
 import { IncomingMessage } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
 import { lidarPoints, publishToROS2 } from "../lib/ros2";
+import { sockets } from "../lib/sockets";
 
 export function GET() {
     const headers = new Headers();
@@ -13,9 +14,17 @@ export function GET() {
 // It can talk to all the clients and receive messages from them
 export function SOCKET(
     client: WebSocket,
-    _request: IncomingMessage,
-    server: WebSocketServer
+    request: IncomingMessage,
+    server: WebSocketServer,
+    context: { params: Record<string, string | string[]> }
 ) {
+    console.log(request);
+    console.log(server);
+    console.log(context.params);
+    client.on("close", () => {
+        console.log("Client disconnected");
+        sockets.delete(client);
+    });
     client.on("message", (message: WebSocket.RawData) => {
         const messageString = message.toString();
         console.log("received: ", messageString);
@@ -26,25 +35,19 @@ export function SOCKET(
         publishToROS2(messageString);
     });
 
-    let counter = 0;
+    console.log("Client connected");
+    sockets.add(client);
+    // const interval = setInterval(() => {
+    //     client.send(
+    //         JSON.stringify([
+    //             {
+    //                 graph: "Power",
+    //                 dataSet: "Test Data",
+    //                 newData: [Math.floor(Math.random() * 30)],
+    //             }
+    //         ])
+    //     );
+    // }, 1000);
 
-    const interval = setInterval(() => {
-        client.send(
-            JSON.stringify([
-                {
-                    graph: "Power",
-                    dataSet: "Test Data",
-                    newData: [Math.floor(Math.random() * 30)],
-                },
-                {
-                    graph: "Lidar",
-                    dataSet: "Points",
-                    newData: lidarPoints,
-                },
-            ])
-        );
-        counter++;
-    }, 250);
-
-    return () => clearInterval(interval);
+    return () => {}; //clearInterval(interval);
 }

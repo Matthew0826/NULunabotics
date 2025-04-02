@@ -17,11 +17,14 @@ export default function DashboardPanels() {
 
     return (
         <div className="flex flex-row gap-4 p-6 h-full w-full">
-            <div className="flex flex-col gap-4 w-full flex-1">
+            <div className="flex flex-col gap-4 w-full flex-1 overflow-y-scroll overflow-x-hidden scrollbar-hidden">
+                {/* <div className="xl:hidden">{mapPanel}</div> */}
                 <div className="xl:hidden">{mapPanel}</div>
-
                 <BatteryIndicator />
 
+                <Panel title="LiDAR">
+                    <LidarVisual />
+                </Panel>
                 <Panel title="Timer">
                     <Timer startTime={0} />
                 </Panel>
@@ -29,11 +32,8 @@ export default function DashboardPanels() {
                     {/* <BatteryIndicator /> */}
                     <WebSocketGraph graphInfo={tempGraphPower} />
                 </Panel>
-                <Panel title="LiDAR">
-                    <LidarVisual />
-                </Panel>
             </div>
-            <div className="w-full hidden xl:block flex-2">{mapPanel}</div>
+            <div className="w-[66vw] hidden xl:block flex-2">{mapPanel}</div>
         </div>
     );
 }

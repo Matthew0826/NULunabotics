@@ -16,3 +16,12 @@ input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
+
+.scrollbar-hidden::-webkit-scrollbar {
+    display: none; /* Hide the scrollbar */
+}
+
+.scrollbar-hidden {
+    -ms-overflow-style: none; /* For Internet Explorer and Edge */
+    scrollbar-width: none; /* For Firefox */
+}

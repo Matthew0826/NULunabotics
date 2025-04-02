@@ -1,7 +1,7 @@
 "use client";
 
 import { gamepadLoop, normalizedVectorToPixels } from "@/app/lib/utils";
-import { useWebSocketContext } from "@/app/socket/web-socket-context";
+import { useWebSocketContext } from "@/app/lib/web-socket-context";
 import { useContext, useState } from "react";
 import { createContext } from "react";
 import { useEffect, useRef } from "react";
@@ -72,15 +72,19 @@ export default function GamepadStateProvider({
             const newState = { ...defaultsNormalized };
             if (event.key === "ArrowUp" || event.key === "w") {
                 newState.y1 = -1;
+                newState.y2 = -1;
             }
             if (event.key === "ArrowDown" || event.key === "s") {
                 newState.y1 = 1;
+                newState.y2 = 1;
             }
-            if (event.key === "ArrowLeft" || event.key === "a") {
-                newState.x1 = -1;
+            if (event.key === "d") {
+                newState.y1 = -1;
+                newState.y2 = 1;
             }
-            if (event.key === "ArrowRight" || event.key === "d") {
-                newState.x1 = 1;
+            if (event.key === "a") {
+                newState.y1 = 1;
+                newState.y2 = -1;
             }
             if (event.key === "z" || event.key === "q") {
                 newState.buttonL = !newState.buttonL;

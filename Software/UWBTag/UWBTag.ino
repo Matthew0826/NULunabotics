@@ -1,114 +1,123 @@
+//
+// THIS IS THE BEACON CODE THAT GOES ON THE BOARD ON THE ROBOT
+//
+
+// Protocol for communication with Raspberry Pi:
+// Header: 0xFF
+// If next byte is 0xFF, that means its sending a distance to a beacon
+// Anchor index: 1 byte (0, 1, or 2)
+// Distance: 2 bytes (in centimeters)
+// 
+// If the next bytes after the header was 0xFE, its sending an accelerometer value
+// Right now it sends:
+// Angle on Z axis: 4 bytes (float from 0.0 to 360.0)
+
 #include <SoftwareSerial.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <Wire.h>
 
-// Create a SoftwareSerial interface on pins RX:13, TX:15
-SoftwareSerial uwbSerial(13, 15); // (RX, TX)
+// UWB stands for Ultra-Wideband and it's how the beacons ("anchors") find the distance to this "tag" board that's sitting on the robot
+// Here's a link for reference on thier "AT" protocol: https://reyax.com//upload/products_download/download_file/AT_Command_RYUW122.pdf
+SoftwareSerial uwbSerial(D6, D5);  // (RX, TX) NOTE: THEY ARE FLIPPED FROM THE ONES IN THE CIRCUIT!!
 
-//–– Configuration ––//
+// Tag beacon configuration
 const String TAG_ADDRESS = "TAG00010";   // This tag's address (8 bytes)
 const String NETWORK_ID = "NEULUNAB";
+const String UWB_BAUD = "115200";
+const String PASSWORD = "FABC0002EEDCAA90FABC0002EEDCAA90";
+const String MODE = "0";  // TAG mode
 
-// Structure to hold recent measurements from an anchor.
-struct AnchorData {
-  String id;            // e.g. "A1"
-  int anchorX;          // fixed X coordinate (for reference)
-  int anchorY;          // fixed Y coordinate (for reference)
-  int measurements[20]; // last 20 distance measurements in cm
-  int index;            // next write position (circular buffer)
-};
+// For accelerometer
+Adafruit_MPU6050 mpu;
+float angleZ = 0.0;
 
-// For simplicity, assume three anchors (A1, A2, A3)
-AnchorData anchors[3];
+// Variables for dealing with accelerometer error (check calculate_IMU_error function)
+float AccX, AccY, AccZ;
+float GyroX, GyroY, GyroZ;
+float AccErrorX, AccErrorY, GyroErrorX, GyroErrorY, GyroErrorZ;
+int c = 0;
 
 // Sends an AT command to the module and prints it to Serial
 void sendCommand(const String &cmd) {
-  uwbSerial.write(cmd);
-  Serial.print("Sent command: ");
-  Serial.println(cmd);
+  uwbSerial.print(cmd + "\r\n");
+  // Serial.print("Sent command: ");
+  // Serial.println(cmd);
   delay(500);
 }
 
 void setup() {
   Serial.begin(9600);
-  uwbSerial.begin(9600);
+  while (!Serial)
+    delay(10);
+  // uwbSerial MUST run on 115200 baud rate, or else it fails to send anything
+  uwbSerial.begin(115200);
+  while (!uwbSerial)
+    delay(10);
   delay(1000);
 
   // Configure UWB module for TAG mode
-  sendCommand("AT+MODE=0"); // TAG mode
+  // If you're having issues, try sending "AT+RESET" first
+  sendCommand("AT+IPR=" + UWB_BAUD);
+  sendCommand("AT+MODE=" + MODE);
   sendCommand("AT+NETWORKID=" + NETWORK_ID);
   sendCommand("AT+ADDRESS=" + TAG_ADDRESS);
-  sendCommand("AT+CPIN=FABC0002EEDCAA90FABC0002EEDCAA90\r\n");
+  sendCommand("AT+CPIN=" + PASSWORD);
 
-  // Initialize anchor data for three anchors.
-  anchors[0].id = "A1";
-  anchors[0].anchorX = 10;   // must match the anchor's payload settings
-  anchors[0].anchorY = 20;
-  anchors[0].index = 0;
+  // Serial.println("Tag module configured.");
 
-  anchors[1].id = "A2";
-  anchors[1].anchorX = 50;
-  anchors[1].anchorY = 20;
-  anchors[1].index = 0;
-
-  anchors[2].id = "A3";
-  anchors[2].anchorX = 30;
-  anchors[2].anchorY = 60;
-  anchors[2].index = 0;
-
-  Serial.println("Tag module configured.");
-}
-
-// Save a new measurement into the circular buffer for the given anchor.
-void storeMeasurement(const String &anchorID, int distance) {
-  for (int i = 0; i < 3; i++) {
-    if (anchors[i].id == anchorID) {
-      anchors[i].measurements[anchors[i].index] = distance;
-      anchors[i].index = (anchors[i].index + 1) % 20;
-      Serial.print("Stored measurement for ");
-      Serial.print(anchorID);
-      Serial.print(": ");
-      Serial.println(distance);
-      return;
+  
+  // Find accelerometer. Did you forget to plug it in to the header pins?
+  if (!mpu.begin()) {
+    Serial.println("Failed to find MPU6050 chip");
+    while (1) {
+      delay(10);
     }
   }
-  Serial.println("Unknown Anchor ID: " + anchorID);
+
+  // Set up accelerometer
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
+  calculate_IMU_error();
+  delay(20);
+
 }
 
 // Parse the custom payload from an anchor.
 // Expected format: "A1XXYYDDD"
-// - First 2 chars: Anchor ID (e.g. "A1")
-// - Next 2 chars: X coordinate (ignored here, as tag already knows it)
-// - Next 2 chars: Y coordinate
+// - First char: Anchor ID (e.g. "1")
 // - Last 3 chars: Distance (in cm)
 void parsePayload(const String &payload) {
-  if (payload.length() < 9) {
-    Serial.println("Invalid payload: " + payload);
+  if (payload.length() < 4) {
+    // Serial.println("Invalid payload: " + payload);
     return;
   }
-  String anchorID = payload.substring(0, 2);
-  String xStr = payload.substring(2, 4);
-  String yStr = payload.substring(4, 6);
-  String dStr = payload.substring(6, 9);
 
-  int distance = dStr.toInt();
-  Serial.print("Received from anchor ");
-  Serial.print(anchorID);
-  Serial.print(" (Location: ");
-  Serial.print(xStr);
-  Serial.print(",");
-  Serial.print(yStr);
-  Serial.print(") Distance: ");
-  Serial.print(distance);
-  Serial.println(" cm");
+  int anchorID = payload.substring(0, 1).toInt();
+  int distance = payload.substring(2, 5).toInt();
 
-  storeMeasurement(anchorID, distance);
+  // Sanitize data a little bit
+  if (distance <= 0 || distance > 65533 || anchorID < 0 || anchorID > 3) return;
+
+  // Write a header for beacons
+  Serial.write(0xFF);
+  Serial.write(0xFF);
+  
+  // Write data
+  Serial.write((byte)(anchorID & 0xFF)); // send only the first byte of anchorID
+  uint16_t distanceShort = distance & 0xFFFF;
+  Serial.write((byte*)&distanceShort, 2); // send first two bytes of distance
 }
+
 
 void loop() {
   // Listen for incoming data from the UWB module.
-  if (uwbSerial.available()) {
+  int available = uwbSerial.available();
+  if (available) {
     String line = uwbSerial.readStringUntil('\n');
     line.trim();
-    Serial.println("Raw received: " + line);
+    // Serial.println("Raw received: " + line);
     // Expected incoming format: "+TAG_RCV=<payload_length>,<payload>"
     int commaIndex = line.indexOf(",");
     if (commaIndex != -1 && commaIndex < line.length()-1) {
@@ -116,4 +125,69 @@ void loop() {
       parsePayload(payload);
     }
   }
+  
+  // Get accelerometer data
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
+
+  // Calculate angle from accelerometer data
+  angleZ += (g.gyro.z + GyroErrorZ) * 1.403;
+  if (angleZ < 0.0)        angleZ = angleZ + 360.0;
+  else if (angleZ > 360.0) angleZ = angleZ - 360.0;
+  
+  if (c % 30 == 0) {
+    // Write a header for rotation
+    Serial.write(0xFF);
+    Serial.write(0xFE);
+    
+    // Write data
+    Serial.write((byte*)&angleZ, 4);
+  }
+  c++; // no way! that's the name of the programming language!
+  delay(20);
 }
+
+
+// Adapted from: https://howtomechatronics.com/tutorials/arduino/arduino-and-mpu6050-accelerometer-and-gyroscope-tutorial/
+void calculate_IMU_error() {
+  // We can call this funtion in the setup section to calculate the accelerometer and gyro data error. From here we will get the error values used in the above equations printed on the Serial Monitor.
+  // Note that we should place the IMU flat in order to get the proper values, so that we then can the correct values
+  // Read accelerometer values 200 times
+  while (c < 200) {
+    sensors_event_t a, g, temp;
+    mpu.getEvent(&a, &g, &temp);
+    AccX = a.acceleration.x;
+    AccY = a.acceleration.y;
+    AccZ = a.acceleration.z;
+    // Sum all readings
+    AccErrorX = AccErrorX + ((atan((AccY) / sqrt(pow((AccX), 2) + pow((AccZ), 2))) * 180 / PI));
+    AccErrorY = AccErrorY + ((atan(-1 * (AccX) / sqrt(pow((AccY), 2) + pow((AccZ), 2))) * 180 / PI));
+
+    GyroX = g.gyro.x;
+    GyroY = g.gyro.y;
+    GyroZ = g.gyro.z;
+    // Sum all readings
+    GyroErrorX = GyroErrorX + (GyroX / 131.0);
+    GyroErrorY = GyroErrorY + (GyroY / 131.0);
+    GyroErrorZ = GyroErrorZ + (GyroZ / 131.0);
+    c++;
+  }
+  //Divide the sum by 200 to get the error value
+  AccErrorX = AccErrorX / 200;
+  AccErrorY = AccErrorY / 200;
+  //Divide the sum by 200 to get the error value
+  GyroErrorX = GyroErrorX / 200;
+  GyroErrorY = GyroErrorY / 200;
+  GyroErrorZ = GyroErrorZ / 200;
+  // Print the error values on the Serial Monitor
+  // Serial.print("AccErrorX: ");
+  // Serial.println(AccErrorX);
+  // Serial.print("AccErrorY: ");
+  // Serial.println(AccErrorY);
+  // Serial.print("GyroErrorX: ");
+  // Serial.println(GyroErrorX);
+  // Serial.print("GyroErrorY: ");
+  // Serial.println(GyroErrorY);
+  // Serial.print("GyroErrorZ: ");
+  // Serial.println(GyroErrorZ);
+} 
