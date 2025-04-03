@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import least_squares
+import time
 
 MARGIN_OF_ERROR = 0.1
 STANDARD_DEVIATION = MARGIN_OF_ERROR / 1.96
@@ -19,31 +20,26 @@ class Point:
     def get_array(self):
         return np.array([self.x, self.y])
 
-a = Point(0, 1)
-b = Point(0, 0)
-c = Point(1, 0)
 
-l = Point(5, 4)
-
-# Distances to the new point
-da = a.get_distance_with_error(l)
-db = b.get_distance_with_error(l)
-dc = c.get_distance_with_error(l)
+a = Point(100, 0)
+b = Point(100, 100)
+c = Point(0, 100)
 
 # Function to minimize
-def trilateration(x):
+def trilateration(x, da, db, dc):
     return [
         np.linalg.norm(x - a.get_array()) - da,
         np.linalg.norm(x - b.get_array()) - db,
         np.linalg.norm(x - c.get_array()) - dc
     ]
 
-# Initial guess for the coordinates of the new point
-initial_guess = Point(3, 3)
+def find_robot_location(da, db, dc):
+    # Initial guess for the coordinates of the new point
+    initial_guess = Point((a.x + b.x + c.x) / 3, (a.y + b.y + c.y) / 3)
 
-# Solve the system of equations
-result = least_squares(trilateration, initial_guess.get_array())
+    # Solve the system of equations
+    result = least_squares(trilateration, initial_guess.get_array(), args=(da, db, dc))
 
-# Resulting coordinates of the new point
-new_point = result.x
-print(f"Coordinates of the new point: {new_point}")
+    # Resulting coordinates of the new point
+    new_point = result.x
+    return new_point

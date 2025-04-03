@@ -2,15 +2,24 @@
 // THIS IS THE BEACON CODE THAT GOES ON THE BOARD ON THE ROBOT
 //
 
+#define ESP_BOARD_ID 2
+
 // Protocol for communication with Raspberry Pi:
 // Header: 0xFF
 // If next byte is 0xFF, that means its sending a distance to a beacon
 // Anchor index: 1 byte (0, 1, or 2)
 // Distance: 2 bytes (in centimeters)
 // 
-// If the next bytes after the header was 0xFE, its sending an accelerometer value
+// If the next bytes after the header was 0xFD, its sending an accelerometer value
 // Right now it sends:
 // Angle on Z axis: 4 bytes (float from 0.0 to 360.0)
+
+// Identifier protocol:
+// Header: 0xFFFE
+
+// Response:
+// Header: 0xFFFE
+// Board ID: 1 byte
 
 #include <SoftwareSerial.h>
 #include <Adafruit_MPU6050.h>
@@ -110,11 +119,11 @@ void parsePayload(const String &payload) {
   Serial.write((byte*)&distanceShort, 2); // send first two bytes of distance
 }
 
+byte previousSerialByte = 0x00;
 
 void loop() {
   // Listen for incoming data from the UWB module.
-  int available = uwbSerial.available();
-  if (available) {
+  if (uwbSerial.available()) {
     String line = uwbSerial.readStringUntil('\n');
     line.trim();
     // Serial.println("Raw received: " + line);
@@ -124,6 +133,16 @@ void loop() {
       String payload = line.substring(commaIndex+1);
       parsePayload(payload);
     }
+  }
+  if (Serial.available()) {
+    // Identification protocol
+    byte nextSerialByte = Serial.read();
+    if (nextSerialByte == 0xFF && previousSerialByte == 0xFE) {
+      Serial.write(0xFF);
+      Serial.write(0xFE);
+      Serial.write(ESP_BOARD_ID);
+    }
+    previousSerialByte = nextSerialByte;
   }
   
   // Get accelerometer data

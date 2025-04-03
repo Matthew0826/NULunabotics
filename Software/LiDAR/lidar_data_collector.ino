@@ -3,6 +3,14 @@
 #include <Wire.h>
 #include <SoftwareSerial.h>
 
+// Identifier protocol:
+// Header: 0xFFFE
+
+// Response:
+// Header: 0xFFFE
+// Board ID: 1 byte
+#define ESP_BOARD_ID 3
+
 #define LIDAR_PWM_PIN D3
 
 // To keep track of how many bytes are in each rotation of the LiDAR
@@ -42,7 +50,8 @@ typedef struct {
 
 
 // Keep track of currently processing packet
-byte previousByte;
+byte previousByte = 0x00;
+byte previousPiByte = 0x00;
 byte packets[BYTES_PER_ROTATION];
 int packetByteIndex = 0;
 bool isReadingPacket = false;
@@ -146,5 +155,15 @@ void loop() {
       proccessFullRotation();
     }
     previousByte = nextByte;
+  }
+  if (raspberryPiSerial.available()) {
+    // Identification protocol
+    byte nextSerialByte = raspberryPiSerial.read();
+    if (nextSerialByte == 0xFF && previousPiByte == 0xFE) {
+      raspberryPiSerial.write(0xFF);
+      raspberryPiSerial.write(0xFE);
+      raspberryPiSerial.write(ESP_BOARD_ID);
+    }
+    previousPiByte = nextSerialByte;
   }
 }

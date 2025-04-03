@@ -1,5 +1,14 @@
 #include <Servo.h>
 
+// Identifier protocol:
+// Header: 0xFFFE
+
+// Response:
+// Header: 0xFFFE
+// Board ID: 1 byte
+
+#define ESP_BOARD_ID 1
+
 #define MOTOR_COUNT 4
 // For communication with ROS on Raspberry Pi
 #define PACKET_SIZE 4
@@ -17,6 +26,7 @@ Servo motors[MOTOR_COUNT];
 // Header: 0xFFFF
 // Motor to move (1 byte)
 // Amount to move (1 byte): 0 is backwards, 255 is forwards, and 127 is neutral
+
 byte serialInput[PACKET_SIZE]; // Buffer for serial input
 int serialIndex = 0;
 
@@ -44,6 +54,11 @@ void loop() {
         if (motor >= 0 && motor < MOTOR_COUNT) {
           motors[motor].writeMicroseconds(map(speed, 0, 255, REVERSE_PULSE_WIDTH, FORWARD_PULSE_WIDTH));
         }
+      } else if (serialInput[0] == 0xFF && serialInput[1] == 0xFE) { // identification protocol
+        // Send the board ID
+        Serial.write(0xFF);
+        Serial.write(0xFE);
+        Serial.write(ESP_BOARD_ID);
       }
 
       serialIndex = 0;
