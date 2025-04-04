@@ -4,7 +4,7 @@ on:
     # Runs on pushes targeting the default branch
     push:
         branches: ["main"]
-        paths: ["Software/NextJS/**"]
+        paths: ["Software/ROS2/website/**"]
 
     # Allows you to run this workflow manually from the Actions tab
     workflow_dispatch:
@@ -14,7 +14,7 @@ permissions:
 
 defaults:
     run:
-        working-directory: Software/NextJS/
+        working-directory: Software/ROS2/website
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
@@ -39,7 +39,7 @@ jobs:
             # - name: SSH to Raspberry Pi
             #   run: |
             #       tar cjvf - \
-            #         -C "$GITHUB_WORKSPACE/Software/NextJS/" "standalone" | \
+            #         -C "$GITHUB_WORKSPACE/Software/ROS2/website" "standalone" | \
             #       sshpass -p "admin" ssh -o StrictHostKeyChecking=no -o TCPKeepAlive=yes -o ConnectTimeout=30 -o ServerAliveInterval=60 selene@100.114.133.21 "
             #         STANDALONE=/var/www/lunabotics/standalone && \
             #         rm -rf \$STANDALONE && \

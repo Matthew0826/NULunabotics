@@ -41,7 +41,7 @@ const String MODE = "0";  // TAG mode
 Adafruit_MPU6050 mpu;
 float angleZ = 0.0;
 
-// Variables for dealing with accelerometer error (check calculate_IMU_error function)
+// Variables for dealing with accelerometer error (check calculateIMUerror function)
 float AccX, AccY, AccZ;
 float GyroX, GyroY, GyroZ;
 float AccErrorX, AccErrorY, GyroErrorX, GyroErrorY, GyroErrorZ;
@@ -88,7 +88,7 @@ void setup() {
   mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
   mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
-  calculate_IMU_error();
+  calculateIMUerror();
   delay(20);
 
 }
@@ -168,8 +168,8 @@ void loop() {
 
 
 // Adapted from: https://howtomechatronics.com/tutorials/arduino/arduino-and-mpu6050-accelerometer-and-gyroscope-tutorial/
-void calculate_IMU_error() {
-  // We can call this funtion in the setup section to calculate the accelerometer and gyro data error. From here we will get the error values used in the above equations printed on the Serial Monitor.
+void calculateIMUerror() {
+  // We can call this function in the setup section to calculate the accelerometer and gyro data error. From here we will get the error values used in the above equations printed on the Serial Monitor.
   // Note that we should place the IMU flat in order to get the proper values, so that we then can the correct values
   // Read accelerometer values 200 times
   while (c < 200) {

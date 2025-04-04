@@ -17,7 +17,7 @@ class SpacialDataPublisher(Node):
     def __init__(self, port: str):
         super().__init__('positioning')
         self.position_publisher = self.create_publisher(Float32MultiArray, '/sensors/position', 10)
-        self.angle_publisher = self.create_publisher(Float32, '/sensors/angle', 10)
+        self.angle_publisher = self.create_publisher(Float32, '/sensors/orientation', 10)
         ser = serial.Serial(port, BAUD_RATE, timeout=1)
         # from esp c++ code:
         # // Protocol for communication with Raspberry Pi:
