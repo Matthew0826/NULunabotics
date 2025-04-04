@@ -1,3 +1,4 @@
+import * as rclnodejs from 'rclnodejs';
 import { sendToClient } from "./sockets";
 
 export const lidarPoints: Point[] = [];
@@ -12,15 +13,13 @@ export type Point = {
 
 // This is used to make sure the compiler doesn't add in ros2 on windows
 export async function importEsmModule<T>(name: string): Promise<T> {
-    const module = eval(`(async () => {return await import("${name}")})()`);
+    const module = eval(`(async () => {return import * as rclnodejs from 'rclnodejs';})()`);
     return module as T;
 }
 
 const DEBUG_MODE = process.platform === "win32";
 
 if (!DEBUG_MODE) {
-    const rclnodejs = await importEsmModule<any>("rclnodejs");
-
     publishToROS2 = (message: string) => {
         if (process.platform === "win32") return;
         const stringMsgObject = rclnodejs.createMessageObject(ROS2_STRING_TYPE);

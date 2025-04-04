@@ -1,0 +1,5 @@
+int64 board_id
+int64 pid
+int64 baud_rate
+---
+String port

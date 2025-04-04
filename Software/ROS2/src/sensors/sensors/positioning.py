@@ -4,7 +4,9 @@ from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray, Float32
 
 from sensors.triangulation import find_robot_location
-from serial_port_client import find_port
+from sensors.serial_port_client import find_port
+
+from lunabotics_interfaces.msg import Point
 
 import serial
 import os
@@ -16,7 +18,7 @@ class SpacialDataPublisher(Node):
 
     def __init__(self, port: str):
         super().__init__('positioning')
-        self.position_publisher = self.create_publisher(Float32MultiArray, '/sensors/position', 10)
+        self.position_publisher = self.create_publisher(Point, '/sensors/position', 10)
         self.angle_publisher = self.create_publisher(Float32, '/sensors/orientation', 10)
         ser = serial.Serial(port, BAUD_RATE, timeout=1)
         # from esp c++ code:
@@ -44,9 +46,10 @@ class SpacialDataPublisher(Node):
                 distances[int(anchor_index)] = distance
                 # if all distances are received, calculate the position
                 if -1 not in distances:
-                    msg = Float32MultiArray()
+                    msg = Point()
                     position = find_robot_location(distances[0], distances[1], distances[2])
-                    msg.data = [position[0], position[1]]
+                    msg.x = position[0]
+                    msg.y = position[1]
                     # distances = [-1, -1, -1]
                     self.position_publisher.publish(msg)
             elif header == b'\xFD':
