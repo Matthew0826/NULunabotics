@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 
-from std_msgs.msg import Float32MultiArray, Float32
+from std_msgs.msg import Float32
 
 from sensors.triangulation import find_robot_location
 from sensors.serial_port_client import find_port
