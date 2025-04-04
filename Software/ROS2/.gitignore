@@ -1,11 +1,3 @@
 /build/**
-!/build/.built_by
-!/build/COLCON_IGNORE
-
 /install/**
-!/install/setup.bash
-!/install/local_setup.bash
-!/install/COLCON_IGNORE
-!/install/.colcon_install_layout
-
 /log/**
