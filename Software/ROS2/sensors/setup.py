@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
 		    'lidar = sensors.lidar:main',
             'listener = sensors.lidar_subcriber:main',
+            'positioning = sensors.positioning:main',
         ],
     },
 )

@@ -3,7 +3,7 @@ from rclpy.node import Node
 
 from std_msgs.msg import Float32MultiArray, Float32
 
-from triangulation import find_robot_location
+from sensors.triangulation import find_robot_location
 from serial_port_client import find_port
 
 import serial
