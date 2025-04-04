@@ -18,9 +18,6 @@ export function SOCKET(
     server: WebSocketServer,
     context: { params: Record<string, string | string[]> }
 ) {
-    console.log(request);
-    console.log(server);
-    console.log(context.params);
     client.on("close", () => {
         console.log("Client disconnected");
         sockets.delete(client);
