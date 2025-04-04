@@ -24,7 +24,6 @@ setup(
             'outtake = physical_robot.outtake:main',
             'drive = physical_robot.drive:main',
             'controller = physical_robot.controller:main',
-            'joystick_tank_drive = physical_robot.joystick_tank_drive:main'
         ],
     },
 )

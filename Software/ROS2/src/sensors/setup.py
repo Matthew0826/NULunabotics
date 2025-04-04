@@ -19,11 +19,11 @@ setup(
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
-        'console_scripts': 
+        'console_scripts': [
             'lidar = sensors.lidar:main',
-            'listener = sensors.lidar_subcriber:main',
+            'lidar_subscriber = sensors.lidar_subscriber:main',
             'positioning = sensors.positioning:main',
-            'serial_server = sensors.serial_port_server:main'
+            'serial_port_server = sensors.serial_port_server:main'
         ],
     },
 )

@@ -1,53 +1,70 @@
 import rclpy
 from rclpy.node import Node
 
-from std_msgs.msg import String
-import json
+from lunabotics_interfaces.msg import Motors
+from sensors.serial_port_client import find_port
+
 import serial
-import datetime
+import os
 
+ESP_BOARD_ID = 1
+BAUD_RATE = 9600
 
-class MinimalSubscriber(Node):
-
-    def __init__(self):
-        super().__init__('minimal_subscriber')
+class MotorDriver(Node):
+    def __init__(self, port: str):
+        super().__init__('motor_driver')
         self.subscription = self.create_subscription(
-            String,
-            'website/controller',
+            Motors,
+            'physical_robot/motors',
             self.listener_callback,
             10
         )
         self.get_logger().info("Waiting for website's controller.")
-        self.previous_data = [0, 0]
         
-        self.serial_out = serial.Serial('/dev/ttyUSB2', 9600, timeout=1)
+        self.serial_out = serial.Serial(port, BAUD_RATE, timeout=1)
+        self.prev_left = 0
+        self.prev_right = 0
     
+    def send_serial_packet(self, motor: int, value: float):
+        # send header
+        try:
+            self.serial_out.write(b'\xFF\xFF')
+            # send data
+            self.serial_out.write(motor.to_bytes(1))
+            self.serial_out.write(int((((value/4.0)+1.0) * 127.5)).to_bytes(1))
+        except Exception as e:
+            pass
 
     def listener_callback(self, msg):
-        decoded = json.loads(str(msg.data))
-        delta = [decoded['x1'], decoded['y1']]
-        if ((self.previous_data[0] - delta[0])**2 + (self.previous_data[1] - delta[1])**2) < 0.005625:
-            self.previous_data = delta
-            return
-        self.previous_data = delta
-        delta_bytes = [min(int((x + 1) * 256), 255).to_bytes(1, 'big') for x in delta]
-        time_amount = datetime.datetime.now() - datetime.datetime.fromtimestamp(decoded['timestamp']/1000)
-        self.get_logger().info("I heard: " + str(delta) + ". It took " + str(time_amount.microseconds/1000) + "ms.")
-        self.serial_out.write(delta_bytes)
-        self.serial_out.write(b"\r\n")
+        left = msg.left_wheels
+        right = msg.right_wheels
+        if abs(left) < 0.05:
+            left = 0
+        if abs(right) < 0.05:
+            right = 0
+        is_delta_left_small = abs(self.prev_left - left) < 0.05
+        is_delta_right_small = abs(self.prev_right - right) < 0.05
+        if not is_delta_left_small:
+            self.send_serial_packet(0, -left)
+            self.send_serial_packet(1, -left)
+        if not is_delta_right_small:
+            self.send_serial_packet(2, right)
+            self.send_serial_packet(3, right)
+        self.prev_left = left
+        self.prev_right = right
 
 
 def main(args=None):
     rclpy.init(args=args)
 
-    minimal_subscriber = MinimalSubscriber()
+    motor_driver = MotorDriver(find_port(ESP_BOARD_ID, os.getpid(), BAUD_RATE))
 
-    rclpy.spin(minimal_subscriber)
+    rclpy.spin(motor_driver)
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
     # when the garbage collector destroys the node object)
-    minimal_subscriber.destroy_node()
+    motor_driver.destroy_node()
     rclpy.shutdown()
 
 
