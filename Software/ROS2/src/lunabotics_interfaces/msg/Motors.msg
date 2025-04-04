@@ -1,4 +1,6 @@
-float32 left_wheels
-float32 right_wheels
+float32 front_left_wheel
+float32 front_right_wheel
+float32 back_left_wheel
+float32 back_right_wheel
 float32 conveyor
 float32 outtake
