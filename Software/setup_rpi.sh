@@ -16,17 +16,14 @@ sudo apt update
 sudo apt upgrade
 sudo apt install ros-jazzy-desktop
 echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
-cd ~/
-git clone https://github.com/Matthew0826/NULunabotics.git
-cd NULunabotics/Software/ROS2/src/website
 # node
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
 \. "$HOME/.nvm/nvm.sh"
 nvm install 22
+cd ~/NULunabotics/Software/ROS2/src/website
 npm install
 npm run deploy
 # build
 cd ~/NULunabotics/Software/ROS2/
 colcon build
 cp -r src/website/.next install/website/share/website/.next
-

@@ -64,22 +64,35 @@ class SerialPortService(Node):
         # ask each port which board_id it is
         for port in open_ports:
             try:
-                ser = serial.Serial(port, baudrate=baud_rate, timeout=1, write_timeout=1)
+                print(f"Trying port {port} with pid {pid} and baud rate {baud_rate}")
+                ser = serial.Serial(port=port, baudrate=baud_rate, timeout=2)
+                print("Opened port")
                 # write header of 0xFFFE
                 ser.write(b'\xFF\xFE')
-                ser.write(board_id.encode())
+                print("wrote header")
                 # read board_id response
-                ser.read_until(b'\xFF\xFE')
+                buffer = []
+                while len(buffer) < 3 or buffer[0] != 0xFF or buffer[1] != 0xFE:
+                    new_byte = ser.read(1)
+                    print(f"new byte: {new_byte}")
+                    if new_byte != b'':
+                        buffer.append(new_byte[0])
+                        print(f"buffer: {buffer}")
+                    buffer = buffer[-3:] # keep only the last 3 bytes
+                    
+                print("read response")
                 port_board_id_byte = ser.read(1)
                 port_board_id = int.from_bytes(port_board_id_byte, byteorder='big')
-                print(f"Port: {port}, Board ID: {port_board_id}")
+                print(f"Port: {port}, Board ID: {port_board_id}, Expected: {board_id}")
                 ser.close()
                 if port_board_id == board_id:
+                    print("Found matching board ID")
                     # port found successfully, sending response
                     self.ports[port] = pid
                     response.port = port
                     return response
-            except serial.SerialException:
+            except serial.SerialException as e:
+                print(f"Serial exception: {e}")
                 continue
         # nothing found, return -1
         response.port = "-1"
