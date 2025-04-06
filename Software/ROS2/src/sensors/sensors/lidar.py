@@ -31,6 +31,7 @@ class LidarPublisher(Node):
             data = ser.read()
             if len(data) < 1: continue
             buffer.append(data[0])
+            # TODO: make it not have to wait for the entire buffer to fill
             if bytes(buffer)[:4] != b'\xFF\xFF\xFF\xFF': continue
             if len(buffer) < deque_len: continue
             nums = [buffer[i*2]*256 + buffer[i*2 + 1] for i in range(4, deque_len//2)]

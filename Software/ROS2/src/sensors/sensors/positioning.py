@@ -21,6 +21,8 @@ class SpacialDataPublisher(Node):
         self.position_publisher = self.create_publisher(Point, '/sensors/position', 10)
         self.angle_publisher = self.create_publisher(Float32, '/sensors/orientation', 10)
         ser = serial.Serial(port, BAUD_RATE, timeout=1)
+        # wait until serial is open
+        self.get_logger().info(f"Serial port {port} opened successfully")
         # from esp c++ code:
         # // Protocol for communication with Raspberry Pi:
         # // Header: 0xFF
@@ -32,15 +34,18 @@ class SpacialDataPublisher(Node):
         # // Right now it sends:
         # // Angle on Z axis: 4 bytes (float from 0.0 to 360.0)
         distances = [-1, -1, -1]
+        buffer = []
         while True:
-            # read the header bytes
-            ser.read_until(b'\xFF')
-            header = ser.read(1)
-            if header == b'\xFF':
+            new_byte = ser.read(1)
+            if new_byte != b'':
+                buffer.append(new_byte)
+            if len(buffer) < 2: continue
+            print(buffer)
+            if buffer[0] != b'\xFF': continue
+            if buffer[1] == b'\xFF' and len(buffer) > 4:
                 # read the anchor index and distance
-                anchor_index = ser.read(1)
-                distance = ser.read(2)
-                distance = int.from_bytes(distance, byteorder='big')
+                anchor_index = buffer[2]
+                distance = buffer[4] * 256 + buffer[3]
                 self.get_logger().info(f"Anchor index: {anchor_index}, Distance: {distance}")
                 # publish new position to the topic
                 distances[int(anchor_index)] = distance
@@ -52,20 +57,21 @@ class SpacialDataPublisher(Node):
                     msg.y = position[1]
                     # distances = [-1, -1, -1]
                     self.position_publisher.publish(msg)
-            elif header == b'\xFD':
+            elif buffer[1] == b'\xFE' and len(buffer) > 5:
                 # read the accelerometer value
-                angle = ser.read(4)
-                angle = float.from_bytes(angle, byteorder='big')
+                angle = buffer[2:6]
+                angle = 1.2#int.from_bytes(angle, byteorder='big')
                 self.get_logger().info(f"Angle: {angle}")
                 msg = Float32()
                 msg.data = angle
                 self.angle_publisher.publish(msg)
+            buffer = buffer[-6:] # keep only the last 6 bytes
 
 
 def main(args=None):
     rclpy.init(args=args)
-
-    spacial_data_publisher = SpacialDataPublisher(find_port(ESP_BOARD_ID, os.getpid(), BAUD_RATE))
+    port = find_port(ESP_BOARD_ID, os.getpid(), BAUD_RATE)
+    spacial_data_publisher = SpacialDataPublisher(port)
     rclpy.spin(spacial_data_publisher)
 
     # Destroy the node explicitly

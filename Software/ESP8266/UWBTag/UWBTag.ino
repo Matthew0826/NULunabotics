@@ -157,7 +157,7 @@ void loop() {
   if (c % 30 == 0) {
     // Write a header for rotation
     Serial.write(0xFF);
-    Serial.write(0xFE);
+    Serial.write(0xFD);
     
     // Write data
     Serial.write((byte*)&angleZ, 4);

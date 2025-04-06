@@ -30,3 +30,4 @@ def find_port(esp_board_id: int, pid: int, baud_rate: int) -> str:
             serial_port_client.get_logger().info("No available ports found, trying again in 5 seconds.")
             time.sleep(5)
     serial_port_client.destroy_node()
+    return port
