@@ -1,8 +1,11 @@
 import rclpy
 from rclpy.node import Node
 
-# data type for lidar data
-from std_msgs.msg import Float32MultiArray
+# data type for lidar data & coordinates
+from lunabotics_interfaces.msg import LidarRotation, Point
+
+# a path data type
+from lunabotics_interfaces.srv import Path
 
 # importing the JSON libraru
 import json
@@ -25,9 +28,9 @@ class Odometry():
         # initalize orientation
         self.orientation = 0
 
-        # lidar: UInt16MultiArray, 
+        # lidar: LidarRotation UInt16MultiArray, 
         # (weight, angle [360 = 36000], distance) 
-        # position: Float32MultiArray,
+        # position: Point Float32MultiArray,
         # (float x, float y)
         # 0, 0 is some corner idk
         # orientation: Float32,
@@ -164,8 +167,14 @@ class Odometry():
 
     # orient the rover to face a position
     def face_position(int x, int y):
-        pass
+        delta_x = self.x - x
+        delta_y = self.y - y
+
         # use atan2
+        new_orientation = math.atan2(y, x)
+
+        # rotate to new orientation
+        self.to_orient(new_orientation)
 
     # STRETCH: give a set of lines (graph) to drive along)
     # I think this would be a set of points actually
