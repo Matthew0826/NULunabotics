@@ -99,7 +99,7 @@ class Odometry():
         self.orientation += 1
 
     # enforce orientation between 0 and 360
-    def set_orientation(self, int orientation):
+    def set_orientation(self, orientation: float):
         if (orientation < 0 or orientation > 360): 
             print("INVALID ORIENTATION: %d" %orientation)
             return
@@ -113,7 +113,7 @@ class Odometry():
         # can save current motor power for future reference
 
     # orient the robot (global orientation)
-    def to_orient(int final_orientation):
+    def to_orient(final_orientation: float):
         # tolerance
         tolerance = 1
         
@@ -135,7 +135,7 @@ class Odometry():
             # done
 
     # rotate the robot
-    def to_rotate(int delta):
+    def to_rotate(delta: float):
         # new orientation (based on how much we rotate)
         final_orientation = this.orientation + delta
 
@@ -143,7 +143,7 @@ class Odometry():
         this.to_orient(final_orientation)
 
     # drive forward in a straight line
-    def to_line(int length):
+    def to_line(length: float):
         
         # get the normalized vector of where we face
         new_x = this.position.x + (math.cos(this.orientation) * length)
@@ -166,7 +166,7 @@ class Odometry():
             self.set_motor_power(1, 1)
 
     # orient the rover to face a position
-    def face_position(int x, int y):
+    def face_position(x: float, y: float):
         delta_x = self.x - x
         delta_y = self.y - y
 
@@ -185,13 +185,13 @@ class Odometry():
 # getType = the type to send from the topic to subscriber
 # topicName = the name of the event to subscribe to
 # callbackName = the name of callback function on self to use
-def subscribe(self, getType, str topicName, str callbackName):
+def subscribe(self, get_type, topic_name: str, callback_name: str):
     return self.create_subscription(
-        getType, 
+        get_type, 
         # the topic to subscribe t
-        topicName, 
+        topic_name, 
         # the function called on an event
-        self[callbackName]
+        self[callback_name]
         10,
         )
 
