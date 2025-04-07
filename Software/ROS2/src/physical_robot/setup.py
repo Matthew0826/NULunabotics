@@ -20,9 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'intake_conveyer = physical_robot.intake_conveyer:main',
-            'outtake = physical_robot.outtake:main',
-            'drive = physical_robot.drive:main',
+            'motor_driver = physical_robot.motor_driver:main',
             'controller = physical_robot.controller:main',
         ],
     },
