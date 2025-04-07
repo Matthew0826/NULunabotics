@@ -1,5 +1,7 @@
 import * as rclnodejs from "rclnodejs";
 import { sendToClient } from "./sockets";
+import { Point as Vector2 } from "@/app/ui/map/robot-path";
+import { Point as ROSPoint } from "rclnodejs/lib/lunabotics_interfaces/msg/Point";
 
 export const lidarPoints: Point[] = [];
 
@@ -24,6 +26,48 @@ export const publishToROS2 = (message: string) => {
     motorsMsg.outtake = messageJson.buttonRight ? 1 : 0;
     rosPublisher.publish(motorsMsg);
     console.log("Published: ", message);
+};
+
+export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, callback: (point: ROSPoint[]) => void ) => {
+    const node = new rclnodejs.Node("pathfinding_request_node");
+    const client = node.createClient(
+        'lunabotics_interfaces/srv/Path',
+        'pathfinding_request'
+    );
+    // To view service events use the following command:
+    //    ros2 topic echo "/add_two_ints/_service_event"
+    // client.configureIntrospection(
+    //     node.getClock(),
+    //     rclnodejs.QoS.profileSystemDefault,
+    //     rclnodejs.ServiceIntrospectionStates.METADATA
+    // );
+
+    const request = {
+        start: {
+            x: point1[0],
+            y: point1[1],
+        },
+        end: {
+            x: point2[0],
+            y: point2[1],
+        },
+    };
+
+    let result = await client.waitForService(1000);
+    if (!result) {
+        console.log('Error: service not available');
+        rclnodejs.shutdown();
+        return;
+    }
+
+    console.log(`Sending: ${typeof request}`, request);
+    client.sendRequest(request, (response) => {
+        console.log(`Result: ${typeof response}`, response);
+        callback(response.nodes);
+        rclnodejs.shutdown();
+    });
+
+    node.spin();
 };
 
 let rosPublisher: rclnodejs.Publisher<typeof LUNABOTICS_MOTORS_TYPE>;

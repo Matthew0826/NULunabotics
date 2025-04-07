@@ -181,10 +181,8 @@ class Pathfinder(Node):
             path = self.calculate_path(start, end, confidence_threshold)
             confidence_threshold += OBSTACLE_CONFIDENCE_STRENGTH
         # get path in world points
-        path_msg = Path()
         path = [self.grid_to_world(node.x, node.y) for node in path]  # convert to world coordinates
-        path_msg.path = [Point(x=point[0],y=point[1]) for point in path]
-        response.path = path_msg
+        response.nodes = [Point(x=point[0],y=point[1]) for point in path]
         return response
 
 

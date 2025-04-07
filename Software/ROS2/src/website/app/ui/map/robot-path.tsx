@@ -1,4 +1,7 @@
-type Point = [number, number];
+import { sendPathfindingRequest } from "@/app/lib/ros2";
+import React, { useEffect } from "react";
+
+export type Point = [number, number];
 
 // This is really badly named sorry
 function pointAwayFromPoint(
@@ -94,8 +97,29 @@ function pointsToPathWithQuadraticCurves(
  * This component represents the path the robot intends to take through the map.
  */
 export default function RobotPath({ path }: { path?: Point[] }) {
+    const pathRef = React.useRef<HTMLDivElement>(null);
+    const [previousClickPosition, setPreviousClickPosition] = React.useState<Point | null>(null);
+    const handlePathClick = (e: React.MouseEvent) => {
+        const rect = pathRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const x = ((e.clientX - rect.left) / rect.width) * 548;
+        const y = ((e.clientY - rect.top) / rect.height) * 487;
+        const newClickPosition: Point = [Math.floor(x), Math.floor(y)];
+        console.log("Click position:", newClickPosition);
+        console.log("Previous click position:", previousClickPosition);
+
+        sendPathfindingRequest(newClickPosition, previousClickPosition ?? newClickPosition, (points) => {
+            if (points) {
+                console.log("New path:", points);
+            } else {
+                console.log("No new path");
+            }
+        });
+
+        setPreviousClickPosition(newClickPosition);
+    }
     return (
-        <div className="absolute top-0 left-0 w-full h-full">
+        <div className="absolute top-0 left-0 w-full h-full" ref={pathRef} onClick={(e) => handlePathClick(e)}>
             <svg
                 width="100%"
                 height="100%"

@@ -20,7 +20,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Point.msg"
   "msg/Obstacle.msg"
   "srv/SerialPort.srv"
-  "msg/Path.srv"
+  "srv/Path.srv"
 )
 
 if(BUILD_TESTING)

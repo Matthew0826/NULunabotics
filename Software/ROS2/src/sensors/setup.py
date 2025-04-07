@@ -11,16 +11,16 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'lunabotics_interfaces'],
     zip_safe=True,
-    maintainer='selene',
+    maintainer='nulunabotics-software-team',
     maintainer_email='selene@todo.todo',
     description='TODO: Package description',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'lidar = sensors.lidar:main'
+            'lidar = sensors.lidar:main',
             'positioning = sensors.positioning:main',
             'serial_port_server = sensors.serial_port_server:main'
         ],
