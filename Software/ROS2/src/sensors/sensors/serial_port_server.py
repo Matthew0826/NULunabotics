@@ -45,7 +45,7 @@ def pid_exists(pid):
 class SerialPortService(Node):
 
     def __init__(self):
-        super().__init__('minimal_service')
+        super().__init__('serial_port_service')
         self.ports = {} # keys: port names, values: pids
         self.srv = self.create_service(SerialPort, 'serial_port', self.serial_port_callback)
 

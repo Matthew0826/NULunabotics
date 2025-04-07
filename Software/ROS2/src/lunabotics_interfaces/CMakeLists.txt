@@ -18,7 +18,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/LidarRotation.msg"
   "msg/Motors.msg"
   "msg/Point.msg"
+  "msg/Obstacle.msg"
   "srv/SerialPort.srv"
+  "msg/Path.srv"
 )
 
 if(BUILD_TESTING)

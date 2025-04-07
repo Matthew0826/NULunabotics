@@ -20,8 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'lidar = sensors.lidar:main',
-            'lidar_subscriber = sensors.lidar_subscriber:main',
+            'lidar = sensors.lidar:main'
             'positioning = sensors.positioning:main',
             'serial_port_server = sensors.serial_port_server:main'
         ],
