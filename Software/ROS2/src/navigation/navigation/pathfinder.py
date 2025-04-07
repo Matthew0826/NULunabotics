@@ -5,6 +5,7 @@ from lunabotics_interfaces.msg import Point, Obstacle
 from lunabotics_interfaces.srv import Path
 
 from astar import AStar
+import random
 
 # Note: 0, 0 is defined as the top left corner of the map
 
@@ -18,6 +19,7 @@ GRID_HEIGHT = MAP_HEIGHT // GRID_RESOLUTION
 ROBOT_WIDTH = 30  # units: cm
 ROBOT_LENGTH = 50  # units: cm
 
+# enum for zones on the map
 OUT_OF_BOUNDS = -1
 START_ZONE = 0
 TRAVERSAL_ZONE = 1
@@ -25,7 +27,7 @@ EXCAVATION_ZONE = 2
 DUMP_ZONE = 3
 BERM_ZONE = 4
 
-# threshold needed for a cell to be considered an obstacle
+# threshold needed for a cell to be considered an obstacle between 0 and 1
 INITIAL_OBSTACLE_CONFIDENCE_THRESHOLD = 0.2
 HIGHEST_CONFIDENCE_THRESHOLD = 0.7
 OBSTACLE_SIZE_THRESHOLD = 10  # units: cm
@@ -126,6 +128,7 @@ class Pathfinder(Node):
         # each square is a float from 0 to 1 representing the probability of that square being an obstacle
         # 0 = no obstacle, 1 = obstacle
         self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+        self.generate_test_obstacles()
 
     def calculate_path(self, start, end, confidence_threshold):
         start_node = Node.from_point(start)
@@ -141,9 +144,19 @@ class Pathfinder(Node):
     def add_confidence(self, world_x, world_y, confidence):
         grid_x, grid_y = self.world_to_grid(world_x, world_y)
         if get_zone(world_x, world_y) != OUT_OF_BOUNDS:
+            # max confidence is 1
             self.grid[grid_y][grid_x] = min(1, self.grid[grid_y][grid_x] + confidence)
+    
+    def generate_test_obstacles(self):
+        # generate test obstacles in the grid
+        for i in range(4):
+            obstacle = Obstacle()
+            obstacle.position.x = random.randint(0, MAP_WIDTH)
+            obstacle.position.y = random.randint(0, MAP_HEIGHT)
+            obstacle.radius = random.randint(30, 40)
+            self.obstacle_callback(obstacle)
 
-    def listener_callback(self, msg):
+    def obstacle_callback(self, msg):
         world_x = msg.position.x
         world_y = msg.position.y
         radius = msg.radius
