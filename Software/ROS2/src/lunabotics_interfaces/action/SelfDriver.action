@@ -1,0 +1,13 @@
+# SelfDriver action
+
+# Request
+#go somewhere like a point
+Point target
+---
+# Result
+# retun 0 or 1
+int result
+---
+# Feedback
+# the percent of the way there
+float progress

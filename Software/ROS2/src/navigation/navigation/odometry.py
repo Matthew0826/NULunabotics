@@ -7,6 +7,9 @@ from lunabotics_interfaces.msg import LidarRotation, Point
 # a path data type
 from lunabotics_interfaces.srv import Path
 
+# the self driver agent action
+from lunabotics_interfaces.actions import SelfDriver
+
 # importing the JSON libraru
 import json
 
@@ -14,10 +17,17 @@ import json
 import math
 
 # A subscriber to events which update the rover.
-class Odometry():
+class Odometry(Node):
 
     def __init__(self):
         super().__init__('odometry')
+
+        # create the action server
+        self._action_server = ActionServer(
+                self,
+                SelfDriver
+                'self_driver',
+                self.
 
         # initalize lidar
         self.lidar = 0
@@ -78,6 +88,32 @@ class Odometry():
         self.position_sub
         self.orientation_sub
         self.motor_pub
+
+    # when someone calls this action
+    # takes in self and goal to be handled
+    def on_goal_updated(self, goal):
+
+        # get the feedback
+        feedback_msg = SelfDriver.Feedback()
+
+        # update current progress
+        feedback_msg.progress += 1
+
+        # do the thing
+        while (False):
+            
+            # publish feedback
+            goal.publish_feedback(feedback_msg)
+            time.sleep(1)
+    
+        # we did it
+        goal.succeed()
+
+        # set the result
+        result = SelfDriver.Result()
+        result.result = 0
+        return result
+
 
     # when lidar updates
     def on_lidar(self, lidar):
@@ -175,6 +211,11 @@ class Odometry():
 
         # rotate to new orientation
         self.to_orient(new_orientation)
+
+    # Drive along a path (List of Points)
+    def to_path(points):
+        for point in points:
+            self.to_position(point)
 
     # STRETCH: give a set of lines (graph) to drive along)
     # I think this would be a set of points actually
