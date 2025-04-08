@@ -1,5 +1,6 @@
-import { sendPathfindingRequest } from "@/app/lib/ros2";
+import { useWebSocketContext } from "@/app/lib/web-socket-context";
 import React, { useEffect } from "react";
+import { MAP_HEIGHT, MAP_WIDTH } from "./map";
 
 export type Point = [number, number];
 
@@ -97,25 +98,16 @@ function pointsToPathWithQuadraticCurves(
  * This component represents the path the robot intends to take through the map.
  */
 export default function RobotPath({ path }: { path?: Point[] }) {
+    const { messages, sendToServer } = useWebSocketContext();
     const pathRef = React.useRef<HTMLDivElement>(null);
     const [previousClickPosition, setPreviousClickPosition] = React.useState<Point | null>(null);
     const handlePathClick = (e: React.MouseEvent) => {
         const rect = pathRef.current?.getBoundingClientRect();
         if (!rect) return;
-        const x = ((e.clientX - rect.left) / rect.width) * 548;
-        const y = ((e.clientY - rect.top) / rect.height) * 487;
+        const x = ((e.clientX - rect.left) / rect.width) * MAP_WIDTH * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * MAP_HEIGHT * 100;
         const newClickPosition: Point = [Math.floor(x), Math.floor(y)];
-        console.log("Click position:", newClickPosition);
-        console.log("Previous click position:", previousClickPosition);
-
-        sendPathfindingRequest(newClickPosition, previousClickPosition ?? newClickPosition, (points) => {
-            if (points) {
-                console.log("New path:", points);
-            } else {
-                console.log("No new path");
-            }
-        });
-
+        sendToServer("sendPathfindingRequest", { point1: newClickPosition, point2: previousClickPosition ?? newClickPosition });
         setPreviousClickPosition(newClickPosition);
     }
     return (
@@ -123,12 +115,12 @@ export default function RobotPath({ path }: { path?: Point[] }) {
             <svg
                 width="100%"
                 height="100%"
-                viewBox="0 0 688 500"
+                viewBox={`0 0 ${MAP_WIDTH * 100} ${MAP_HEIGHT * 100}`}
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
             >
                 <path
-                    d={pointsToPathWithQuadraticCurves(path ?? [], 35)}
+                    d={pointsToPathWithQuadraticCurves(path ?? [], 10)}
                     stroke="#E85252"
                     strokeWidth="4"
                     strokeLinejoin="round"
@@ -136,6 +128,20 @@ export default function RobotPath({ path }: { path?: Point[] }) {
                     strokeDasharray="10 10"
                 />
             </svg>
+            {/* {
+                path?.map((point, index) => (
+                    <div
+                        key={index}
+                        className="absolute rounded-full bg-red-500"
+                        style={{
+                            width: "10px",
+                            height: "10px",
+                            left: `${(point[0] / (MAP_WIDTH * 100)) * 100}%`,
+                            top: `${(point[1] / (MAP_HEIGHT * 100)) * 100}%`,
+                        }}
+                    />
+                ))
+            } */}
         </div>
     );
 }

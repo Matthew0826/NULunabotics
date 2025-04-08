@@ -1,6 +1,8 @@
+// Web socket server code
+
 import { IncomingMessage } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
-import { lidarPoints, publishToROS2 } from "../lib/ros2";
+import { lidarPoints, publishToROS2, sendPathfindingRequest } from "../lib/ros2";
 import { sockets } from "../lib/sockets";
 
 export function GET() {
@@ -27,9 +29,25 @@ export function SOCKET(
         console.log("received: ", messageString);
         try {
             const messageJson = JSON.parse(messageString);
-            console.log("in " + (Date.now() - messageJson?.timestamp) + "ms");
+            if (messageJson.type === "sendPathfindingRequest") {
+                sendPathfindingRequest(
+                    messageJson.data.point1,
+                    messageJson.data.point2,
+                    (points) => {
+                        const response = JSON.stringify([
+                            {
+                                graph: "Path",
+                                dataSet: "Pathfinding",
+                                newData: points,
+                            },
+                        ]);
+                        client.send(response);
+                    }
+                )
+            } else if (messageJson.type === "controls") {
+                publishToROS2(JSON.stringify(messageJson.data));
+            }
         } catch (error) {}
-        publishToROS2(messageString);
     });
 
     console.log("Client connected");

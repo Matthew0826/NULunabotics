@@ -93,20 +93,18 @@ export default function GamepadStateProvider({
                 newState.buttonR = !newState.buttonR;
             }
             newState.timestamp = Date.now();
-            const newStateString = JSON.stringify(newState);
-            if (newStateString != JSON.stringify(state)) {
-                sendToServer(newStateString);
-            }
+            sendToServer("controls", newState);
             setState(newState);
         }
 
         function handleKeyUp(event: KeyboardEvent) {
             if (defaults !== state) {
                 sendToServer(
-                    JSON.stringify({
+                    "controls", 
+                    {
                         ...defaultsNormalized,
                         timestamp: Date.now(),
-                    })
+                    }
                 );
             }
             setState(defaults);

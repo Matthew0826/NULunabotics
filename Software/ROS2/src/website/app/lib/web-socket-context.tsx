@@ -1,8 +1,9 @@
+// Web socket client code
+
 "use client";
 
 import {
     createContext,
-    useCallback,
     useContext,
     useEffect,
     useRef,
@@ -11,12 +12,12 @@ import {
 
 export type WebSocketMessages = {
     messages: string[];
-    sendToServer: (message: string) => void;
+    sendToServer: (messageType: string, message: any) => void;
 };
 
 const WebSocketContext = createContext<WebSocketMessages>({
     messages: [],
-    sendToServer: () => {},
+    sendToServer: () => { },
 });
 
 export const useWebSocketContext = () => useContext(WebSocketContext);
@@ -66,7 +67,7 @@ export default function WebSocketProvider({
                 typeof event.data === "string"
                     ? event.data
                     : await event.data.text();
-            setMessages((p) => [...p, payload].slice(-10)); // Keep only the last 10 messages
+            setMessages((p) => [...p, payload]/*.slice(-10)*/); // Keep only the last 10 messages
         }
 
         socketRef.current?.addEventListener("message", handleMessage);
@@ -77,8 +78,8 @@ export default function WebSocketProvider({
             socketRef.current?.removeEventListener("message", handleMessage);
     }, []);
 
-    function sendToServer(message: string) {
-        socketRef.current?.send(message);
+    function sendToServer(messageType: string, message: any) {
+        socketRef.current?.send(JSON.stringify({ type: messageType, data: message }));
     }
 
     return (

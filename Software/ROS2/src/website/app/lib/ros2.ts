@@ -14,6 +14,8 @@ export type Point = {
 const LUNABOTICS_LIDAR_ROTATION_TYPE =
     "lunabotics_interfaces/msg/LidarRotation";
 const LUNABOTICS_MOTORS_TYPE = "lunabotics_interfaces/msg/Motors";
+const LUNABOTICS_PATH_TYPE = "lunabotics_interfaces/srv/Path";
+const LUNABOTICS_OBSTACLE_TYPE = "lunabotics_interfaces/msg/Obstacle";
 
 export const publishToROS2 = (message: string) => {
     const messageJson = JSON.parse(message);
@@ -24,16 +26,11 @@ export const publishToROS2 = (message: string) => {
     motorsMsg.back_right_wheel = messageJson.y2;
     motorsMsg.conveyor = messageJson.buttonLeft ? 1 : 0;
     motorsMsg.outtake = messageJson.buttonRight ? 1 : 0;
-    rosPublisher.publish(motorsMsg);
+    rosControlsPublisher.publish(motorsMsg);
     console.log("Published: ", message);
 };
 
 export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, callback: (point: ROSPoint[]) => void ) => {
-    const node = new rclnodejs.Node("pathfinding_request_node");
-    const client = node.createClient(
-        'lunabotics_interfaces/srv/Path',
-        'pathfinding_request'
-    );
     // To view service events use the following command:
     //    ros2 topic echo "/add_two_ints/_service_event"
     // client.configureIntrospection(
@@ -53,39 +50,36 @@ export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, c
         },
     };
 
-    let result = await client.waitForService(1000);
+    let result = await rosClient.waitForService(1000);
     if (!result) {
         console.log('Error: service not available');
-        rclnodejs.shutdown();
         return;
     }
 
     console.log(`Sending: ${typeof request}`, request);
-    client.sendRequest(request, (response) => {
-        console.log(`Result: ${typeof response}`, response);
+    rosClient.sendRequest(request, (response) => {
         callback(response.nodes);
-        rclnodejs.shutdown();
     });
-
-    node.spin();
 };
 
-let rosPublisher: rclnodejs.Publisher<typeof LUNABOTICS_MOTORS_TYPE>;
-let rosSubscriber: rclnodejs.Subscription;
+let rosControlsPublisher: rclnodejs.Publisher<typeof LUNABOTICS_MOTORS_TYPE>;
+let rosLidarSubscriber: rclnodejs.Subscription;
+let rosObstaclesSubscriber: rclnodejs.Subscription;
+let rosClient: rclnodejs.Client<typeof LUNABOTICS_PATH_TYPE>;
 
 rclnodejs.init().then(() => {
     const node = new rclnodejs.Node("website_backend");
-    rosPublisher = node.createPublisher(
+    rosControlsPublisher = node.createPublisher(
         LUNABOTICS_MOTORS_TYPE,
         "physical_robot/motors"
     );
-    rosSubscriber = node.createSubscription(
+    rosLidarSubscriber = node.createSubscription(
         LUNABOTICS_LIDAR_ROTATION_TYPE,
         "sensors/lidar",
         (msg: any) => {
             const data = msg.points;
             lidarPoints.length = 0;
-            for (let i = 0; i < data.length; i += 1) {
+            for (let i = 0; i < data.length; i++) {
                 const distance = data[i].distance;
                 const angle = data[i].angle;
                 const weight = data[i].weight;
@@ -103,6 +97,28 @@ rclnodejs.init().then(() => {
                 ])
             );
         }
+    );
+    let previousObstacle: any = null;
+    rosObstaclesSubscriber = node.createSubscription(
+        LUNABOTICS_OBSTACLE_TYPE,
+        "navigation/obstacles",
+        (msg: any) => {
+            if (msg == previousObstacle) return;
+            sendToClient(
+                JSON.stringify([
+                    {
+                        graph: "Obstacles",
+                        dataSet: "Obstacles",
+                        newData: msg,
+                    },
+                ])
+            );
+            previousObstacle = msg;
+        }
+    );
+    rosClient = node.createClient(
+        LUNABOTICS_PATH_TYPE,
+        'pathfinder'
     );
     node.spin();
 });

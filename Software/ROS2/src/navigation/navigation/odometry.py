@@ -153,7 +153,7 @@ class Odometry():
         to_position(new_x, new_y)
 
     # move the robot from current to new position
-    def to_position(int x, int y):
+    def to_position(x: float, y: float):
 
         # tolerance
         tolerance = 1
@@ -162,7 +162,7 @@ class Odometry():
         face_position(x, y)
 
         # drive in a line until we reach the position
-        while (this.position - current_position) > 1):
+        while ((this.position - current_position) > 1):
             self.set_motor_power(1, 1)
 
     # orient the rover to face a position
@@ -191,7 +191,7 @@ def subscribe(self, get_type, topic_name: str, callback_name: str):
         # the topic to subscribe t
         topic_name, 
         # the function called on an event
-        self[callback_name]
+        self[callback_name],
         10,
         )
 

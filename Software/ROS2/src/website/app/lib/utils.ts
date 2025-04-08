@@ -29,7 +29,7 @@ export function normalizedVectorToPixels(
 export var gamepadData = {};
 
 export function gamepadLoop(
-    sendToServer: (data: string) => void,
+    sendToServer: (messageType: string, message: any) => void,
     setState: React.Dispatch<React.SetStateAction<GamepadState>>
 ) {
     let start: number;
@@ -86,7 +86,7 @@ export function gamepadLoop(
 
         if (gamepadData !== newData) {
             gamepadData = newData;
-            sendToServer(JSON.stringify({ ...newData, timestamp: Date.now() }));
+            sendToServer("controls", {...newData, timestamp: Date.now()});
             const end1 = normalizedVectorToPixels(x1, y1);
             const end2 = normalizedVectorToPixels(x2, y2);
             newData.x1 = end1.endX;
