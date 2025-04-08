@@ -1,7 +1,6 @@
 import * as rclnodejs from "rclnodejs";
 import { sendToClient } from "./sockets";
 import { Point as Vector2 } from "@/app/ui/map/robot-path";
-import { Point as ROSPoint } from "rclnodejs/lib/lunabotics_interfaces/msg/Point";
 
 export const lidarPoints: Point[] = [];
 
@@ -30,7 +29,7 @@ export const publishToROS2 = (message: string) => {
     console.log("Published: ", message);
 };
 
-export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, callback: (point: ROSPoint[]) => void ) => {
+export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, callback: (point: any[]) => void ) => {
     // To view service events use the following command:
     //    ros2 topic echo "/add_two_ints/_service_event"
     // client.configureIntrospection(

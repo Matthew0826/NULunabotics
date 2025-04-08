@@ -4,7 +4,7 @@ from rclpy.node import Node
 from lunabotics_interfaces.msg import Point, Obstacle
 from lunabotics_interfaces.srv import Path
 
-from astar import AStar
+from navigation.astar import AStar
 import random
 import math
 
@@ -236,6 +236,7 @@ class Pathfinder(Node):
 def main(args=None):
     rclpy.init(args=args)
     pathfinder = Pathfinder()
+    print("Pathfinder is running!")
     rclpy.spin(pathfinder)
     rclpy.shutdown()
 

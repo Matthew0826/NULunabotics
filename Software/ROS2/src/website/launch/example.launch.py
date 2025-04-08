@@ -21,7 +21,7 @@ def generate_launch_description():
 
     start_javascript_node = Node(
         name='test_node',
-        executable='node',
+        executable='/home/selene/.nvm/versions/node/v22.14.0/bin/node',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time}],
         arguments=[
