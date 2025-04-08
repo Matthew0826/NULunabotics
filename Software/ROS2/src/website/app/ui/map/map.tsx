@@ -28,9 +28,11 @@ export default function Map() {
         const data = (pathMessage?.newData || []).map((point: any) => ([point.x, point.y]));
         // console.log("Path data", data);
         setPathData(data);
-        const obstaclesMessages = [...new Set(messages.map((message: any) => JSON.parse(message)[0])
+        const obstaclesMessages = [...new Set(messages.map((message: any) => JSON.parse(message))
+            .flat()
             .filter((message: any) => message.graph === "Obstacles")
             .map((message: any) => message.newData)
+            .flat()
             .map((newObstacle: any) => {
                 return { x: newObstacle.position.x, y: newObstacle.position.y, radius: newObstacle.radius, isHole: true }
             }))];

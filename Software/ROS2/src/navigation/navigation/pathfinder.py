@@ -155,21 +155,21 @@ class Pathfinder(Node):
     
     def generate_test_obstacles(self):
         # generate test obstacles in the grid
-        for i in range(6):
-            obstacle = Obstacle()
-            obstacle.position.x = float(random.randint(0, MAP_WIDTH))
-            obstacle.position.y = float(random.randint(0, MAP_HEIGHT))
-            obstacle.radius = float(random.randint(15, 20))
-            for i in range(int(1/OBSTACLE_CONFIDENCE_STRENGTH)):
-                self.obstacle_tester_publisher.publish(obstacle)
-                self.obstacle_callback(obstacle)
+        # for i in range(6):
+        #     obstacle = Obstacle()
+        #     obstacle.position.x = float(random.randint(0, MAP_WIDTH))
+        #     obstacle.position.y = float(random.randint(0, MAP_HEIGHT))
+        #     obstacle.radius = float(random.randint(15, 20))
+        #     for i in range(int(1/OBSTACLE_CONFIDENCE_STRENGTH)):
+        #         self.obstacle_tester_publisher.publish(obstacle)
+        #         self.obstacle_callback(obstacle)
         for i in range(1,9): # loop between 1 and 8
             obstacle = Obstacle()
             obstacle.position.x = 548.0 - i*34.25 + 34.25/2
             obstacle.position.y = 244.0
             obstacle.radius = 34.25/2
             for i in range(10):
-                self.obstacle_tester_publisher.publish(obstacle)
+                # self.obstacle_tester_publisher.publish(obstacle)
                 self.obstacle_callback(obstacle)
 
     def obstacle_callback(self, msg):

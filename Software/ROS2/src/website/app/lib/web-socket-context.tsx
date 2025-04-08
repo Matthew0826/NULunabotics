@@ -9,6 +9,7 @@ import {
     useRef,
     useState,
 } from "react";
+import { tempStartingData } from "./temp-graph-info";
 
 export type WebSocketMessages = {
     messages: string[];
@@ -42,24 +43,9 @@ export default function WebSocketProvider({
         };
     }, []);
 
-    const [messages, setMessages] = useState<string[]>([
-        JSON.stringify([
-            {
-                graph: "Lidar",
-                dataSet: "Points",
-                newData: [
-                    { distance: 2000, angle: (7 * Math.PI) / 4, weight: 0 },
-                    { distance: 1000, angle: (6 * Math.PI) / 4, weight: 0 },
-                    { distance: 2000, angle: (5 * Math.PI) / 4, weight: 0 },
-                    { distance: 1200, angle: Math.PI, weight: 0 },
-                    { distance: 2000, angle: (3 * Math.PI) / 4, weight: 0 },
-                    { distance: 2000, angle: (2 * Math.PI) / 4, weight: 0 },
-                    { distance: 2000, angle: Math.PI / 4, weight: 0 },
-                    { distance: 2000, angle: 0, weight: 0 },
-                ],
-            },
-        ]),
-    ]);
+    const [messages, setMessages] = useState<string[]>(
+        tempStartingData.map((msg) => JSON.stringify(msg)),
+    );
 
     useEffect(() => {
         async function handleMessage(event: MessageEvent) {
