@@ -8566,8 +8566,8 @@
 	)
 	(via
 		(at 120.517401 75.770101)
-		(size 0.6)
-		(drill 0.3)
+		(size 1)
+		(drill 0.8)
 		(layers "F.Cu" "B.Cu")
 		(net 1)
 		(uuid "1ba0d67e-669c-48d5-839e-d10752c9571b")
