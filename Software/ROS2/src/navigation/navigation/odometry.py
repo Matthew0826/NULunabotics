@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 
 # data type for lidar data & coordinates
-from lunabotics_interfaces.msg import LidarRotation, Point
+from lunabotics_interfaces.msg import LidarRotation, Point, Motor
 
 # a path data type
 from lunabotics_interfaces.srv import Path
@@ -50,7 +50,7 @@ class Odometry(Node):
         # subscribe to lidar
         self.lidar_sub = subscribe(
             self,
-            UInt16MultiArray,
+            LidarRotation,
             'sensor/lidar'
             'on_lidar'
             )
@@ -58,7 +58,7 @@ class Odometry(Node):
         # subscribe to position
         self.position_sub = subscribe(
             self,
-            Float32MultiArray,
+            Point,
             'sensor/position'
             'on_position'
             )
@@ -78,7 +78,7 @@ class Odometry(Node):
         # "{"y1": 1, "y2": -1}"
 
         self.motor_pub = self.create_publisher(
-            String,
+            Motors,
             'website/controller',
             10
             )
@@ -145,7 +145,17 @@ class Odometry(Node):
 
     # set the power of left and right front motors
     def set_motor_power(left_power, right_power):
-        this.motor_pub.publish("{'y1': %d, 'y2': %d}" % left_power % right_power)
+        # message class
+        msg = Motors()
+        msg.front_left_wheel = left_power
+        msg.front_right_wheel = right_power
+        msg.back_left_wheel = left_power
+        msg.back_right_wheel = right_power
+        msg.conveyor = 0.0
+        msg.outtake = 0.0
+
+        # Then publish it like usual
+        self.motor_pub.publish(msg)
         # can save current motor power for future reference
 
     # orient the robot (global orientation)
@@ -189,7 +199,7 @@ class Odometry(Node):
         to_position(new_x, new_y)
 
     # move the robot from current to new position
-    def to_position(int x, int y):
+    def to_position(x: float, y: float):
 
         # tolerance
         tolerance = 1
@@ -198,7 +208,7 @@ class Odometry(Node):
         face_position(x, y)
 
         # drive in a line until we reach the position
-        while (this.position - current_position) > 1):
+        while ((this.position - current_position) > 1):
             self.set_motor_power(1, 1)
 
     # orient the rover to face a position
@@ -232,7 +242,7 @@ def subscribe(self, get_type, topic_name: str, callback_name: str):
         # the topic to subscribe t
         topic_name, 
         # the function called on an event
-        self[callback_name]
+        self[callback_name],
         10,
         )
 

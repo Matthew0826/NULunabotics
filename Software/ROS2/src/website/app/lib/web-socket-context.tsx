@@ -1,22 +1,24 @@
+// Web socket client code
+
 "use client";
 
 import {
     createContext,
-    useCallback,
     useContext,
     useEffect,
     useRef,
     useState,
 } from "react";
+import { tempStartingData } from "./temp-graph-info";
 
 export type WebSocketMessages = {
     messages: string[];
-    sendToServer: (message: string) => void;
+    sendToServer: (messageType: string, message: any) => void;
 };
 
 const WebSocketContext = createContext<WebSocketMessages>({
     messages: [],
-    sendToServer: () => {},
+    sendToServer: () => { },
 });
 
 export const useWebSocketContext = () => useContext(WebSocketContext);
@@ -41,24 +43,9 @@ export default function WebSocketProvider({
         };
     }, []);
 
-    const [messages, setMessages] = useState<string[]>([
-        JSON.stringify([
-            {
-                graph: "Lidar",
-                dataSet: "Points",
-                newData: [
-                    { distance: 2000, angle: (7 * Math.PI) / 4, weight: 0 },
-                    { distance: 1000, angle: (6 * Math.PI) / 4, weight: 0 },
-                    { distance: 2000, angle: (5 * Math.PI) / 4, weight: 0 },
-                    { distance: 1200, angle: Math.PI, weight: 0 },
-                    { distance: 2000, angle: (3 * Math.PI) / 4, weight: 0 },
-                    { distance: 2000, angle: (2 * Math.PI) / 4, weight: 0 },
-                    { distance: 2000, angle: Math.PI / 4, weight: 0 },
-                    { distance: 2000, angle: 0, weight: 0 },
-                ],
-            },
-        ]),
-    ]);
+    const [messages, setMessages] = useState<string[]>(
+        tempStartingData.map((msg) => JSON.stringify(msg)),
+    );
 
     useEffect(() => {
         async function handleMessage(event: MessageEvent) {
@@ -66,7 +53,7 @@ export default function WebSocketProvider({
                 typeof event.data === "string"
                     ? event.data
                     : await event.data.text();
-            setMessages((p) => [...p, payload].slice(-10)); // Keep only the last 10 messages
+            setMessages((p) => [...p, payload]/*.slice(-10)*/); // Keep only the last 10 messages
         }
 
         socketRef.current?.addEventListener("message", handleMessage);
@@ -77,8 +64,8 @@ export default function WebSocketProvider({
             socketRef.current?.removeEventListener("message", handleMessage);
     }, []);
 
-    function sendToServer(message: string) {
-        socketRef.current?.send(message);
+    function sendToServer(messageType: string, message: any) {
+        socketRef.current?.send(JSON.stringify({ type: messageType, data: message }));
     }
 
     return (

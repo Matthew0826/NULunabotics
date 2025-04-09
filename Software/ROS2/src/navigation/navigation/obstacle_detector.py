@@ -170,7 +170,7 @@ def main(args=None):
     rclpy.init(args=args)
 
     obstacle_detector = ObstacleDetector()
-
+    print("Obstacle detector is running!")
     rclpy.spin(obstacle_detector)
 
     # Destroy the node explicitly
