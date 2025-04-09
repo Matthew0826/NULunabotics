@@ -16,7 +16,7 @@ MAP_HEIGHT = 490
 GRID_RESOLUTION = 5  # units: cm
 GRID_WIDTH = MAP_WIDTH // GRID_RESOLUTION
 GRID_HEIGHT = MAP_HEIGHT // GRID_RESOLUTION
-# TODO: use actual robot dimensions
+# TODO: make this a ros parameter
 ROBOT_WIDTH = 71 # units: cm
 ROBOT_LENGTH = 98  # units: cm
 
