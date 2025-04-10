@@ -27,7 +27,8 @@ class Odometry(Node):
                 self,
                 SelfDriver
                 'self_driver',
-                self.
+                self.on_goal_updated
+                )
 
         # initalize lidar
         self.lidar = 0
