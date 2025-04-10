@@ -1,12 +1,10 @@
-# SelfDriver action
-
 # Request
-#go somewhere like a point
 Point target
+bool should_excavate
+bool should_dump
 ---
 # Result
-# retun 0 or 1
-int result
+bool success
 ---
 # Feedback
 # the percent of the way there
