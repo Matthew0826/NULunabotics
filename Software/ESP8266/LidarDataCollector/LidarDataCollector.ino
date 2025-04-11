@@ -109,17 +109,22 @@ void proccessFullRotation() {
   
   // Send all points
   for (int i = 0; i < POINTS_PER_ROTATION; i++) {
-    sendUnsignedShort(points[i].angle);
-    sendUnsignedShort(points[i].distance);
-    sendUnsignedShort(points[i].weight);
+    // Only takes angles from 180 degrees to 360 (LiDAR goes in reverse fsfr)
+    if (points[i].angle/100 >= 180 && points[i].angle/100 < 360) {
+      sendUnsignedShort(points[i].angle);
+      sendUnsignedShort(points[i].distance);
+      sendUnsignedShort(points[i].weight);
+    }
   }
 }
 
 
 vector2_t pointToVector(point_t point) {
+  // Converts Angle given by LiDAR to degrees and radians
   float degrees = ((float)point.angle)/100.0;
   float radians = PI * degrees / 180.0;
   vector2_t vector;
+  // Converts from distance to carteisna vector distance
   vector.x = point.distance * cos(radians);
   vector.y = point.distance * sin(radians);
   return vector;
