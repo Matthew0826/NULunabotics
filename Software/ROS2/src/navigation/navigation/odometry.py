@@ -52,7 +52,7 @@ class Odometry(Node):
         self.lidar_sub = subscribe(
             self,
             LidarRotation,
-            'sensor/lidar'
+            'sensors/lidar'
             'on_lidar'
             )
 
@@ -60,7 +60,7 @@ class Odometry(Node):
         self.position_sub = subscribe(
             self,
             Point,
-            'sensor/position'
+            'sensors/position'
             'on_position'
             )
 
@@ -68,7 +68,7 @@ class Odometry(Node):
         self.orientation_sub = subscribe(
             self,
             Float32,
-            'sensor/orientation'
+            'sensors/orientation'
             'on_orientation'
             )
 
