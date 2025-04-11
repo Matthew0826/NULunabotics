@@ -4,12 +4,60 @@ from rclpy.node import Node
 
 from lunabotics_intefaces.action import SelfDriver
 
+# listen for motor updates
+from lunabotics_interfaces.msg import Motor
 
-class FibonacciActionClient(Node):
+# publish new coordinates and rotation
+from lunabotics_interfaces.msg import LidarRotation, Point
 
+class OdometryTesterActionClient(Node):
     def __init__(self):
         super().__init__('self_driver_action_client')
+        
         self._action_client = ActionClient(self, SelfDriver, 'self_driver')
+
+        # fields
+        # speed is how fast in centimeters per second it goes with max power
+        self.speed = 1
+        self.position = Point
+        self.position.x = 0
+        self.position.y = 0
+        
+        # create it as action client
+        self._action_client = ActionClient(
+                 self, 
+                 SelfDriver, 
+                 'self_driver'
+                 )
+
+
+        # create subscription to motors
+        self.subscription = self.create_subscription(
+                Motors,
+                'website/controller',
+                self.on_motor_event,
+                10)
+
+        # create it as publisher for position
+        self.position_pub = self.create_publisher(
+                self,
+                Point,
+                'sensors/position',
+                10
+                )
+
+        # create it as publisher for orientation
+        self.orientation_pub = self.create_publisher(
+                self,
+                Float32,
+                'sensors/orientation',
+                'on_orientation'
+                )
+
+        # hide unused variable warning (useless)
+        self.subscription
+        self.position_pub
+        self.orientation_pub
 
     def send_goal(self, order):
         goal_msg = SelfDriver.Goal()
@@ -37,11 +85,27 @@ class FibonacciActionClient(Node):
         self.get_logger().info('Result: {0}'.format(result.sequence))
         rclpy.shutdown()
 
+    def on_motor_event(self, msg):
+        # increment current position by motor power
+        self.position.x += self.speed * msg.front_left_wheel
+        self.position.y += self.speed * msg.front_right_wheel
+
+        # position to publish
+        msg = self.position
+
+        # publish new position
+        self.motor_pub.publish(msg)
+
+        # orientation to publish
+        msg = 0.0
+    
+        # publish new orientation
+        self.orientation_pub.publish(msg)
 
 def main(args=None):
     rclpy.init(args=args)
 
-    action_client = Odometry()
+    action_client = OdometryTesterActionClient()
 
     action_client.to_orient(90)
 
