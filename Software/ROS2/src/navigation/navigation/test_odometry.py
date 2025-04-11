@@ -90,11 +90,17 @@ class OdometryTesterActionClient(Node):
         self.position.x += self.speed * msg.front_left_wheel
         self.position.y += self.speed * msg.front_right_wheel
 
-        # to publish
+        # position to publish
         msg = self.position
 
         # publish new position
         self.motor_pub.publish(msg)
+
+        # orientation to publish
+        msg = 0.0
+    
+        # publish new orientation
+        self.orientation_pub.publish(msg)
 
 def main(args=None):
     rclpy.init(args=args)
