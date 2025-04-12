@@ -1,20 +1,16 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.action import ActionServer
 
-# data type for lidar data & coordinates
-from lunabotics_interfaces.msg import LidarRotation, Point, Motor
-
-# a path data type
-from lunabotics_interfaces.srv import Path
+from lunabotics_interfaces.msg import Point, Motors
 
 # the self driver agent action
-from lunabotics_interfaces.actions import SelfDriver
+from lunabotics_interfaces.action import SelfDriver
 
-# importing the JSON libraru
-import json
+from std_msgs.msg import Float32
 
-# import math
 import math
+import time
 
 # A subscriber to events which update the rover.
 class Odometry(Node):
@@ -25,36 +21,18 @@ class Odometry(Node):
         # create the action server
         self._action_server = ActionServer(
                 self,
-                SelfDriver
+                SelfDriver,
                 'self_driver',
                 self.on_goal_updated
                 )
 
-        # initalize lidar
-        self.lidar = 0
-
         # initalize position
-        self.position = 0
+        self.position = Point()
+        self.position.x = 448
+        self.position.y = 100
 
         # initalize orientation
-        self.orientation = 0
-
-        # lidar: LidarRotation UInt16MultiArray, 
-        # (weight, angle [360 = 36000], distance) 
-        # position: Point Float32MultiArray,
-        # (float x, float y)
-        # 0, 0 is some corner idk
-        # orientation: Float32,
-        # rotation is on z axis
-        # controller: JSON (String actually)
-
-        # subscribe to lidar
-        self.lidar_sub = subscribe(
-            self,
-            LidarRotation,
-            'sensors/lidar'
-            'on_lidar'
-            )
+        self.orientation = 0.0
 
         # subscribe to position
         self.position_sub = subscribe(
@@ -72,53 +50,39 @@ class Odometry(Node):
             'on_orientation'
             )
 
-        # publish JSON String Control
-        # Example (Left forward, Right backward): 
-        # Thus it turns right in this case
-        # set the motor power to these values
-        # "{"y1": 1, "y2": -1}"
-
         self.motor_pub = self.create_publisher(
             Motors,
             'website/controller',
             10
             )
-    
-        # prevent unused variable warning (useless)
-        self.lidar_sub
-        self.position_sub
-        self.orientation_sub
-        self.motor_pub
 
     # when someone calls this action
-    # takes in self and goal to be handled
-    def on_goal_updated(self, goal):
-
-        # get the feedback
+    # SelfDriver.action:
+    # # Request
+    # Point[] targets
+    # ---
+    # # Result
+    # int64 time_elapsed_millis
+    # ---
+    # # Feedback
+    # # from 0 to 1
+    # float progress
+    def on_goal_updated(self, goal_handle):
         feedback_msg = SelfDriver.Feedback()
+        feedback_msg.progress = 0.0
+        start_time = self.get_clock().now()
 
-        # update current progress
-        feedback_msg.progress += 1
-
-        # do the thing
-        while (False):
-            
-            # publish feedback
-            goal.publish_feedback(feedback_msg)
-            time.sleep(1)
-    
-        # we did it
-        goal.succeed()
-
-        # set the result
+        # get points from the goal
+        points = goal_handle.request.targets
+        self.get_logger().info('Received goal with {0} points'.format(len(points)))
+        self.to_path(points, goal_handle, feedback_msg)
+        
+        # send the result
+        goal_handle.succeed()
         result = SelfDriver.Result()
-        result.result = 0
+        end_time = self.get_clock().now()
+        result.time_elapsed_millis = (end_time - start_time).nanoseconds / 1_000_000
         return result
-
-
-    # when lidar updates
-    def on_lidar(self, lidar):
-        self.lidar = lidar
 
     # when position updates
     def on_position(self, position):
@@ -128,7 +92,7 @@ class Odometry(Node):
     def on_orientation(self, orientation):
         self.set_orientation(orientation)
 
-    # called everytime SOMETHING is updated
+    # called every time SOMETHING is updated
     def listener_callback(self, msg):
         msg.data = 'Hello World: %d' % msg
         
@@ -138,20 +102,19 @@ class Odometry(Node):
     # enforce orientation between 0 and 360
     def set_orientation(self, orientation: float):
         if (orientation < 0 or orientation > 360): 
-            print("INVALID ORIENTATION: %d" %orientation)
+            print(f"Invalid Orientation: {orientation}")
             return
-
-        # update since valid
         self.orientation = orientation
 
     # set the power of left and right front motors
-    def set_motor_power(left_power, right_power):
+    def set_motor_power(self, left_power, right_power):
         # message class
         msg = Motors()
-        msg.front_left_wheel = left_power
-        msg.front_right_wheel = right_power
-        msg.back_left_wheel = left_power
-        msg.back_right_wheel = right_power
+        # one forth speed is plenty for now!
+        msg.front_left_wheel = left_power / 4.0
+        msg.front_right_wheel = right_power / 4.0
+        msg.back_left_wheel = left_power / 4.0
+        msg.back_right_wheel = right_power / 4.0
         msg.conveyor = 0.0
         msg.outtake = 0.0
 
@@ -160,77 +123,66 @@ class Odometry(Node):
         # can save current motor power for future reference
 
     # orient the robot (global orientation)
-    def to_orient(final_orientation: float):
-        # tolerance
-        tolerance = 1
-        
-        while (abs(self.orientation - final_orientation) > tolerance):
+    def to_orient(self, final_orientation: float):
+        tolerance_degrees = 1
+        while ((abs(self.orientation - final_orientation) + 360) % 360 > tolerance_degrees):
             # gap between where we are and want to be
             delta_orientation = self.orientation - final_orientation
-
+            
             # delta_orientation/90 means full power when gap > 90
-
-            # calculate right motor power
-            left_power = clamp(delta_orientation/90, -1, 1)
-
-            # calculate left motor power
+            # calculate motor power
+            left_power = clamp(delta_orientation/90.0, -1.0, 1.0)
             right_power = -left_power
-
             # set motor power
             self.set_motor_power(left_power, right_power)
 
-            # done
-
     # rotate the robot
-    def to_rotate(delta: float):
+    def to_rotate(self, delta: float):
         # new orientation (based on how much we rotate)
-        final_orientation = this.orientation + delta
+        final_orientation = self.orientation + delta
 
         # now go to new orientation
-        this.to_orient(final_orientation)
+        self.to_orient(final_orientation)
 
     # drive forward in a straight line
-    def to_line(length: float):
+    def to_line(self, length: float):
         
         # get the normalized vector of where we face
-        new_x = this.position.x + (math.cos(this.orientation) * length)
-        new_y = this.position.y + (math.sin(this.orientation) * length)
+        new_x = self.position.x + (math.cos(self.orientation) * length)
+        new_y = self.position.y + (math.sin(self.orientation) * length)
 
         # calculate the x, y we end up at if driving straight
-        to_position(new_x, new_y)
+        self.to_position(new_x, new_y)
 
     # move the robot from current to new position
-    def to_position(x: float, y: float):
-
-        # tolerance
-        tolerance = 1
-
+    def to_position(self, x: float, y: float):
+        tolerance_cm = 5.0
         # calculate orientation to face position
-        face_position(x, y)
-
+        self.face_position(x, y)
         # drive in a line until we reach the position
-        while ((this.position - current_position) > 1):
+        while (distance(self.position.x, self.position.y, x, y) > tolerance_cm):
             self.set_motor_power(1, 1)
+            time.sleep(0.05)
 
     # orient the rover to face a position
-    def face_position(x: float, y: float):
+    def face_position(self, x: float, y: float):
         delta_x = self.x - x
         delta_y = self.y - y
 
         # use atan2
-        new_orientation = math.atan2(y, x)
+        new_orientation = math.atan2(delta_y, delta_x)
 
         # rotate to new orientation
         self.to_orient(new_orientation)
 
-    # Drive along a path (List of Points)
-    def to_path(points):
+    # drive along a path (list of points)
+    def to_path(self, points):
         for point in points:
             self.to_position(point)
 
     # STRETCH: give a set of lines (graph) to drive along)
     # I think this would be a set of points actually
-    def to_graph():
+    def to_graph(self):
         pass
 
 # self = the class to add subscription to
@@ -251,6 +203,9 @@ def subscribe(self, get_type, topic_name: str, callback_name: str):
 # should replace with sigmoid function later
 def clamp(value, min_value, max_value):
     return max(min_value, min(max_value, value))
+
+def distance(x1, y1, x2, y2):
+    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 def main(args=None):
     rclpy.init(args=args)

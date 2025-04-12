@@ -151,7 +151,11 @@ class ObstacleDetector(Node):
                 filtered_bumps.append((lower, upper))
         # publish bumps as obstacles
         for lower, upper in filtered_bumps:
-            size = (upper - lower) / 2
+            # find average distance in the bump
+            size = 0
+            for degree in range(lower, upper):
+                size += recent_avg_distances[degree]
+            size /= (upper - lower)
             x = math.cos(math.radians(degree)) * recent_avg_distances[degree]
             y = math.sin(math.radians(degree)) * recent_avg_distances[degree]
             self.publish_obstacle(x, y, size)

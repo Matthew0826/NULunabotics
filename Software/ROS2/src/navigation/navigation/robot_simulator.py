@@ -10,7 +10,7 @@ from lunabotics_interfaces.msg import Motor
 # publish new coordinates and rotation
 from lunabotics_interfaces.msg import LidarRotation, Point
 
-class OdometryTesterActionClient(Node):
+class RobotSimulator(Node):
     def __init__(self):
         super().__init__('self_driver_action_client')
         
@@ -105,11 +105,9 @@ class OdometryTesterActionClient(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    action_client = OdometryTesterActionClient()
+    robot_simulator = RobotSimulator()
 
-    action_client.to_orient(90)
-
-    rclpy.spin(action_client)
+    rclpy.spin(robot_simulator)
 
 
 if __name__ == '__main__':

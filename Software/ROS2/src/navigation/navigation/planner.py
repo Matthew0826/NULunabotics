@@ -1,16 +1,32 @@
 import rclpy
-from rclpy.action import ActionClient
+from rclpy.action import ActionClient, ActionServer
 from rclpy.node import Node
 
-from lunabotics_interfaces.action import SelfDriver
+from lunabotics_interfaces.action import SelfDriver, Plan
 from lunabotics_interfaces.msg import Point
+from lunabotics_interfaces.srv import Path
+
+# Goals:
+# 1. Travel to the excavation zone and dig
+# 2. Travel to the berm and dump the regolith
+# 3. Repeat step 2
+
+# We want to maximize berm volume
+# We want to minimize:
+# 1. Time
+#    a. Wait time (such as LiDAR scanning or waiting for digging)
+#    b. Travel time (such as waiting for the robot to travel to the target)
+# 2. Watt hours
+#    a. Motor usage
+
 
 # each dump in the berm is about 10x10 cm
-# TODO: use actual value
+# TODO: use actual values
 BERM_DUMP_SIZE = 10
 ROBOT_WIDTH = 71
-ROBOT_LENGTH = 98  # units: cm
+ROBOT_LENGTH = 98
 LIDAR_VIEW_DISTANCE = 100
+HAS_REACHED_TARGET_THRESHOLD = 10
 
 def distance(point, other_point):
     return ((point.x - other_point.x) ** 2 + (point.y - other_point.y) ** 2) ** 0.5
@@ -36,12 +52,12 @@ class Zone:
         return point
 
     def pop_next_point(self):
-        point = peek_nth_point()
+        point = self.peek_nth_point()
         self.n -= 1
         return point
     
     def shrink(self, amount, only_top=False):
-        if !only_top:
+        if not only_top:
             self.x += amount
             self.width -= amount * 2
         self.y += amount
@@ -61,7 +77,7 @@ class Zone:
         return point
 
 
-# define zones in cm and shrink them so the robot doesnt hit the walls
+# define zones in cm and shrink them so the robot doesn't hit the walls
 berm_zone = Zone(428.0, 265.5, 70.0, 200.0)
 berm_zone.shrink(ROBOT_WIDTH/2, only_top=True)  # there might be no need to shrink berm since it already avoids parts near rocks
 excavation_zone = Zone(0, 244.0, 274.0, 243.0)
@@ -73,74 +89,130 @@ class Planner(Node):
 
     def __init__(self):
         super().__init__('planner')
-        self._action_client = ActionClient(self, SelfDriver, 'self_driver')
+        self.odometry_action_client = ActionClient(self, SelfDriver, 'self_driver')
+        self.planner_action_server = ActionServer(self, Plan, 'plan', self.plan_callback)
         self.previous_position = start_zone.get_center()
+        self.current_target = None
+        self.was_travel_successful = False 
+    
+    def plan_callback(self, goal_handle):
+        feedback_msg = Plan.Feedback()
+        feedback_msg.progress = 0.0
+        start_time = self.get_clock().now()
+        should_excavate = goal_handle.request.should_excavate
+        should_dump = goal_handle.request.should_dump
+        start = goal_handle.request.start
+        self.get_logger().info(f"Should excavate: {should_excavate}, should dump: {should_dump}")
+        zone = None
+        if should_excavate:
+            zone = excavation_zone
+        elif should_dump:
+            zone = berm_zone
+        else:
+            self.get_logger().info("No excavation or dump zone specified")
+            goal_handle.fail()
+            result = Plan.Result()
+            result.time_elapsed_millis = 0
+            return
+        self.current_target = zone.pop_next_point()
+        self.previous_position = start
+        total_distance_to_target = distance(start, self.current_target)  # to calculate progress
 
-    def send_goal(self, targets):
+        self.was_travel_successful = False
+        # keep looping until it finds a point that it can travel to
+        should_travel = self.travel_to_target()
+        if not should_travel:
+            goal_handle.fail()
+            result = Plan.Result()
+            current_time = self.get_clock().now()
+            result.time_elapsed_millis = current_time - start_time
+            return result
+        while not self.was_travel_successful:
+            # TODO: wait until the travel_to_target function is called again after the self driver goal is completed
+            
+            if goal_handle.is_cancel_requested():
+                goal_handle.canceled()
+                result = Plan.Result()
+                current_time = self.get_clock().now()
+                result.time_elapsed_millis = current_time - start_time
+                return result
+            feedback_msg.progress = 1.0 - distance(self.previous_position, self.current_target) / total_distance_to_target
+            goal_handle.publish_feedback(feedback_msg)    
+        
+        goal_handle.succeed()
+        result = Plan.Result()
+        current_time = self.get_clock().now()
+        result.time_elapsed_millis = current_time - start_time
+        return result
+
+    def send_drive_goal(self, targets):
         goal_msg = SelfDriver.Goal()
         goal_msg.targets = targets
 
-        self._action_client.wait_for_server()
-        self._send_goal_future = self._action_client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback)
-        self._send_goal_future.add_done_callback(self.goal_response_callback)
+        self.odometry_action_client.wait_for_server()
+        self._send_goal_future = self.odometry_action_client.send_goal_async(goal_msg, feedback_callback=self.driving_feedback_callback)
+        self._send_goal_future.add_done_callback(self.drive_goal_response_callback)
 
-    def goal_response_callback(self, future):
+    def drive_goal_response_callback(self, future):
         goal_handle = future.result()
         if not goal_handle.accepted:
-            self.get_logger().info('Goal rejected :(')
+            # traveling to the point failed!
+            # TODO: maybe back up and try another route? this way might be a bad idea
+            print("Traveling was rejected")
+            self.travel_to_target()
             return
-
-        self.get_logger().info('Goal accepted :)')
-
+        
+        # traveling was successful
         self._get_result_future = goal_handle.get_result_async()
-        self._get_result_future.add_done_callback(self.get_result_callback)
+        self._get_result_future.add_done_callback(self.get_drive_result_callback)
 
-    def get_result_callback(self, future):
-        result = future.result().result
-        self.get_logger().info('Result: {0}'.format(result.sequence))
-        rclpy.shutdown()
-
-    def feedback_callback(self, feedback_msg):
+    def get_drive_result_callback(self, future):
+        # this function is called when traveling was successful
+        result = future.result().result  # idk why you have to do result().result
+        time_elapsed = result.time_elapsed_millis
+        self.previous_position = self.current_target
+        print(f"Travel to ({self.current_target.x}, {self.current_target.y}) took {time_elapsed} ms")
+        # continue to next part of the path
+        self.travel_to_target()
+        
+    def driving_feedback_callback(self, feedback_msg):
         feedback = feedback_msg.feedback
-        self.get_logger().info('Received feedback: {0}'.format(feedback.partial_sequence))
+        # TODO: What if the time limit ends? we need to cancel the goal
+        # TODO: If the robot isn't making very much progress, maybe cancel this goal and try a different route?
+        progress = feedback.progress
+        print(f"Progress to ({self.current_target.x}, {self.current_target.y}): {progress}")
     
     def make_path(self, target):
         return use_pathfinder(self.previous_position, target)
     
     def prune_path(self, path):
-         # get rid of all points in path that are further than 1 meter
+        # get rid of all points in path that are further than 1 meter
+        new_path = path.copy()
         sum_of_distances = 0
-        for i in range(len(path) - 1):
-            sum_of_distances += distance(path[i], path[i+1])
+        for i in range(len(new_path) - 1):
+            sum_of_distances += distance(new_path[i], new_path[i+1])
             if sum_of_distances > LIDAR_VIEW_DISTANCE:
-                path = path[:i]
+                new_path = new_path[:i + 1]
                 break
-        return path
+        return new_path
     
-    def go_to(self, target):
-        has_moved = False
-        while True:
-            # make new path
-            path = self.make_path(target)
-            # check if path is valid, and only return true if its moved at all
-            if len(path) <= 0: return has_moved
-            # we don't know about obstacles that are too far away, so we need to prune those points from the path
-            path = self.prune_path(path)
-            self.send_goal(path)
-            has_moved = True
-    
-    def travel_to_zone(self, zone):
-        success = False
-        # keep looping until it finds a point that it can travel to
-        while not success:
-            success = self.go_to(zone.pop_next_point(self.berm_dump_count))
-    
-    def do_lunabotics_competition_plan(self):
-        while not excavation_zone.is_done():
-            self.travel_to_zone(excavation_zone)
-            self.excavate()
-            self.travel_to_zone(berm_zone)
-            self.dump()
+    # travel_to_target only returns true if the robot should continue
+    # towards its final destination on its current trajectory
+    def travel_to_target(self):
+        # make new path
+        path = self.make_path(self.current_target)
+        # check if path is valid, if not this travel was not successful, and we need to test a different point
+        if len(path) <= 0: return False
+        # we don't know about obstacles that are too far away, so we need to prune those points from the path
+        pruned_path = self.prune_path(path)
+        if len(pruned_path) <= 0 and distance(path[-1], self.current_target) < HAS_REACHED_TARGET_THRESHOLD:
+            # now we have reached the destination
+            self.was_travel_successful = True
+            return True
+        # send_goal will eventually call this function again
+        self.send_drive_goal(pruned_path)
+        return True
+
 
 class PathfinderClient(Node):
     def __init__(self):
