@@ -42,7 +42,12 @@ class MockOdometry(Node):
         
         # publish the initial position and orientation
         self.position_publisher.publish(self.position)
-        self.angle_publisher.publish(self.orientation)
+        self.publish_angle()
+    
+    def publish_angle(self):
+        angle_msg = Float32()
+        angle_msg.data = self.orientation
+        self.angle_publisher.publish(angle_msg)
 
     # when someone calls this action
     # SelfDriver.action:
@@ -75,7 +80,7 @@ class MockOdometry(Node):
     # orient the robot (global orientation)
     def to_orient(self, final_orientation: float):
         self.orientation = (final_orientation + 360) % 360
-        self.angle_publisher.publish(self.orientation)
+        self.publish_angle()
 
     # rotate the robot
     def to_rotate(self, delta: float):
@@ -91,8 +96,8 @@ class MockOdometry(Node):
         distance = math.sqrt((self.position.x - x) ** 2 + (self.position.y - y) ** 2)
         for i in range(int(distance / MOCK_SPEED)):
             # move the robot
-            self.position.x += MOCK_SPEED * math.cos(self.orientation)
-            self.position.y += MOCK_SPEED * math.sin(self.orientation)
+            self.position.x += MOCK_SPEED * math.cos(math.radians(self.orientation))
+            self.position.y += MOCK_SPEED * math.sin(math.radians(self.orientation))
             # send out updated position
             self.position_publisher.publish(self.position)
             goal_handle.publish_feedback(feedback_msg)
@@ -101,16 +106,20 @@ class MockOdometry(Node):
     
     # orient the rover to face a position
     def face_position(self, x: float, y: float):
-        delta_x = self.x - x
-        delta_y = self.y - y
-        new_orientation = math.atan2(delta_y, delta_x)
+        delta_x = x - self.position.x
+        delta_y = y - self.position.y
+        new_orientation = math.degrees(math.atan2(delta_y, delta_x))
         self.to_orient(new_orientation)
 
     # Drive along a path (list of points)
     def to_path(self, points, goal_handle, feedback_msg):
-        for point in points:
-            self.to_position(point, goal_handle, feedback_msg)
-            feedback_msg.progress += 1 / len(points)
+        for i, point in enumerate(points):
+            self.to_position(point.x, point.y, goal_handle, feedback_msg)
+            feedback_msg.progress = (i + 1) / len(points)
+            goal_handle.publish_feedback(feedback_msg)
+        feedback_msg.progress = 1.0
+        goal_handle.publish_feedback(feedback_msg)
+
 
 
 def main(args=None):

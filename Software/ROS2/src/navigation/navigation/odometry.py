@@ -92,13 +92,6 @@ class Odometry(Node):
     def on_orientation(self, orientation):
         self.set_orientation(orientation)
 
-    # called every time SOMETHING is updated
-    def listener_callback(self, msg):
-        msg.data = 'Hello World: %d' % msg
-        
-        # test increment orientation
-        self.orientation += 1
-
     # enforce orientation between 0 and 360
     def set_orientation(self, orientation: float):
         if (orientation < 0 or orientation > 360): 
@@ -148,8 +141,8 @@ class Odometry(Node):
     def to_line(self, length: float):
         
         # get the normalized vector of where we face
-        new_x = self.position.x + (math.cos(self.orientation) * length)
-        new_y = self.position.y + (math.sin(self.orientation) * length)
+        new_x = self.position.x + (math.cos(math.radians(self.orientation)) * length)
+        new_y = self.position.y + (math.sin(math.radians(self.orientation)) * length)
 
         # calculate the x, y we end up at if driving straight
         self.to_position(new_x, new_y)
@@ -166,11 +159,9 @@ class Odometry(Node):
 
     # orient the rover to face a position
     def face_position(self, x: float, y: float):
-        delta_x = self.x - x
-        delta_y = self.y - y
-
-        # use atan2
-        new_orientation = math.atan2(delta_y, delta_x)
+        delta_x = x - self.position.x
+        delta_y = y - self.position.y
+        new_orientation = math.degrees(math.atan2(delta_y, delta_x))
 
         # rotate to new orientation
         self.to_orient(new_orientation)
@@ -178,7 +169,7 @@ class Odometry(Node):
     # drive along a path (list of points)
     def to_path(self, points):
         for point in points:
-            self.to_position(point)
+            self.to_position(point.x, point.y)
 
     # STRETCH: give a set of lines (graph) to drive along)
     # I think this would be a set of points actually

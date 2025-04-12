@@ -137,6 +137,7 @@ class Planner(Node):
             current_time = self.get_clock().now()
             result.time_elapsed_millis = current_time - start_time
             return result
+        
         while not self.was_travel_successful:
             if goal_handle.is_cancel_requested():
                 self._travel_done_event.set()
@@ -145,7 +146,6 @@ class Planner(Node):
                 current_time = self.get_clock().now()
                 result.time_elapsed_millis = current_time - start_time
                 return result
-            
             # wait for the robot to finish traveling once
             self._travel_done_event.wait(timeout=1.0)
             feedback_msg.progress = 1.0 - distance(self.previous_position, self.current_target) / total_distance_to_target
