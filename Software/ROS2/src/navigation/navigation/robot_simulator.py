@@ -104,10 +104,9 @@ class RobotSimulator(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
     robot_simulator = RobotSimulator()
-
     rclpy.spin(robot_simulator)
+    rclpy.shutdown()
 
 
 if __name__ == '__main__':

@@ -6,6 +6,10 @@ from lunabotics_interfaces.action import SelfDriver, Plan
 from lunabotics_interfaces.msg import Point
 from lunabotics_interfaces.srv import Path
 
+from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
+from threading import Event
+
 # Goals:
 # 1. Travel to the excavation zone and dig
 # 2. Travel to the berm and dump the regolith
@@ -94,7 +98,12 @@ class Planner(Node):
         self.previous_position = start_zone.get_center()
         self.current_target = None
         self.was_travel_successful = False 
+        self.drive_count = 0
+        self.callback_group = ReentrantCallbackGroup()
+        self._travel_done_event = Event()
     
+    # gets run whenever a new goal is sent to the planner
+    # TODO: only supports one action at a time! (for now)
     def plan_callback(self, goal_handle):
         feedback_msg = Plan.Feedback()
         feedback_msg.progress = 0.0
@@ -120,6 +129,7 @@ class Planner(Node):
 
         self.was_travel_successful = False
         # keep looping until it finds a point that it can travel to
+        self.drive_count = 1
         should_travel = self.travel_to_target()
         if not should_travel:
             goal_handle.fail()
@@ -128,16 +138,18 @@ class Planner(Node):
             result.time_elapsed_millis = current_time - start_time
             return result
         while not self.was_travel_successful:
-            # TODO: wait until the travel_to_target function is called again after the self driver goal is completed
-            
             if goal_handle.is_cancel_requested():
+                self._travel_done_event.set()
                 goal_handle.canceled()
                 result = Plan.Result()
                 current_time = self.get_clock().now()
                 result.time_elapsed_millis = current_time - start_time
                 return result
+            
+            # wait for the robot to finish traveling once
+            self._travel_done_event.wait(timeout=1.0)
             feedback_msg.progress = 1.0 - distance(self.previous_position, self.current_target) / total_distance_to_target
-            goal_handle.publish_feedback(feedback_msg)    
+            goal_handle.publish_feedback(feedback_msg)
         
         goal_handle.succeed()
         result = Plan.Result()
@@ -159,21 +171,23 @@ class Planner(Node):
             # traveling to the point failed!
             # TODO: maybe back up and try another route? this way might be a bad idea
             print("Traveling was rejected")
+            self.drive_count += 1
             self.travel_to_target()
             return
         
         # traveling was successful
         self._get_result_future = goal_handle.get_result_async()
         self._get_result_future.add_done_callback(self.get_drive_result_callback)
-
+        
     def get_drive_result_callback(self, future):
-        # this function is called when traveling was successful
-        result = future.result().result  # idk why you have to do result().result
+        result = future.result().result
         time_elapsed = result.time_elapsed_millis
         self.previous_position = self.current_target
         print(f"Travel to ({self.current_target.x}, {self.current_target.y}) took {time_elapsed} ms")
-        # continue to next part of the path
-        self.travel_to_target()
+
+        self.was_travel_successful = True
+        self.drive_count += 1
+        self._travel_done_event.set()
         
     def driving_feedback_callback(self, feedback_msg):
         feedback = feedback_msg.feedback
@@ -241,9 +255,15 @@ def use_pathfinder(start, end):
 def main(args=None):
     rclpy.init(args=args)
     planner = Planner()
-    rclpy.spin(planner)
-    pathfinder_client.destroy_node()
-    rclpy.shutdown()
+    executor = MultiThreadedExecutor()
+    executor.add_node(planner)
+    executor.add_node(pathfinder_client)
+    try:
+        executor.spin()
+    finally:
+        planner.destroy_node()
+        pathfinder_client.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':
