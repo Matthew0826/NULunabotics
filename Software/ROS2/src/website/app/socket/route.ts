@@ -2,8 +2,8 @@
 
 import { IncomingMessage } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
-import { lidarPoints, publishToROS2, sendPathfindingRequest } from "../lib/ros2";
-import { sockets } from "../lib/sockets";
+import { lidarPoints, publishToROS2, sendPathfindingRequest, sendPlanAction } from "../lib/ros2";
+import { sendToClient, sockets } from "../lib/sockets";
 
 export function GET() {
     const headers = new Headers();
@@ -30,39 +30,32 @@ export function SOCKET(
         try {
             const messageJson = JSON.parse(messageString);
             if (messageJson.type === "sendPathfindingRequest") {
-                sendPathfindingRequest(
-                    messageJson.data.point1,
-                    messageJson.data.point2,
-                    (points) => {
-                        const response = JSON.stringify([
-                            {
-                                graph: "Path",
-                                dataSet: "Pathfinding",
-                                newData: points,
-                            },
-                        ]);
-                        client.send(response);
+                const isPoint2BelowObstacles = messageJson.message.point2.y >= 244.0;
+                const isPoint2DumpZone = messageJson.message.point2.x >= 274.0;
+                if (isPoint2BelowObstacles) {
+                    if (isPoint2DumpZone) {
+                        sendPlanAction(messageJson.message.point1, false, true);
+                    } else {
+                        sendPlanAction(messageJson.message.point1, true, false);
                     }
-                )
+                } else {
+                    sendPathfindingRequest(
+                        messageJson.message.point1,
+                        messageJson.message.point2,
+                        (points) => {
+                            sendToClient("path", points);
+                        }
+                    )
+                }
+
             } else if (messageJson.type === "controls") {
-                publishToROS2(JSON.stringify(messageJson.data));
+                publishToROS2(messageJson.message);
             }
-        } catch (error) {}
+        } catch (error) { }
     });
 
     console.log("Client connected");
     sockets.add(client);
-    // const interval = setInterval(() => {
-    //     client.send(
-    //         JSON.stringify([
-    //             {
-    //                 graph: "Power",
-    //                 dataSet: "Test Data",
-    //                 newData: [Math.floor(Math.random() * 30)],
-    //             }
-    //         ])
-    //     );
-    // }, 1000);
 
-    return () => {}; //clearInterval(interval);
+    return () => { }; //clearInterval(interval);
 }

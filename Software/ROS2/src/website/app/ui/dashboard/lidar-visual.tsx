@@ -20,11 +20,10 @@ export default function LidarVisual() {
     const [lidarData, setLidarData] = useState<Point[]>([]);
     useEffect(() => {
         if (messages.length == 0) return;
-        const lidarMessage = JSON.parse(messages[messages.length - 1]).find(
-            (message: any) => message.graph === "Lidar"
-        );
-        setLidarData(lidarMessage?.newData || []);
-        previousLidarData.push(lidarMessage?.newData || []);
+        const lidarMessage = messages[messages.length - 1];
+        if (lidarMessage.type !== "lidar") return;
+        setLidarData(lidarMessage?.message || []);
+        previousLidarData.push(lidarMessage?.message || []);
         if (previousLidarData.length > previousLidarDataMaxSize) {
             previousLidarData.shift();
         }
@@ -64,17 +63,17 @@ export default function LidarVisual() {
                     height: 4,
                     backgroundColor: doInterpolateColor
                         ? interpolateColor(
-                              [0, 255, 0],
-                              [255, 0, 0],
-                              //   point.weight / 256
-                              // how far away from moving average
-                              Math.min(
-                                  1.0,
-                                  getAveragePreviousPoint(
-                                      Math.floor(point.angle)
-                                  ).distance / 200.0
-                              )
-                          )
+                            [0, 255, 0],
+                            [255, 0, 0],
+                            //   point.weight / 256
+                            // how far away from moving average
+                            Math.min(
+                                1.0,
+                                getAveragePreviousPoint(
+                                    Math.floor(point.angle)
+                                ).distance / 200.0
+                            )
+                        )
                         : "blue",
                     left: `${50 + 50 * (point.distance / getMaxDistance()) * Math.cos(point.angle)}%`,
                     bottom: `${50 + 50 * (point.distance / getMaxDistance()) * -Math.sin(point.angle)}%`,

@@ -20,9 +20,11 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-#            'odometry = navigation.odometry:main',
+            'odometry = navigation.odometry:main',
             'obstacle_detector = navigation.obstacle_detector:main',
-            'pathfinder = navigation.pathfinder:main'
+            'pathfinder = navigation.pathfinder:main',
+            'mock_odometry = navigation.mock_odometry:main',
+            'planner = navigation.planner:main'
         ],
     },
 )

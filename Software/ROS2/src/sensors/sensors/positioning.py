@@ -63,7 +63,7 @@ class SpacialDataPublisher(Node):
                 angle = 1.2#int.from_bytes(angle, byteorder='big')
                 self.get_logger().info(f"Angle: {angle}")
                 msg = Float32()
-                msg.data = angle
+                msg.data = angle / 100.0
                 self.angle_publisher.publish(msg)
             buffer = buffer[-6:] # keep only the last 6 bytes
 

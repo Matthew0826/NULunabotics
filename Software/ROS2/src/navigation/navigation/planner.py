@@ -168,11 +168,7 @@ class Planner(Node):
     def drive_goal_response_callback(self, future):
         goal_handle = future.result()
         if not goal_handle.accepted:
-            # traveling to the point failed!
-            # TODO: maybe back up and try another route? this way might be a bad idea
             print("Traveling was rejected")
-            self.drive_count += 1
-            self.travel_to_target()
             return
         
         # traveling was successful

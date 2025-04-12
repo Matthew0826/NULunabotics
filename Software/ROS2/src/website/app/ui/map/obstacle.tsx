@@ -25,7 +25,7 @@ export default function Obstacle({
             style={{
                 width: `${(2 * radius) / MAP_WIDTH}%`,
                 height: `${(2 * radius) / MAP_HEIGHT}%`,
-                top: `${y / MAP_HEIGHT}%`, // 12.5% is arbitrary, I'm not sure why you have to subtract it
+                top: `${y / MAP_HEIGHT}%`,
                 left: `${x / MAP_WIDTH}%`,
             }}
         />

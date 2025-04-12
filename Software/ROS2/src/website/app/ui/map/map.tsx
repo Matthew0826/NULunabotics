@@ -1,7 +1,8 @@
-import { useWebSocketContext } from "@/app/lib/web-socket-context";
+import { Message, useWebSocketContext } from "@/app/lib/web-socket-context";
 import Obstacle from "./obstacle";
 import RobotPath, { Point } from "./robot-path";
 import { useEffect, useState } from "react";
+import Robot from "./robot";
 
 export const MAP_WIDTH = 5.48; // meters
 export const MAP_OBSTACLES_ZONE_HEIGHT = 2.44; // meters
@@ -20,18 +21,24 @@ export default function Map() {
     const { messages, sendToServer } = useWebSocketContext();
     const [pathData, setPathData] = useState<Point[]>([]);
     const [obstacles, setObstacles] = useState<ObstacleType[]>([]);
+    const [robot, setRobot] = useState({ x: 0, y: 0, width: 71, height: 98, rotation: 0 });
     useEffect(() => {
         if (messages.length == 0) return;
-        const pathMessage = JSON.parse(messages[messages.length - 1]).find(
-            (message: any) => message.graph === "Path"
-        );
-        const data = (pathMessage?.newData || []).map((point: any) => ([point.x, point.y]));
-        // console.log("Path data", data);
-        setPathData(data);
-        const obstaclesMessages = [...new Set(messages.map((message: any) => JSON.parse(message))
-            .flat()
-            .filter((message: any) => message.graph === "Obstacles")
-            .map((message: any) => message.newData)
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage.type === "path") {
+            const data = (lastMessage?.message || []).map((point: any) => ([point.x, point.y]));
+            // console.log("Path data", data);
+            setPathData(data);
+        } else if (lastMessage.type === "position") {
+            const data = lastMessage?.message || {};
+            setRobot(prev => ({ ...prev, x: data.x, y: data.y }));
+        } else if (lastMessage.type === "orientation") {
+            const data = lastMessage?.message || {};
+            setRobot(prev => ({ ...prev, rotation: data }));
+        }
+        const obstaclesMessages = [...new Set(messages
+            .filter((message: Message) => message.type === "obstacles")
+            .map((message: Message) => message.message)
             .flat()
             .map((newObstacle: any) => {
                 return { x: newObstacle.position.x, y: newObstacle.position.y, radius: newObstacle.radius, isHole: true }
@@ -108,6 +115,7 @@ export default function Map() {
                     />
                 ))}
                 <RobotPath path={pathData} />
+                <Robot x={robot.x} y={robot.y} width={robot.width} height={robot.height} rotation={robot.rotation} />
             </div>
         </div>
     );

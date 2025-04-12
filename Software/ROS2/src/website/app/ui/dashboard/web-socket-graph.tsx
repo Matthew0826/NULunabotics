@@ -32,9 +32,9 @@ export default function WebSocketGraph({
 
     useEffect(() => {
         if (messages.length == 0) return;
-        const payload = messages[messages.length - 1];
-        const data = JSON.parse(payload);
-        for (const dataPoint of data) {
+        const data = messages[messages.length - 1];
+        if (!data.type.startsWith("graph")) return;
+        for (const dataPoint of data.message) {
             const graphName = dataPoint.graph as string;
             if (graph.name != graphName) {
                 continue;

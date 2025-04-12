@@ -1,3 +1,5 @@
+import { Message } from "./web-socket-context";
+
 export const tempGraphPower = {
     name: "Power",
     xAxisLabel: "time (s)",
@@ -26,38 +28,32 @@ const getRock = (i: number) => {
     return obstacle;
 }
 
-export const tempStartingData = [
-    [
-        {
-            graph: "Lidar",
-            dataSet: "Points",
-            newData: [
-                { distance: 2000, angle: (7 * Math.PI) / 4, weight: 0 },
-                { distance: 1000, angle: (6 * Math.PI) / 4, weight: 0 },
-                { distance: 2000, angle: (5 * Math.PI) / 4, weight: 0 },
-                { distance: 1200, angle: Math.PI, weight: 0 },
-                { distance: 2000, angle: (3 * Math.PI) / 4, weight: 0 },
-                { distance: 2000, angle: (2 * Math.PI) / 4, weight: 0 },
-                { distance: 2000, angle: Math.PI / 4, weight: 0 },
-                { distance: 2000, angle: 0, weight: 0 },
-            ],
-        },
-    ],
-    [
-        {
-            graph: "Obstacles",
-            dataSet: "Obstacles",
-            newData: [
-                getRock(1),
-                getRock(2),
-                getRock(3),
-                getRock(4),
-                getRock(5),
-                getRock(6),
-                getRock(7),
-                getRock(8),
-            ]
-        }
-    ]
+export const tempStartingData: Message[] = [
+    {
+        type: "lidar",
+        message: [
+            { distance: 200, angle: (7 * Math.PI) / 4, weight: 0 },
+            { distance: 100, angle: (6 * Math.PI) / 4, weight: 0 },
+            { distance: 200, angle: (5 * Math.PI) / 4, weight: 0 },
+            { distance: 120, angle: Math.PI, weight: 0 },
+            { distance: 200, angle: (3 * Math.PI) / 4, weight: 0 },
+            { distance: 200, angle: (2 * Math.PI) / 4, weight: 0 },
+            { distance: 200, angle: Math.PI / 4, weight: 0 },
+            { distance: 200, angle: 0, weight: 0 },
+        ],
+    },
+    {
+        type: "obstacles",
+        message: [
+            getRock(1),
+            getRock(2),
+            getRock(3),
+            getRock(4),
+            getRock(5),
+            getRock(6),
+            getRock(7),
+            getRock(8),
+        ]
+    }
 
 ]

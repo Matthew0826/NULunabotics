@@ -12,7 +12,7 @@ import {
 import { tempStartingData } from "./temp-graph-info";
 
 export type WebSocketMessages = {
-    messages: string[];
+    messages: Message[];
     sendToServer: (messageType: string, message: any) => void;
 };
 
@@ -20,6 +20,11 @@ const WebSocketContext = createContext<WebSocketMessages>({
     messages: [],
     sendToServer: () => { },
 });
+
+export type Message = {
+    type: string;
+    message: any;
+};
 
 export const useWebSocketContext = () => useContext(WebSocketContext);
 
@@ -43,8 +48,8 @@ export default function WebSocketProvider({
         };
     }, []);
 
-    const [messages, setMessages] = useState<string[]>(
-        tempStartingData.map((msg) => JSON.stringify(msg)),
+    const [messages, setMessages] = useState<Message[]>(
+        tempStartingData
     );
 
     useEffect(() => {
@@ -53,7 +58,7 @@ export default function WebSocketProvider({
                 typeof event.data === "string"
                     ? event.data
                     : await event.data.text();
-            setMessages((p) => [...p, payload]/*.slice(-10)*/); // Keep only the last 10 messages
+            setMessages((p) => [...p, JSON.parse(payload)]);
         }
 
         socketRef.current?.addEventListener("message", handleMessage);
@@ -65,7 +70,7 @@ export default function WebSocketProvider({
     }, []);
 
     function sendToServer(messageType: string, message: any) {
-        socketRef.current?.send(JSON.stringify({ type: messageType, data: message }));
+        socketRef.current?.send(JSON.stringify({ type: messageType, message: message }));
     }
 
     return (
