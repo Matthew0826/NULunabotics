@@ -195,7 +195,6 @@ class Planner(Node):
         # self.get_logger().info(f"Progress to ({self.current_target.x}, {self.current_target.y}): {progress}")
     
     def make_path(self, target):
-        self.get_logger().info(f"making path from {self.previous_position} to {target}")
         return use_pathfinder(self.pathfinder_client, self.previous_position, target)
     
     def prune_path(self, path):

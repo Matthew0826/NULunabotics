@@ -2,7 +2,7 @@
 
 import { IncomingMessage } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
-import { lidarPoints, publishToROS2, sendPathfindingRequest, sendPlanAction } from "../lib/ros2";
+import { lidarPoints, publishMockObstacle, publishToROS2, sendPathfindingRequest, sendPlanAction } from "../lib/ros2";
 import { sendToClient, sockets } from "../lib/sockets";
 
 export function GET() {
@@ -44,14 +44,16 @@ export function SOCKET(
                         sendPlanAction({ x: robot.x, y: robot.y }, true, false);
                     }
                 } else {
-                    console.log("Sending pathfinding request");
-                    sendPathfindingRequest(
-                        point1,
-                        point2,
-                        (points) => {
-                            sendToClient("path", points);
-                        }
-                    )
+                    // console.log("Sending pathfinding request");
+                    // sendPathfindingRequest(
+                    //     point1,
+                    //     point2,
+                    //     (points) => {
+                    //         sendToClient("path", points);
+                    //     }
+                    // )
+                    console.log("Making mock obstacle");
+                    publishMockObstacle({ x: point2[0], y: point2[1], radius: 20 });
                 }
 
             } else if (messageJson.type === "controls") {

@@ -95,7 +95,7 @@ class MockOdometry(Node):
             # pretend to take time to rotate
             time.sleep(1/(MOCK_ROTATION_SPEED*2))
         # set the final orientation
-        self.orientation = (final_orientation + 360) % 360
+        self.orientation = final_orientation
         self.publish_angle()
 
     # rotate the robot
@@ -108,6 +108,7 @@ class MockOdometry(Node):
 
     # move the robot from current to new position
     def to_position(self, x: float, y: float, goal_handle, feedback_msg):
+        self.position_publisher.publish(self.position)
         self.face_position(x, y)
         distance = math.sqrt((self.position.x - x) ** 2 + (self.position.y - y) ** 2)
         for i in range(int(distance / MOCK_SPEED)):

@@ -33,6 +33,17 @@ export const publishToROS2 = (messageJson: any) => {
     // console.log("Published: ", messageJson);
 };
 
+export const publishMockObstacle = (messageJson: any) => {
+    const obstacleMsg = rclnodejs.createMessageObject(LUNABOTICS_OBSTACLE_TYPE);
+    obstacleMsg.position.x = messageJson.x;
+    obstacleMsg.position.y = messageJson.y;
+    obstacleMsg.radius = messageJson.radius;
+    // Make sure the pathfinder thinks its high confidence since this is a mock
+    for (let i = 0; i < 10; i++) {
+        rosMockObstaclePublisher.publish(obstacleMsg);
+    }
+};
+
 export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, callback: (point: any[]) => void) => {
     // To view service events use the following command:
     //    ros2 topic echo "/add_two_ints/_service_event"
@@ -118,6 +129,7 @@ async function timerCallback(goalHandle: rclnodejs.ClientGoalHandle<typeof LUNAB
 
 let rosNode: rclnodejs.Node;
 let rosControlsPublisher: rclnodejs.Publisher<typeof LUNABOTICS_MOTORS_TYPE>;
+let rosMockObstaclePublisher: rclnodejs.Publisher<typeof LUNABOTICS_OBSTACLE_TYPE>;
 let rosClient: rclnodejs.Client<typeof LUNABOTICS_PATH_TYPE>;
 let planActionClient: rclnodejs.ActionClient<typeof LUNABOTICS_PLAN_TYPE>;
 
@@ -127,6 +139,10 @@ rclnodejs.init().then(() => {
     rosControlsPublisher = node.createPublisher(
         LUNABOTICS_MOTORS_TYPE,
         "physical_robot/motors"
+    );
+    rosMockObstaclePublisher = node.createPublisher(
+        LUNABOTICS_OBSTACLE_TYPE,
+        "navigation/obstacles"
     );
     node.createSubscription(
         LUNABOTICS_LIDAR_ROTATION_TYPE,
