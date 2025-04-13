@@ -7,6 +7,8 @@ from lunabotics_interfaces.msg import Point, Motors
 # the self driver agent action
 from lunabotics_interfaces.action import SelfDriver
 
+from navigation.pathfinder_helper import distance
+
 from std_msgs.msg import Float32
 
 import math
@@ -153,7 +155,7 @@ class Odometry(Node):
         # calculate orientation to face position
         self.face_position(x, y)
         # drive in a line until we reach the position
-        while (distance(self.position.x, self.position.y, x, y) > tolerance_cm):
+        while (distance(self.position, Point(x=x, y=y)) > tolerance_cm):
             self.set_motor_power(1, 1)
             time.sleep(0.05)
 
@@ -195,8 +197,6 @@ def subscribe(self, get_type, topic_name: str, callback_name: str):
 def clamp(value, min_value, max_value):
     return max(min_value, min(max_value, value))
 
-def distance(x1, y1, x2, y2):
-    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 def main(args=None):
     rclpy.init(args=args)

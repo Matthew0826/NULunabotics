@@ -4,29 +4,15 @@ from rclpy.node import Node
 from lunabotics_interfaces.msg import Point, Obstacle, PathVisual
 from lunabotics_interfaces.srv import Path
 
-from navigation.astar import AStar
+from navigation.pathfinder_helper import *
 import random
 import math
 
 # Note: 0, 0 is defined as the top left corner of the map
 
-# these are rounded up to the nearest 5 cm
-MAP_WIDTH = 550  # units: cm
-MAP_HEIGHT = 490
-GRID_RESOLUTION = 5  # units: cm
-GRID_WIDTH = MAP_WIDTH // GRID_RESOLUTION
-GRID_HEIGHT = MAP_HEIGHT // GRID_RESOLUTION
 # TODO: make this a ros parameter
 ROBOT_WIDTH = 71 # units: cm
 ROBOT_LENGTH = 98  # units: cm
-
-# enum for zones on the map
-OUT_OF_BOUNDS = -1
-START_ZONE = 0
-TRAVERSAL_ZONE = 1
-EXCAVATION_ZONE = 2
-DUMP_ZONE = 3
-BERM_ZONE = 4
 
 # threshold needed for a cell to be considered an obstacle between 0 and 1
 INITIAL_OBSTACLE_CONFIDENCE_THRESHOLD = 0.2
@@ -36,87 +22,15 @@ OBSTACLE_SIZE_THRESHOLD = 10  # units: cm
 OBSTACLE_CONFIDENCE_STRENGTH = 0.12
 
 
-def world_to_grid(x, y):
-    return int(x // GRID_RESOLUTION), int(y // GRID_RESOLUTION)
-
-
-def grid_to_world(x, y):
-    return x * GRID_RESOLUTION + GRID_RESOLUTION/2, y * GRID_RESOLUTION + GRID_RESOLUTION/2
-
-
-def get_zone(x, y):
-    if x < 0 or x >= MAP_WIDTH or y < 0 or y >= MAP_HEIGHT:
-        return OUT_OF_BOUNDS
-    if y < 200:
-        if x > MAP_WIDTH - 200:
-            return START_ZONE
-        return BERM_ZONE
-    if x < 274:
-        return EXCAVATION_ZONE
-    return DUMP_ZONE
-
-
-class AStarNode:
-    """Represents a 5x5 cm square on the map (node on the graph). x and y are coordinates in cm on the grid (not world)."""
-    def __init__(self, x, y, confidence=0):
-        self.x = x
-        self.y = y
-        self.confidence = confidence
-    
-    @classmethod
-    def from_point(cls, point):
-        world_x, world_y = world_to_grid(point.x, point.y)
-        return cls(world_x, world_y, 0)
-        
-    def distance(self, other):
-        return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
-    
-    def __hash__(self):
-        return hash((self.x, self.y))
-    
-    def __eq__(self, other):
-        return self.x == other.x and self.y == other.y
-    
-    def __str__(self):
-        return f"AStarNode({self.x}, {self.y}, confidence={self.confidence})"
-
-
-# TODO: add a better heuristic cost function to the A* algorithm to make it faster? maybe not needed
-class LunaboticsAStar(AStar):
-    """Used for the astar package to find a path through the grid of nodes for the robot to drive."""
-    def __init__(self, nodes, confidence_threshold):
-        self.nodes = nodes
-        self.confidence_threshold = confidence_threshold
-
-    def neighbors(self, n):
-        # TODO: account for robot width and length when finding neighbors (not just 8!)
-        # loop through all 8 neighbors of the node
-        for i in range(-1, 2):
-            for j in range(-1, 2):
-                if i == 0 and j == 0:
-                    continue
-                x = n.x + i
-                y = n.y + j
-                if x < 0 or x >= GRID_WIDTH or y < 0 or y >= GRID_HEIGHT:
-                    continue
-                node = self.nodes[int(y)][int(x)]
-                is_obstacle = node.confidence >= self.confidence_threshold
-                world_x, world_y = grid_to_world(x, y)
-                if get_zone(world_x, world_y) != OUT_OF_BOUNDS and not is_obstacle:
-                    yield node
-
-    def distance_between(self, n1, n2):
-        return n1.distance(n2)
-            
-    def heuristic_cost_estimate(self, current, goal):
-        return current.distance(goal)
-    
-    def is_goal_reached(self, current, goal):
-        return current == goal
 
 
 class Pathfinder(Node):
-
+    """
+    The pathfinder node that finds a path through the map using the A* algorithm.
+    Uses a confidence map to determine if a square is an obstacle or not.
+    1 = obstacle, 0 = no obstacle.
+    """
+    
     def __init__(self):
         super().__init__('pathfinder')
         # these are any obstacles detected by the lidar system
@@ -138,6 +52,7 @@ class Pathfinder(Node):
         self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/path', 10)
 
     def calculate_path(self, start, end, confidence_threshold):
+        """Finds a path from start to end using the A* algorithm."""
         start_node = AStarNode.from_point(start)
         goal_node = AStarNode.from_point(end)
         # create a grid of nodes with the confidence values
@@ -149,12 +64,15 @@ class Pathfinder(Node):
         return []
 
     def add_confidence(self, world_x, world_y, confidence):
+        """Adds confidence to the grid at the given world coordinates in cm."""
         grid_x, grid_y = world_to_grid(world_x, world_y)
         if get_zone(world_x, world_y) != OUT_OF_BOUNDS:
             # max confidence is 1
             self.grid[grid_y][grid_x] = min(1, self.grid[grid_y][grid_x] + confidence)
     
     def generate_test_obstacles(self):
+        """Generates test obstacles for the pathfinder to use.
+        We know there will be rocks along the border between the obstacle zone and the dump zone."""
         #TODO: add obstacles around the edge so the robot doesn't think it can go outside of the map
         for i in range(1,9): # loop between 1 and 8
             obstacle = Obstacle()
@@ -165,6 +83,8 @@ class Pathfinder(Node):
                 self.obstacle_callback(obstacle)
 
     def obstacle_callback(self, msg):
+        """Treats rocks and craters as circles and adds them to the grid.
+        Squares that are only partially covered by the circle are less likely to be an obstacle."""
         world_x = msg.position.x
         world_y = msg.position.y
         radius = int(math.ceil(msg.radius))
@@ -182,6 +102,8 @@ class Pathfinder(Node):
                     self.add_confidence(world_x + i, world_y + j, OBSTACLE_CONFIDENCE_STRENGTH/(GRID_RESOLUTION**2))
         
     def filter_nearby_points(self, path, min_distance):
+        """Filters out points that are too close to each other in the path.
+        This is to decrease the amount of steps the odometry node has to complete, as well as fixing a rendering bug on the website."""
         filtered_path = []
         for i in range(len(path) - 1):
             for j in range(len(filtered_path)):
@@ -195,6 +117,11 @@ class Pathfinder(Node):
         return filtered_path
     
     def path_service_callback(self, request, response):
+        """
+        This function is called whenever a path is requested.
+        It finds a path from start to end, beginning with using all obstacles of any confidence threashold,
+        before moving on to only using high confidence obstacles to reach the destination.
+        """
         start = request.start
         end = request.end
         # search for a path until one is found or the confidence threshold is too low
@@ -216,8 +143,8 @@ class Pathfinder(Node):
         return response
     
     def debug_map(self):
-        # print entire map for debugging using ascii art to represent the confidence values
-        # options from least filled in to most filled in
+        """Print entire map for debugging using ascii art to represent the confidence values
+        options from least filled in to most filled in."""
         ascii_options = [" ", ".", "*", ":", "o", "8", "X", "#", "@", "%"]
         for i in range(GRID_HEIGHT):
             for j in range(GRID_WIDTH):
