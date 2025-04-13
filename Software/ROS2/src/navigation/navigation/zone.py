@@ -1,4 +1,15 @@
+from lunabotics_interfaces.msg import Point
+# is each dump in the berm is about 10x10 cm?
+BERM_DUMP_SIZE = 10
+
 class Zone:
+    """Represents a zone on the competition map. The zone is a rectangle with a width and height. Options are:
+    - excavation zone
+    - dump zone
+    - obstacle zone
+    - start zone
+    - or out of bounds
+    """
     def __init__(self, x, y, width, height):
         self.x = x
         self.y = y
@@ -21,6 +32,7 @@ class Zone:
         return point
     
     def shrink(self, amount, only_top=False):
+        """Shrinks the zone by the given amount. If only_top is true, only the top of the zone is shrunk."""
         if not only_top:
             self.x += amount
             self.width -= amount * 2

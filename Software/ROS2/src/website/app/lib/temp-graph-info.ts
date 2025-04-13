@@ -42,18 +42,18 @@ export const tempStartingData: Message[] = [
             { distance: 200, angle: 0, weight: 0 },
         ],
     },
-    {
-        type: "obstacles",
-        message: [
-            getRock(1),
-            getRock(2),
-            getRock(3),
-            getRock(4),
-            getRock(5),
-            getRock(6),
-            getRock(7),
-            getRock(8),
-        ]
-    }
+    // {
+    //     type: "obstacles",
+    //     message: [
+    //         getRock(1),
+    //         getRock(2),
+    //         getRock(3),
+    //         getRock(4),
+    //         getRock(5),
+    //         getRock(6),
+    //         getRock(7),
+    //         getRock(8),
+    //     ]
+    // }
 
 ]

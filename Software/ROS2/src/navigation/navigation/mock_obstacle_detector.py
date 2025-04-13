@@ -60,6 +60,21 @@ class MockObstacleDetector(Node):
         self.robot_position = None
         self.robot_orientation = None
         self.mock_obstacles = []
+        self.generate_test_obstacles()
+        
+    def publish_obstacle(self, x, y, radius):
+        """Publish an obstacle at the given coordinates 10 times to ensure pathfinder has confidence in it."""
+        for _ in range(10):  # to make condifence of this fake obstacle 100%
+            ob = Obstacle()
+            ob.position.x = float(x)
+            ob.position.y = float(y)
+            ob.radius = float(radius)
+            self.obstacle_publisher.publish(ob)
+    
+    def generate_test_obstacles(self):
+        """Generates test obstacles for the pathfinder to use.
+        We know there will be rocks along the border between the obstacle zone and the dump zone."""
+        #TODO: add obstacles around the edge so the robot doesn't think it can go outside of the map
         while len(self.mock_obstacles) < MOCK_OBSTACLE_COUNT:
             # pick a point anywhere in the obstacle zone
             x = float(random.randint(0, 548))
@@ -70,15 +85,13 @@ class MockObstacleDetector(Node):
                 continue
             # False means the robot hasn't seen it yet
             self.mock_obstacles.append([x, y, radius, False])
-        
-    def publish_obstacle(self, x, y, radius):
-        """Publish an obstacle at the given coordinates 10 times to ensure pathfinder has confidence in it."""
-        for _ in range(10):  # to make condifence of this fake obstacle 100%
-            ob = Obstacle()
-            ob.position.x = float(x)
-            ob.position.y = float(y)
-            ob.radius = float(radius)
-            self.obstacle_publisher.publish(ob)
+        # generates the line of rocks between the obstacle and construction zones
+        for i in range(1,9): # loop between 1 and 8
+            x = 548.0 - i*34.25 + 34.25/2
+            y = 244.0
+            radius = 34.25/2
+            # False means the robot hasn't seen it yet
+            self.mock_obstacles.append([x, y, radius, False])
         
     # I thought of the idea for the algorithm!
     # Numpy is hard ok?

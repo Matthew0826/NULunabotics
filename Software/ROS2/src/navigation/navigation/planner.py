@@ -30,8 +30,6 @@ from navigation.pathfinder_helper import distance
 
 # TODO: use actual values
 LIDAR_VIEW_DISTANCE = 100 # cm
-# is each dump in the berm is about 10x10 cm?
-BERM_DUMP_SIZE = 10
 ROBOT_WIDTH = 71
 ROBOT_LENGTH = 98
 LIDAR_VIEW_DISTANCE = 100

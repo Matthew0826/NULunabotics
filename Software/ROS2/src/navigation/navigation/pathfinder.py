@@ -47,7 +47,6 @@ class Pathfinder(Node):
         # each square is a float from 0 to 1 representing the probability of that square being an obstacle
         # 0 = no obstacle, 1 = obstacle
         self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
-        self.generate_test_obstacles()
         
         self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/path', 10)
 
@@ -69,18 +68,6 @@ class Pathfinder(Node):
         if get_zone(world_x, world_y) != OUT_OF_BOUNDS:
             # max confidence is 1
             self.grid[grid_y][grid_x] = min(1, self.grid[grid_y][grid_x] + confidence)
-    
-    def generate_test_obstacles(self):
-        """Generates test obstacles for the pathfinder to use.
-        We know there will be rocks along the border between the obstacle zone and the dump zone."""
-        #TODO: add obstacles around the edge so the robot doesn't think it can go outside of the map
-        for i in range(1,9): # loop between 1 and 8
-            obstacle = Obstacle()
-            obstacle.position.x = 548.0 - i*34.25 + 34.25/2
-            obstacle.position.y = 244.0
-            obstacle.radius = 34.25/2
-            for i in range(10):
-                self.obstacle_callback(obstacle)
 
     def obstacle_callback(self, msg):
         """Treats rocks and craters as circles and adds them to the grid.
