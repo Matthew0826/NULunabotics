@@ -70,7 +70,11 @@ export default function WebSocketProvider({
     }, []);
 
     function sendToServer(messageType: string, message: any) {
-        socketRef.current?.send(JSON.stringify({ type: messageType, message: message }));
+        try {
+            socketRef.current?.send(JSON.stringify({ type: messageType, message: message }));
+        } catch (error) {
+            console.error("Error sending message to server:", error);
+        }
     }
 
     return (

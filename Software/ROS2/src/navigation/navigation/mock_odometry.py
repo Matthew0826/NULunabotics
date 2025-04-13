@@ -13,6 +13,7 @@ import math
 import time
 
 MOCK_SPEED = 5  # cm/s
+MOCK_ROTATION_SPEED = 5  # degrees/s
 
 # This mock odometry node pretends to be real odometry, but just says that the robot moved instead of actually moving it.
 # It is used to test the planner and other nodes that depend on odometry.
@@ -31,8 +32,8 @@ class MockOdometry(Node):
 
         # initialize position
         self.position = Point()
-        self.position.x = 448
-        self.position.y = 100
+        self.position.x = 448.0
+        self.position.y = 100.0
 
         # initialize orientation randomly (they do that in the competition, although the robot won't really be able to tell immediately)
         self.orientation = float(random.randint(0, 360))
@@ -74,11 +75,26 @@ class MockOdometry(Node):
         goal_handle.succeed()
         result = SelfDriver.Result()
         end_time = self.get_clock().now()
-        result.time_elapsed_millis = (end_time - start_time).nanoseconds / 1_000_000
+        result.time_elapsed_millis = (end_time - start_time).nanoseconds // 1_000_000
         return result
     
     # orient the robot (global orientation)
     def to_orient(self, final_orientation: float):
+        # rotate slowly to simulate real rotation
+        delta = final_orientation - self.orientation
+        if delta > 180:
+            delta -= 360
+        elif delta < -180:
+            delta += 360
+        steps = int(abs(delta) / MOCK_ROTATION_SPEED)
+        for i in range(steps):
+            # rotate the robot
+            self.orientation += delta / steps
+            # send out updated position
+            self.publish_angle()
+            # pretend to take time to rotate
+            time.sleep(1/(MOCK_ROTATION_SPEED*2))
+        # set the final orientation
         self.orientation = (final_orientation + 360) % 360
         self.publish_angle()
 
@@ -102,7 +118,7 @@ class MockOdometry(Node):
             self.position_publisher.publish(self.position)
             goal_handle.publish_feedback(feedback_msg)
             # pretend to take time to move
-            time.sleep(1/MOCK_SPEED)
+            time.sleep(1/(MOCK_SPEED*2))
     
     # orient the rover to face a position
     def face_position(self, x: float, y: float):

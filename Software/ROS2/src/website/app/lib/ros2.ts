@@ -1,7 +1,7 @@
 import * as rclnodejs from "rclnodejs";
 import { sendToClient } from "./sockets";
 import { Point as Vector2 } from "@/app/ui/map/robot-path";
-// const Plan = rclnodejs.require('lunabotics_interfaces/action/Plan');
+const Plan = rclnodejs.require("lunabotics_interfaces/action/Plan");
 
 export const lidarPoints: Point[] = [];
 
@@ -18,6 +18,7 @@ const LUNABOTICS_PATH_TYPE = "lunabotics_interfaces/srv/Path";
 const LUNABOTICS_OBSTACLE_TYPE = "lunabotics_interfaces/msg/Obstacle";
 const LUNABOTICS_PLAN_TYPE = "lunabotics_interfaces/action/Plan";
 const LUNABOTICS_POINT_TYPE = "lunabotics_interfaces/msg/Point";
+const LUNABOTICS_PATH_VISUAL_TYPE = "lunabotics_interfaces/msg/PathVisual";
 const ROS2_FLOAT_TYPE = "std_msgs/msg/Float32";
 
 export const publishToROS2 = (messageJson: any) => {
@@ -29,7 +30,7 @@ export const publishToROS2 = (messageJson: any) => {
     motorsMsg.conveyor = messageJson.buttonLeft ? 1 : 0;
     motorsMsg.outtake = messageJson.buttonRight ? 1 : 0;
     rosControlsPublisher.publish(motorsMsg);
-    console.log("Published: ", messageJson);
+    // console.log("Published: ", messageJson);
 };
 
 export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, callback: (point: any[]) => void) => {
@@ -66,20 +67,20 @@ export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, c
 
 export async function sendPlanAction(start: any, should_excavate: boolean, should_dump: boolean) {
     console.log('Waiting for action server...');
-    await planActionClient.waitForServer();
+    await planActionClient.waitForServer(2000);
 
-    const goal = new rclnodejs.lunabotics_interfaces.action.Plan.Goal();
+    const goal = new Plan.Goal();
     goal.start = start;
     goal.should_excavate = should_excavate;
     goal.should_dump = should_dump;
 
     console.log('Sending goal request...');
 
-    const goalHandle = await planActionClient.sendGoal(goal, (feedback: rclnodejs.lunabotics_interfaces.action.Plan.FeedbackMessage) =>
-        feedbackCallback(feedback)
+    const goalHandle = await planActionClient.sendGoal(goal, (feedback: rclnodejs.lunabotics_interfaces.action.Plan_Feedback) =>
+        console.log(`Received feedback: ${feedback.progress}`)
     );
 
-    if (!goalHandle.accepted) {
+    if (!goalHandle.isAccepted()) {
         console.log('Goal rejected');
         return;
     }
@@ -94,17 +95,13 @@ export async function sendPlanAction(start: any, should_excavate: boolean, shoul
     const result = await goalHandle.getResult();
 
     if (goalHandle.isSucceeded()) {
-        console.log(`Goal suceeded in ${result.time_elapsed_millis} ms`);
+        console.log(`Goal succeeded in ${result.time_elapsed_millis} ms`);
     } else {
-        console.log(`Goal failed with status: ${result.status}`);
+        console.log(`Goal failed with status: ${result}`);
     }
 }
 
-function feedbackCallback(feedbackMessage: rclnodejs.lunabotics_interfaces.action.Plan.FeedbackMessage) {
-    console.log(`Received feedback: ${feedbackMessage.feedback.progress}`);
-}
-
-async function timerCallback(goalHandle: rclnodejs.ActionClientGoalHandle, timer: rclnodejs.Timer) {
+async function timerCallback(goalHandle: rclnodejs.ClientGoalHandle<typeof LUNABOTICS_PLAN_TYPE>, timer: rclnodejs.Timer) {
     console.log('Canceling goal');
     // Cancel the timer
     timer.cancel();
@@ -122,7 +119,7 @@ async function timerCallback(goalHandle: rclnodejs.ActionClientGoalHandle, timer
 let rosNode: rclnodejs.Node;
 let rosControlsPublisher: rclnodejs.Publisher<typeof LUNABOTICS_MOTORS_TYPE>;
 let rosClient: rclnodejs.Client<typeof LUNABOTICS_PATH_TYPE>;
-let planActionClient: rclnodejs.ActionClient<typeof rclnodejs.lunabotics_interfaces.action.Plan>;
+let planActionClient: rclnodejs.ActionClient<typeof LUNABOTICS_PLAN_TYPE>;
 
 rclnodejs.init().then(() => {
     const node = new rclnodejs.Node("website_backend");
@@ -168,7 +165,14 @@ rclnodejs.init().then(() => {
         ROS2_FLOAT_TYPE,
         "sensors/orientation",
         (msg: any) => {
-            sendToClient("orientation", msg);
+            sendToClient("orientation", msg.data);
+        }
+    );
+    node.createSubscription(
+        LUNABOTICS_PATH_VISUAL_TYPE,
+        "navigation/path",
+        (msg: any) => {
+            sendToClient("path", msg.nodes);
         }
     );
     rosClient = node.createClient(

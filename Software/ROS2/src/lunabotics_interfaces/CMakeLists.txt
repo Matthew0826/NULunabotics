@@ -19,12 +19,11 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Motors.msg"
   "msg/Point.msg"
   "msg/Obstacle.msg"
+  "msg/PathVisual.msg"
   "srv/SerialPort.srv"
   "srv/Path.srv"
-<<<<<<< HEAD
   "action/SelfDriver.action"
-=======
->>>>>>> 84554152b289e90e3a9a81fa19acc7d2a649c7d4
+  "action/Plan.action"
 )
 
 if(BUILD_TESTING)

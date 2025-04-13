@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 
-from lunabotics_interfaces.msg import Point, Obstacle
+from lunabotics_interfaces.msg import Point, Obstacle, PathVisual
 from lunabotics_interfaces.srv import Path
 
 from navigation.astar import AStar
@@ -133,8 +133,9 @@ class Pathfinder(Node):
         # each square is a float from 0 to 1 representing the probability of that square being an obstacle
         # 0 = no obstacle, 1 = obstacle
         self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
-        self.obstacle_tester_publisher = self.create_publisher(Obstacle, 'navigation/obstacles', 10)
         self.generate_test_obstacles()
+        
+        self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/path', 10)
 
     def calculate_path(self, start, end, confidence_threshold):
         start_node = AStarNode.from_point(start)
@@ -144,7 +145,7 @@ class Pathfinder(Node):
         a_star = LunaboticsAStar(nodes, confidence_threshold)
         path = a_star.astar(start_node, goal_node)
         if path is not None:
-            return list(reversed(list(path)))
+            return list(path)
         return []
 
     def add_confidence(self, world_x, world_y, confidence):
@@ -154,22 +155,12 @@ class Pathfinder(Node):
             self.grid[grid_y][grid_x] = min(1, self.grid[grid_y][grid_x] + confidence)
     
     def generate_test_obstacles(self):
-        # generate test obstacles in the grid
-        # for i in range(6):
-        #     obstacle = Obstacle()
-        #     obstacle.position.x = float(random.randint(0, MAP_WIDTH))
-        #     obstacle.position.y = float(random.randint(0, MAP_HEIGHT))
-        #     obstacle.radius = float(random.randint(15, 20))
-        #     for i in range(int(1/OBSTACLE_CONFIDENCE_STRENGTH)):
-        #         self.obstacle_tester_publisher.publish(obstacle)
-        #         self.obstacle_callback(obstacle)
         for i in range(1,9): # loop between 1 and 8
             obstacle = Obstacle()
             obstacle.position.x = 548.0 - i*34.25 + 34.25/2
             obstacle.position.y = 244.0
             obstacle.radius = 34.25/2
             for i in range(10):
-                # self.obstacle_tester_publisher.publish(obstacle)
                 self.obstacle_callback(obstacle)
 
     def obstacle_callback(self, msg):
@@ -220,6 +211,7 @@ class Pathfinder(Node):
         print("Path found with confidence threshold:", confidence_threshold)
         print("Start:", start.x, ",", start.y, "  End:", end.x, ",", end.y)
         # self.debug_map()
+        self.website_path_visualizer.publish(PathVisual(nodes=response.nodes))
         return response
     
     def debug_map(self):

@@ -21,7 +21,7 @@ export default function Map() {
     const { messages, sendToServer } = useWebSocketContext();
     const [pathData, setPathData] = useState<Point[]>([]);
     const [obstacles, setObstacles] = useState<ObstacleType[]>([]);
-    const [robot, setRobot] = useState({ x: 0, y: 0, width: 71, height: 98, rotation: 0 });
+    const [robot, setRobot] = useState({ x: 448, y: 100, width: 71, height: 98, rotation: 0 });
     useEffect(() => {
         if (messages.length == 0) return;
         const lastMessage = messages[messages.length - 1];
@@ -114,7 +114,7 @@ export default function Map() {
                         isHole={obstacle.isHole}
                     />
                 ))}
-                <RobotPath path={pathData} />
+                <RobotPath path={pathData} robot={robot} />
                 <Robot x={robot.x} y={robot.y} width={robot.width} height={robot.height} rotation={robot.rotation} />
             </div>
         </div>

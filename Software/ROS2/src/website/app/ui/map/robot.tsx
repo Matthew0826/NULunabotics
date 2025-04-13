@@ -16,12 +16,13 @@ export default function Robot({
 }) {
     return (
         <div
-            className={`absolute rounded-lg -translate-y-1/2 -translate-x-1/2 bg-blue-400 rotate-[${rotation}deg]`}
+            className={`absolute rounded-lg bg-blue-400`}
             style={{
                 width: `${(width) / MAP_WIDTH}%`,
                 height: `${(height) / MAP_HEIGHT}%`,
                 top: `${y / MAP_HEIGHT}%`,
                 left: `${x / MAP_WIDTH}%`,
+                transform: `translate(-50%, -50%) rotate(${rotation + 90}deg)`,
             }}
         />
     );

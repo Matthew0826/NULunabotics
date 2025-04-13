@@ -6,4 +6,4 @@ int64 time_elapsed_millis
 ---
 # Feedback
 # from 0 to 1
-float progress
+float32 progress

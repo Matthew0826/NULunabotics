@@ -26,22 +26,28 @@ export function SOCKET(
     });
     client.on("message", (message: WebSocket.RawData) => {
         const messageString = message.toString();
-        console.log("received: ", messageString);
+        // console.log("received: ", messageString);
         try {
             const messageJson = JSON.parse(messageString);
             if (messageJson.type === "sendPathfindingRequest") {
-                const isPoint2BelowObstacles = messageJson.message.point2.y >= 244.0;
-                const isPoint2DumpZone = messageJson.message.point2.x >= 274.0;
+                const point1 = messageJson.message.point1;
+                const point2 = messageJson.message.point2;
+                const robot = messageJson.message.robot;
+                const isPoint2BelowObstacles = point2[1] >= 244.0;
+                const isPoint2DumpZone = point2[0] >= 274.0;
                 if (isPoint2BelowObstacles) {
                     if (isPoint2DumpZone) {
-                        sendPlanAction(messageJson.message.point1, false, true);
+                        console.log("Sending plan to dump zone");
+                        sendPlanAction({ x: robot.x, y: robot.y }, false, true);
                     } else {
-                        sendPlanAction(messageJson.message.point1, true, false);
+                        console.log("Sending plan to excavation zone");
+                        sendPlanAction({ x: robot.x, y: robot.y }, true, false);
                     }
                 } else {
+                    console.log("Sending pathfinding request");
                     sendPathfindingRequest(
-                        messageJson.message.point1,
-                        messageJson.message.point2,
+                        point1,
+                        point2,
                         (points) => {
                             sendToClient("path", points);
                         }

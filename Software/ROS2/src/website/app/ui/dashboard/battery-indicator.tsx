@@ -35,9 +35,8 @@ export default function BatteryIndicator() {
                 {/* Battery Fill (Only if batteryLevel is available) */}
                 {batteryLevel !== null ? (
                     <div
-                        className={`h-full transition-all duration-300 ${
-                            batteryLevel > 20 ? "bg-green-500" : "bg-red-500"
-                        }`}
+                        className={`h-full transition-all duration-300 ${batteryLevel > 20 ? "bg-green-500" : "bg-red-500"
+                            }`}
                         style={{ width: `${Math.floor(batteryLevel)}%` }}
                     ></div>
                 ) : (
@@ -49,7 +48,7 @@ export default function BatteryIndicator() {
             <span className="ml-2 text-sm font-semibold text-gray-700">
                 {isSupported
                     ? batteryLevel !== null
-                        ? `${batteryLevel}%`
+                        ? `${Math.floor(batteryLevel)}%`
                         : "Loading..."
                     : "N/A"}
             </span>

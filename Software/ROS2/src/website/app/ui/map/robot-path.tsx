@@ -97,7 +97,7 @@ function pointsToPathWithQuadraticCurves(
 /**
  * This component represents the path the robot intends to take through the map.
  */
-export default function RobotPath({ path }: { path?: Point[] }) {
+export default function RobotPath({ path, robot }: { path?: Point[], robot: any }) {
     const { messages, sendToServer } = useWebSocketContext();
     const pathRef = React.useRef<HTMLDivElement>(null);
     const [previousClickPosition, setPreviousClickPosition] = React.useState<Point | null>(null);
@@ -107,7 +107,7 @@ export default function RobotPath({ path }: { path?: Point[] }) {
         const x = ((e.clientX - rect.left) / rect.width) * MAP_WIDTH * 100;
         const y = ((e.clientY - rect.top) / rect.height) * MAP_HEIGHT * 100;
         const newClickPosition: Point = [Math.floor(x), Math.floor(y)];
-        sendToServer("sendPathfindingRequest", { point1: newClickPosition, point2: previousClickPosition ?? newClickPosition });
+        sendToServer("sendPathfindingRequest", { point1: previousClickPosition ?? newClickPosition, point2: newClickPosition, robot: robot });
         setPreviousClickPosition(newClickPosition);
     }
     return (
