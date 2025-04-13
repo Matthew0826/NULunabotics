@@ -1,3 +1,5 @@
+"""A mock obstacle detector that generates fake obstacles in a random location."""
+
 import rclpy
 from rclpy.node import Node
 import math
@@ -12,10 +14,11 @@ import random
 # TODO: put actual values in for the offset
 ROBOT_LIDAR_OFFSET = (30, 0, 20) # X, Y, Z (in cm)
                            # ^ vertical
+# estimates of the real thing
 LIDAR_VIEW_DISTANCE = 100 # cm
 LIDAR_VIEW_SIZE = 120 # cm
-BUMP_SIZE_GUESS = 3 # degrees
-BUMP_THRESHOLD = 10 # cm
+# how many obstacles to generate
+MOCK_OBSTACLE_COUNT = 8
 
 
 def rotate_vector_2d(vector, angle_degrees):
@@ -40,7 +43,7 @@ def rotate_vector_2d(vector, angle_degrees):
 
 
 class MockObstacleDetector(Node):
-
+    """A mock obstacle detector that generates fake obstacles in a random location."""
     def __init__(self):
         super().__init__('obstacle_detector')
         self.position_subscription = self.create_subscription(
@@ -57,7 +60,7 @@ class MockObstacleDetector(Node):
         self.robot_position = None
         self.robot_orientation = None
         self.mock_obstacles = []
-        while len(self.mock_obstacles) < 6:
+        while len(self.mock_obstacles) < MOCK_OBSTACLE_COUNT:
             # pick a point anywhere in the obstacle zone
             x = float(random.randint(0, 548))
             y = float(random.randint(0, 305))
@@ -65,26 +68,26 @@ class MockObstacleDetector(Node):
             # check if obstacle would be in start zone
             if x > (348 - radius) and y < (200 + radius):
                 continue
-            self.mock_obstacles.append((x, y, radius))
+            # False means the robot hasn't seen it yet
+            self.mock_obstacles.append([x, y, radius, False])
         
     def publish_obstacle(self, x, y, radius):
-        if self.robot_position is None or self.robot_orientation is None:
-            return
-        obstacle = Obstacle()
-        position = Point()
-        # adjust x and y based on robot orientation
-        x, y = rotate_vector_2d(np.array([x + ROBOT_LIDAR_OFFSET[0], y + ROBOT_LIDAR_OFFSET[1]]), self.robot_orientation)
-        world_x = self.robot_position[0] + x
-        world_y = self.robot_position[1] + y
-        position.x = world_x
-        position.y = world_y
-        obstacle.position = position
-        obstacle.radius = radius    
-        self.obstacle_publisher.publish(obstacle)
+        """Publish an obstacle at the given coordinates 10 times to ensure pathfinder has confidence in it."""
+        for _ in range(10):  # to make condifence of this fake obstacle 100%
+            ob = Obstacle()
+            ob.position.x = float(x)
+            ob.position.y = float(y)
+            ob.radius = float(radius)
+            self.obstacle_publisher.publish(ob)
         
+    # I thought of the idea for the algorithm!
+    # Numpy is hard ok?
     # Courtesy of ChatGPT:
     def can_robot_see_obstacle(self, obstacle):
+        """Check if the robot can see the given obstacle, accounting for real world factors such as LiDAR view distance."""
         if self.robot_position is None or self.robot_orientation is None:
+            return False
+        if obstacle[3]: # already seen
             return False
         robot_pos = np.array(self.robot_position)
 
@@ -135,19 +138,19 @@ class MockObstacleDetector(Node):
         # are considered visible by the LIDAR.
     
     def check_obstacles(self):
+        """Check if the robot can see any of the obstacles we invented earlier."""
         for obstacle in self.mock_obstacles:
             if self.can_robot_see_obstacle(obstacle):
-                ob = Obstacle()
-                ob.position.x = float(obstacle[0])
-                ob.position.y = float(obstacle[1])
-                ob.radius = float(obstacle[2])
-                self.obstacle_publisher.publish(ob)
+                self.publish_obstacle(obstacle[0], obstacle[1], obstacle[2])
+                obstacle[3] = True
     
     def position_callback(self, msg):
+        """Called whenever the robot's position is updated. Updates the robot's position and check for obstacles."""
         self.robot_position = (msg.x, msg.y)
         self.check_obstacles()
     
     def orientation_callback(self, msg):
+        """Called whenever the robot's orientation is updated. Updates the robot's orientation and check for obstacles."""
         self.robot_orientation = msg.data
         self.check_obstacles()
 

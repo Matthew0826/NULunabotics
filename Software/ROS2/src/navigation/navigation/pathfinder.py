@@ -155,6 +155,7 @@ class Pathfinder(Node):
             self.grid[grid_y][grid_x] = min(1, self.grid[grid_y][grid_x] + confidence)
     
     def generate_test_obstacles(self):
+        #TODO: add obstacles around the edge so the robot doesn't think it can go outside of the map
         for i in range(1,9): # loop between 1 and 8
             obstacle = Obstacle()
             obstacle.position.x = 548.0 - i*34.25 + 34.25/2

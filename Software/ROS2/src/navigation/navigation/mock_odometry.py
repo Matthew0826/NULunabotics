@@ -1,5 +1,3 @@
-
-
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionServer
@@ -15,9 +13,12 @@ import time
 MOCK_SPEED = 5  # cm/s
 MOCK_ROTATION_SPEED = 5  # degrees/s
 
-# This mock odometry node pretends to be real odometry, but just says that the robot moved instead of actually moving it.
-# It is used to test the planner and other nodes that depend on odometry.
+
 class MockOdometry(Node):
+    """
+    This mock odometry node pretends to be real odometry, but just says that the robot moved instead of actually moving it.
+    It is used to test the planner and other nodes that depend on odometry.
+    """
 
     def __init__(self):
         super().__init__('mock_odometry')
@@ -46,22 +47,26 @@ class MockOdometry(Node):
         self.publish_angle()
     
     def publish_angle(self):
+        """Prented to update the real angle of the robot."""
         angle_msg = Float32()
         angle_msg.data = self.orientation
         self.angle_publisher.publish(angle_msg)
 
-    # when someone calls this action
-    # SelfDriver.action:
-    # # Request
-    # Point[] targets
-    # ---
-    # # Result
-    # int64 time_elapsed_millis
-    # ---
-    # # Feedback
-    # # from 0 to 1
-    # float progress
     def on_goal_updated(self, goal_handle):
+        """     
+        This function is called when someone calls this action to move the robot.
+        SelfDriver.action:
+        # Request
+        Point[] targets
+        ---
+        # Result
+        int64 time_elapsed_millis
+        ---
+        # Feedback
+        # from 0 to 1
+        float progress
+        """
+        
         feedback_msg = SelfDriver.Feedback()
         feedback_msg.progress = 0.0
         start_time = self.get_clock().now()
@@ -80,12 +85,15 @@ class MockOdometry(Node):
     
     # orient the robot (global orientation)
     def to_orient(self, final_orientation: float):
-        # rotate slowly to simulate real rotation
+        """Rotates the robot to the given orientation slowly to simulate real rotation. Final orientation is in degrees."""
+        # normalize the angle to be between 0 and 360
+        # to find degrees that needs to be rotated by
         delta = final_orientation - self.orientation
         if delta > 180:
             delta -= 360
         elif delta < -180:
             delta += 360
+        # loop through a series of discrete steps to simulate rotation
         steps = int(abs(delta) / MOCK_ROTATION_SPEED)
         for i in range(steps):
             # rotate the robot
@@ -100,6 +108,7 @@ class MockOdometry(Node):
 
     # rotate the robot
     def to_rotate(self, delta: float):
+        """Rotates the robot to the given orientation slowly to simulate real rotation. delta is in degrees."""
         # new orientation (based on how much we rotate)
         final_orientation = self.orientation + delta
 
@@ -108,9 +117,13 @@ class MockOdometry(Node):
 
     # move the robot from current to new position
     def to_position(self, x: float, y: float, goal_handle, feedback_msg):
+        """Moves the robot to the given position slowly to simulate real movement. x and y are in cm."""
+        # to fix the issue on the website where the robot was beginning to rotate, but it was rendered in the wrong position
         self.position_publisher.publish(self.position)
+        # orient the robot to face the new position
         self.face_position(x, y)
         distance = math.sqrt((self.position.x - x) ** 2 + (self.position.y - y) ** 2)
+        # move robot in discrete steps to simulate movement
         for i in range(int(distance / MOCK_SPEED)):
             # move the robot
             self.position.x += MOCK_SPEED * math.cos(math.radians(self.orientation))
@@ -121,22 +134,25 @@ class MockOdometry(Node):
             # pretend to take time to move
             time.sleep(1/(MOCK_SPEED*2))
     
-    # orient the rover to face a position
     def face_position(self, x: float, y: float):
+        """
+        Orients the rover to face a position.
+        Calculates the angle and rotates the robot to face the given x, y coordinate.
+        x and y are in cm.
+        """
         delta_x = x - self.position.x
         delta_y = y - self.position.y
         new_orientation = math.degrees(math.atan2(delta_y, delta_x))
         self.to_orient(new_orientation)
 
-    # Drive along a path (list of points)
     def to_path(self, points, goal_handle, feedback_msg):
+        """Drive along a path (list of points). Publishes feedback as it goes about its progress."""
         for i, point in enumerate(points):
             self.to_position(point.x, point.y, goal_handle, feedback_msg)
             feedback_msg.progress = (i + 1) / len(points)
             goal_handle.publish_feedback(feedback_msg)
         feedback_msg.progress = 1.0
         goal_handle.publish_feedback(feedback_msg)
-
 
 
 def main(args=None):
