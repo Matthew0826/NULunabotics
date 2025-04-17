@@ -4,8 +4,8 @@
 
 #include <SoftwareSerial.h>
 
-#define ANCHOR_ID 1
-const String ANCHOR_ID_STRING = "1";
+#define ANCHOR_ID 0
+const String ANCHOR_ID_STRING = "0";
 
 // UWB stands for Ultra-Wideband and it's how the beacons ("anchors") find the distance to this "tag" board that's sitting on the robot
 // Here's a link for reference on thier "AT" protocol: https://reyax.com//upload/products_download/download_file/AT_Command_RYUW122.pdf
