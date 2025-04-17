@@ -51,8 +51,18 @@ int c = 0;
 void sendCommand(const String &cmd) {
   uwbSerial.print(cmd + "\r\n");
   // Serial.print("Sent command: ");
-  // Serial.println(cmd);
-  delay(500);
+  Serial.println(cmd);
+  String response = "";
+  // Wait until we get a response
+  while (response.length() == 0) {
+    if (uwbSerial.available()) {
+      response = uwbSerial.readStringUntil('\n');  // Read a line from uwbSerial
+      Serial.println(response);  // Print it to the standard Serial
+    }
+    delay(10);
+  }
+  Serial.println("Command done!");
+  delay(10);
 }
 
 void setup() {
@@ -78,7 +88,7 @@ void setup() {
   
   // Find accelerometer. Did you forget to plug it in to the header pins?
   if (!mpu.begin()) {
-    Serial.println("Failed to find MPU6050 chip");
+    // Serial.println("Failed to find MPU6050 chip");
     while (1) {
       delay(10);
     }
@@ -102,9 +112,10 @@ void parsePayload(const String &payload) {
     // Serial.println("Invalid payload: " + payload);
     return;
   }
+  // Serial.println(payload);
 
   int anchorID = payload.substring(0, 1).toInt();
-  int distance = payload.substring(2, 5).toInt();
+  int distance = payload.substring(1, 5).toInt();
 
   // Sanitize data a little bit
   if (distance <= 0 || distance > 65533 || anchorID < 0 || anchorID > 3) return;

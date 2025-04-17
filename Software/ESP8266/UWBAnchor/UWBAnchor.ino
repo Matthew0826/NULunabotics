@@ -23,8 +23,18 @@ const String MODE = "1";   // set module to ANCHOR mode
 void sendCommand(const String &cmd) {
   uwbSerial.print(cmd + "\r\n");
   // Serial.print("Sent command: ");
-  // Serial.println(cmd);
-  delay(500);  // wait a bit for module to process
+  Serial.println(cmd);
+  String response = "";
+  // Wait until we get a response
+  while (response.length() == 0) {
+    if (uwbSerial.available()) {
+      response = uwbSerial.readStringUntil('\n');  // Read a line from uwbSerial
+      Serial.println(response);  // Print it to the standard Serial
+    }
+    delay(10);
+  }
+  Serial.println("Command done!");
+  delay(10);
 }
 
 void setup() {
@@ -91,5 +101,16 @@ void performRanging() {
 
 void loop() {
   performRanging();
-  delay(500);
+  delay(200);
+  // // Check if there's data available on Serial
+  // if (Serial.available()) {
+  //   String command = Serial.readStringUntil('\n');  // Read a line from Serial
+  //   sendCommand(command);  // Send it using your custom function
+  // }
+
+  // // Check if there's data available on uwbSerial
+  // if (uwbSerial.available()) {
+  //   String response = uwbSerial.readStringUntil('\n');  // Read a line from uwbSerial
+  //   Serial.println(response);  // Print it to the standard Serial
+  // }
 }
