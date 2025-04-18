@@ -3039,7 +3039,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "CONN4_S4B-XH_JST"
+		(property "Footprint" "Connector_JST:JST_XH_B4B-XH-A_1x04_P2.50mm_Vertical"
 			(at 205.74 110.49 0)
 			(effects
 				(font
