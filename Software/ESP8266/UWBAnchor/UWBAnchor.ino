@@ -65,7 +65,7 @@ void performRanging() {
       resp += (char)uwbSerial.read();
     }
   }
-  // Serial.println("Ranging response: " + resp);
+  Serial.println("Ranging response: " + resp);
 
   // 2. Parse out the measured distance from the response
   //    (Assumes response contains ",<distance> cm" at the end)
@@ -89,9 +89,10 @@ void performRanging() {
   // Example: "1" + "040" → "1040"
   char payload[5];  // 4 characters + null terminator
   int distance = distanceStr.toInt();
+  Serial.println(distance);
   sprintf(payload, "%d%03d", ANCHOR_ID, distance);
   String payloadStr = String(payload);
-  // Serial.println("Custom payload: " + payloadStr);
+  Serial.println("Custom payload: " + payloadStr);
 
   // 4. Send the custom message.
   // Using a payload length (here, 4) that is different from the ranging phase to avoid a new measurement.
@@ -101,7 +102,7 @@ void performRanging() {
 
 void loop() {
   performRanging();
-  delay(200);
+  delay(20);
   // // Check if there's data available on Serial
   // if (Serial.available()) {
   //   String command = Serial.readStringUntil('\n');  // Read a line from Serial

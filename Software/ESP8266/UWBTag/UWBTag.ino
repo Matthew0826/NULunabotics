@@ -165,15 +165,15 @@ void loop() {
   if (angleZ < 0.0)        angleZ = angleZ + 360.0;
   else if (angleZ > 360.0) angleZ = angleZ - 360.0;
   
-  if (c % 30 == 0) {
-    // Write a header for rotation
-    Serial.write(0xFF);
-    Serial.write(0xFD);
+  // if (c % 30 == 0) {
+  //   // Write a header for rotation
+  //   Serial.write(0xFF);
+  //   Serial.write(0xFD);
     
-    // Write data
-    Serial.write((byte*)&angleZ, 4);
-  }
-  c++; // no way! that's the name of the programming language!
+  //   // Write data
+  //   Serial.write((byte*)&angleZ, 4);
+  // }
+  // c++; // no way! that's the name of the programming language!
   delay(20);
 }
 
