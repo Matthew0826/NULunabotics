@@ -89,7 +89,7 @@
 		(descr "Connector XT60 Horizontal PCB Female, https://www.tme.eu/Document/b13629717d44ae038681dba08d18c0b6/XT60PW-M.pdf")
 		(tags "RC Connector XT60")
 		(property "Reference" "J14"
-			(at 3.6 -7.15 360)
+			(at 3.6 -7.15 0)
 			(layer "F.SilkS")
 			(uuid "06c0dc2a-f96f-44f2-bebf-119c67087a24")
 			(effects
@@ -100,7 +100,7 @@
 			)
 		)
 		(property "Value" "XT60PW-M"
-			(at 3.6 4 360)
+			(at 3.6 4 0)
 			(layer "F.Fab")
 			(uuid "a33404ea-71a4-4570-a650-390fb7b0e986")
 			(effects
@@ -474,7 +474,7 @@
 			(uuid "25a37bfe-d4a0-43fd-a68a-7d36bde39ea6")
 		)
 		(fp_text user "+"
-			(at 9.5 2.5 360)
+			(at 9.5 2.5 0)
 			(layer "F.SilkS")
 			(uuid "15b01204-578c-4c39-b198-ac0f4f03fd8e")
 			(effects
@@ -485,7 +485,7 @@
 			)
 		)
 		(fp_text user "-"
-			(at -2.8 2.5 360)
+			(at -2.8 2.5 0)
 			(layer "F.SilkS")
 			(uuid "28a4efad-91af-46d9-8c6a-5ce7d4154f54")
 			(effects
@@ -496,7 +496,7 @@
 			)
 		)
 		(fp_text user "${REFERENCE}"
-			(at 3.6 -3.6 360)
+			(at 3.6 -3.6 0)
 			(layer "F.Fab")
 			(uuid "eae6ad77-7491-4e3e-be09-f6c26e0bec8e")
 			(effects
@@ -564,7 +564,7 @@
 		(descr "Connector XT60 Horizontal PCB Female, https://www.tme.eu/Document/b13629717d44ae038681dba08d18c0b6/XT60PW-M.pdf")
 		(tags "RC Connector XT60")
 		(property "Reference" "J12"
-			(at 3.6 -7.15 360)
+			(at 3.6 -7.15 0)
 			(layer "F.SilkS")
 			(uuid "0531d9bc-4f59-4f0f-8894-921a0fd5acb8")
 			(effects
@@ -575,7 +575,7 @@
 			)
 		)
 		(property "Value" "XT60PW-M"
-			(at 3.6 4 360)
+			(at 3.6 4 0)
 			(layer "F.Fab")
 			(uuid "b9dd4eb4-1198-4fde-a6a1-36bf07c09ad9")
 			(effects
@@ -949,7 +949,7 @@
 			(uuid "3eb43076-c464-4d1f-8445-14835b3cd6a6")
 		)
 		(fp_text user "-"
-			(at -2.8 2.5 360)
+			(at -2.8 2.5 0)
 			(layer "F.SilkS")
 			(uuid "3d0b8888-3d9e-44cd-ba7a-1852af8cfa39")
 			(effects
@@ -960,7 +960,7 @@
 			)
 		)
 		(fp_text user "+"
-			(at 9.5 2.5 360)
+			(at 9.5 2.5 0)
 			(layer "F.SilkS")
 			(uuid "e0b88ab0-45ca-4f3f-8795-64a84b595fb6")
 			(effects
@@ -971,7 +971,7 @@
 			)
 		)
 		(fp_text user "${REFERENCE}"
-			(at 3.6 -3.6 360)
+			(at 3.6 -3.6 0)
 			(layer "F.Fab")
 			(uuid "8f0a525e-b8d4-4510-8610-8d7fee158bcb")
 			(effects
@@ -1623,7 +1623,7 @@
 		(descr "Connector XT60 Horizontal PCB Female, https://www.tme.eu/Document/b13629717d44ae038681dba08d18c0b6/XT60PW-M.pdf")
 		(tags "RC Connector XT60")
 		(property "Reference" "J15"
-			(at 3.6 -7.15 360)
+			(at 3.6 -7.15 0)
 			(layer "F.SilkS")
 			(uuid "c9cf337f-6f76-4208-9ad3-89ece9de0213")
 			(effects
@@ -1634,7 +1634,7 @@
 			)
 		)
 		(property "Value" "XT60PW-M"
-			(at 3.6 4 360)
+			(at 3.6 4 0)
 			(layer "F.Fab")
 			(uuid "a5b170c5-6788-42a1-8e92-cbe98de89171")
 			(effects
@@ -2008,7 +2008,7 @@
 			(uuid "3ace4bc9-eb31-4dce-a3f0-fcdc523e82d6")
 		)
 		(fp_text user "+"
-			(at 9.5 2.5 360)
+			(at 9.5 2.5 0)
 			(layer "F.SilkS")
 			(uuid "2a9a8794-2389-48a4-aa6b-2d9d11f0d817")
 			(effects
@@ -2019,7 +2019,7 @@
 			)
 		)
 		(fp_text user "-"
-			(at -2.8 2.5 360)
+			(at -2.8 2.5 0)
 			(layer "F.SilkS")
 			(uuid "48fee8c2-a816-470d-95d5-6ffd0495f633")
 			(effects
@@ -2030,7 +2030,7 @@
 			)
 		)
 		(fp_text user "${REFERENCE}"
-			(at 3.6 -3.6 360)
+			(at 3.6 -3.6 0)
 			(layer "F.Fab")
 			(uuid "27947bd4-f830-4503-9a55-71aac1986f68")
 			(effects
@@ -4800,7 +4800,7 @@
 		(descr "Connector XT60 Horizontal PCB Female, https://www.tme.eu/Document/b13629717d44ae038681dba08d18c0b6/XT60PW-M.pdf")
 		(tags "RC Connector XT60")
 		(property "Reference" "J11"
-			(at 3.6 -7.15 360)
+			(at 3.6 -7.15 0)
 			(layer "F.SilkS")
 			(uuid "68fc613f-0a4d-4a52-bfe9-b5878b0b8303")
 			(effects
@@ -4811,7 +4811,7 @@
 			)
 		)
 		(property "Value" "XT60PW-M"
-			(at 3.6 4 360)
+			(at 3.6 4 0)
 			(layer "F.Fab")
 			(uuid "a7387173-17ff-4307-a804-82f19adb1279")
 			(effects
@@ -5185,7 +5185,7 @@
 			(uuid "26574fe0-1ef9-42b4-a748-afb287d6a33c")
 		)
 		(fp_text user "-"
-			(at -2.8 2.5 360)
+			(at -2.8 2.5 0)
 			(layer "F.SilkS")
 			(uuid "99a6ace1-1da5-4ea4-b50a-ceec7a90f476")
 			(effects
@@ -5196,7 +5196,7 @@
 			)
 		)
 		(fp_text user "+"
-			(at 9.5 2.5 360)
+			(at 9.5 2.5 0)
 			(layer "F.SilkS")
 			(uuid "fe9bd4a4-6767-428c-a90f-533e958d730b")
 			(effects
@@ -5207,7 +5207,7 @@
 			)
 		)
 		(fp_text user "${REFERENCE}"
-			(at 3.6 -3.6 360)
+			(at 3.6 -3.6 0)
 			(layer "F.Fab")
 			(uuid "b5d97243-a455-49c2-9654-8052e0aa960d")
 			(effects
