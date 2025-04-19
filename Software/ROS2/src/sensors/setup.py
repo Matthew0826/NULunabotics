@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
             'lidar = sensors.lidar:main',
             'positioning = sensors.positioning:main',
+            'power_data = sensors.power_data:main',
             'serial_port_server = sensors.serial_port_server:main',
             'mock_positioning = sensors.mock_positioning:main'
         ],

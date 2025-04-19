@@ -12,7 +12,7 @@ from collections import deque
 #   A higher covariance indicates more uncertainty, while a lower covariance indicates more confidence in the estimate.
 
 # Constants
-MARGIN_OF_ERROR = 0.1
+MARGIN_OF_ERROR = 0.12
 STANDARD_DEVIATION = MARGIN_OF_ERROR / 1.96
 
 
@@ -144,8 +144,8 @@ b = Point(0, 115)
 c = Point(0, 0)
 fixed_points = [a, b, c]
 
-# EKF initialization with tuned parameters
-dt = 0.1  # Smaller time step for better tracking
+# Note: this is the number of seconds between each time we get new distance values from find_robot_location
+dt = 0.8
 
 # State transition matrix (x, vx, y, vy)
 F = np.array([
@@ -155,8 +155,9 @@ F = np.array([
     [0, 0, 0, 1]  # vy = vy
 ])
 
-# Process noise covariance matrix using continuous-time model
-sigma_a = 0.01  # process noise due to acceleration uncertainty
+# A larger value of "sigma_a" means the sensors are untrustworthy and the motion model is actually more trustworthy. 
+# TODO: 0.05 might be a better value!
+sigma_a = 0.02  # process noise due to acceleration uncertainty
 G = np.array([
     [dt ** 2 / 2, 0],
     [dt, 0],
@@ -170,10 +171,10 @@ R = np.eye(3) * (STANDARD_DEVIATION ** 2)
 
 # Initial state estimate - better to start slightly off than grossly wrong
 # [x, vx, y, vy]
-x0 = np.array([5.0, 0.1, 5.0, 0.1])  # Close to true starting position with some velocity
+x0 = np.array([15.0, 0.0, 55.0, 0.0])  # Close to true starting position with some velocity
 
 # Initial uncertainty - smaller values to indicate more confidence in initial state
-P0 = np.diag([0.5, 0.05, 0.5, 0.05])
+P0 = np.diag([0.5, 0.005, 0.5, 0.005])
 
 # Create EKF instance
 ekf = ExtendedKalmanFilter(F, Q, R, x0, P0, fixed_points)
@@ -182,29 +183,41 @@ ekf = ExtendedKalmanFilter(F, Q, R, x0, P0, fixed_points)
 # true_points = generate_moving_points([5, 4], num_steps=100, step_size=0.05)
 
 # Track the EKF estimates over time
-MAX_HISTORY = 100  # or however many steps you want to keep
-ekf_estimates = deque(maxlen=MAX_HISTORY)
-innovation_history = deque(maxlen=MAX_HISTORY)
-P_history = deque(maxlen=MAX_HISTORY)
+# These could be used to debug the EKF and find better values for the constants above; it tracks the performance of the filter
+# MAX_HISTORY = 300  # or however many steps you want to keep
+# ekf_estimates = deque(maxlen=MAX_HISTORY)
+# innovation_history = deque(maxlen=MAX_HISTORY)
+# P_history = deque(maxlen=MAX_HISTORY)
+measurement_buffer = deque(maxlen=3)  # You can also try 2
 
-
+last_time = time.time()
 def find_robot_location(da, db, dc):
-    measurements = np.array([da, db, dc])
+    global last_time
+    current_time = time.time()
+    # continuously update dt depending on how long it takes to get a new location
+    dt = current_time - last_time
+    last_time = current_time
     
+    raw_measurements = np.array([da, db, dc])
+    measurement_buffer.append(raw_measurements)
+    # Apply simple moving average
+    measurements = np.mean(measurement_buffer, axis=0)
+
     # EKF predict and update steps
     ekf.predict()
 
     # Calculate pre-update expected measurements for innovation tracking
-    expected_z = ekf.compute_expected_measurements()
-    innovation = measurements - expected_z
-    innovation_history.append(innovation)
+    # expected_z = ekf.compute_expected_measurements()
+    # innovation = measurements - expected_z
+    # innovation_history.append(innovation)
 
     # Update step
     ekf.update(measurements)
-    print(ekf.x)
+    [x, y] = [ekf.x[0], ekf.x[2]]
+    print("Robot estimated location:", x, ",", y, "; Velocity:", ekf.x[1], ",", ekf.x[3])
 
     # Store current estimate and covariance
-    ekf_estimates.append(np.array([ekf.x[0], ekf.x[2]]))  # [x, y]
-    P_history.append(np.array([ekf.P[0, 0], ekf.P[2, 2]]))  # Position variances
-    # Return the estimated position in x, y
-    return ekf.x[0], ekf.x[2]
+    # ekf_estimates.append(np.array([ekf.x[0], ekf.x[2]]))  # [x, y]
+    # P_history.append(np.array([ekf.P[0, 0], ekf.P[2, 2]]))  # Position variances
+    
+    return x, y

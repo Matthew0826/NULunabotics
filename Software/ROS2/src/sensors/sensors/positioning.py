@@ -3,7 +3,7 @@ from rclpy.node import Node
 
 from std_msgs.msg import Float32
 
-from sensors.triangulation import find_robot_location
+from sensors.other_kalman import find_robot_location
 from sensors.serial_port_client import find_port
 
 from lunabotics_interfaces.msg import Point
@@ -17,10 +17,12 @@ BAUD_RATE = 9600
 
 import struct
 
+test_dists = []
 
 class SpacialDataPublisher(Node):
 
     def __init__(self, port: str):
+        global test_dists
         super().__init__('positioning')
         self.position_publisher = self.create_publisher(Point, '/sensors/position', 10)
         self.angle_publisher = self.create_publisher(Float32, '/sensors/orientation', 10)
@@ -48,22 +50,27 @@ class SpacialDataPublisher(Node):
             # print(buffer)
             if buffer[0] == b'\xFF':
                 if buffer[1] == b'\xFF' and len(buffer) > 4:
-                    print("got dist")
                     # read the anchor index and distance
                     anchor_index = int.from_bytes(buffer[2])
                     distance = int.from_bytes(buffer[4]) * 256 + int.from_bytes(buffer[3])
-                    self.get_logger().info(f"Anchor index: {anchor_index}, Distance: {distance}")
+                    self.get_logger().info(f"Anchor index: {anchor_index}, Distance: {distance}, Len: {len(test_dists)}")
                     # print("Anchor index: ", anchor_index, "Distance: ", distance)
                     if anchor_index <= 2 and distance < 10_000:
                         # publish new position to the topic
                         distances[int(anchor_index)] = distance
+                        test_dists.append(distance)
+                        if len(test_dists) == 15:
+                            for i in test_dists:
+                                print(i)
+                            test_dists.clear()
+                            abc = input("waiting...")
                         # if all distances are received, calculate the position
                         if -1 not in distances:
                             msg = Point()
                             position = find_robot_location(distances[0], distances[1], distances[2])
                             msg.x = position[0]
                             msg.y = position[1]
-                            self.get_logger().info(str(distances))
+                            # self.get_logger().info(str(position))
                             distances = [-1, -1, -1]
                             self.position_publisher.publish(msg)
                 elif buffer[1] == b'\xFD' and len(buffer) > 5:
@@ -82,7 +89,7 @@ class SpacialDataPublisher(Node):
 def main(args=None):
     rclpy.init(args=args)
     # port = find_port(ESP_BOARD_ID, os.getpid(), BAUD_RATE)
-    spacial_data_publisher = SpacialDataPublisher("/dev/ttyUSB0")
+    spacial_data_publisher = SpacialDataPublisher("/dev/ttyUSB1")
     rclpy.spin(spacial_data_publisher)
 
     # Destroy the node explicitly
