@@ -51,8 +51,18 @@ int c = 0;
 void sendCommand(const String &cmd) {
   uwbSerial.print(cmd + "\r\n");
   // Serial.print("Sent command: ");
-  // Serial.println(cmd);
-  delay(500);
+  Serial.println(cmd);
+  String response = "";
+  // Wait until we get a response
+  while (response.length() == 0) {
+    if (uwbSerial.available()) {
+      response = uwbSerial.readStringUntil('\n');  // Read a line from uwbSerial
+      Serial.println(response);  // Print it to the standard Serial
+    }
+    delay(10);
+  }
+  Serial.println("Command done!");
+  delay(10);
 }
 
 void setup() {

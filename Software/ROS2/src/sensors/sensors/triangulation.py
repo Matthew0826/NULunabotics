@@ -21,9 +21,9 @@ class Point:
         return np.array([self.x, self.y])
 
 
-a = Point(100, 0)
-b = Point(100, 100)
-c = Point(0, 100)
+a = Point(292, 0)
+b = Point(0, 115)
+c = Point(0, 0)
 
 # Function to minimize
 def trilateration(x, da, db, dc):

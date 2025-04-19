@@ -28,7 +28,7 @@ setup(
             'pathfinder = navigation.pathfinder:main',
             'mock_odometry = navigation.mock_odometry:main',
             'planner = navigation.planner:main',
-            'mock_obstacle_detector = navigation.mock_obstacle_detector:main',
-        ],
+            'mock_obstacle_detector = navigation.mock_obstacle_detector:main',        
+            ],
     },
 )

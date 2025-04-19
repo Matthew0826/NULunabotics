@@ -10,9 +10,13 @@ from lunabotics_interfaces.msg import Point
 
 import serial
 import os
+import math
 
 ESP_BOARD_ID = 2
 BAUD_RATE = 9600
+
+import struct
+
 
 class SpacialDataPublisher(Node):
 
@@ -20,6 +24,7 @@ class SpacialDataPublisher(Node):
         super().__init__('positioning')
         self.position_publisher = self.create_publisher(Point, '/sensors/position', 10)
         self.angle_publisher = self.create_publisher(Float32, '/sensors/orientation', 10)
+        self.get_logger().info("Spacial data publisher started")
         ser = serial.Serial(port, BAUD_RATE, timeout=1)
         # wait until serial is open
         self.get_logger().info(f"Serial port {port} opened successfully")
@@ -40,38 +45,44 @@ class SpacialDataPublisher(Node):
             if new_byte != b'':
                 buffer.append(new_byte)
             if len(buffer) < 2: continue
-            print(buffer)
-            if buffer[0] != b'\xFF': continue
-            if buffer[1] == b'\xFF' and len(buffer) > 4:
-                # read the anchor index and distance
-                anchor_index = buffer[2]
-                distance = buffer[4] * 256 + buffer[3]
-                self.get_logger().info(f"Anchor index: {anchor_index}, Distance: {distance}")
-                # publish new position to the topic
-                distances[int(anchor_index)] = distance
-                # if all distances are received, calculate the position
-                if -1 not in distances:
-                    msg = Point()
-                    position = find_robot_location(distances[0], distances[1], distances[2])
-                    msg.x = position[0]
-                    msg.y = position[1]
-                    # distances = [-1, -1, -1]
-                    self.position_publisher.publish(msg)
-            elif buffer[1] == b'\xFE' and len(buffer) > 5:
-                # read the accelerometer value
-                angle = buffer[2:6]
-                angle = 1.2#int.from_bytes(angle, byteorder='big')
-                self.get_logger().info(f"Angle: {angle}")
-                msg = Float32()
-                msg.data = angle / 100.0
-                self.angle_publisher.publish(msg)
+            # print(buffer)
+            if buffer[0] == b'\xFF':
+                if buffer[1] == b'\xFF' and len(buffer) > 4:
+                    print("got dist")
+                    # read the anchor index and distance
+                    anchor_index = int.from_bytes(buffer[2])
+                    distance = int.from_bytes(buffer[4]) * 256 + int.from_bytes(buffer[3])
+                    self.get_logger().info(f"Anchor index: {anchor_index}, Distance: {distance}")
+                    # print("Anchor index: ", anchor_index, "Distance: ", distance)
+                    if anchor_index <= 2 and distance < 10_000:
+                        # publish new position to the topic
+                        distances[int(anchor_index)] = distance
+                        # if all distances are received, calculate the position
+                        if -1 not in distances:
+                            msg = Point()
+                            position = find_robot_location(distances[0], distances[1], distances[2])
+                            msg.x = position[0]
+                            msg.y = position[1]
+                            self.get_logger().info(str(distances))
+                            distances = [-1, -1, -1]
+                            self.position_publisher.publish(msg)
+                elif buffer[1] == b'\xFD' and len(buffer) > 5:
+                    print("got angle")
+                    # reads the accelerometer value by
+                    # decoding a 32 bit float from the buffer
+                    angle = struct.unpack("<f", b''.join(buffer[2:6]))[0]
+                    # self.get_logger().info(f"Angle: {angle}")
+                    msg = Float32()
+                    msg.data = float(angle)
+                    self.angle_publisher.publish(msg)
             buffer = buffer[-6:] # keep only the last 6 bytes
+            # print(buffer)
 
 
 def main(args=None):
     rclpy.init(args=args)
-    port = find_port(ESP_BOARD_ID, os.getpid(), BAUD_RATE)
-    spacial_data_publisher = SpacialDataPublisher(port)
+    # port = find_port(ESP_BOARD_ID, os.getpid(), BAUD_RATE)
+    spacial_data_publisher = SpacialDataPublisher("/dev/ttyUSB0")
     rclpy.spin(spacial_data_publisher)
 
     # Destroy the node explicitly

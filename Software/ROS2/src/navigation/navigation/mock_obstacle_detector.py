@@ -18,7 +18,7 @@ ROBOT_LIDAR_OFFSET = (30, 0, 20) # X, Y, Z (in cm)
 LIDAR_VIEW_DISTANCE = 100 # cm
 LIDAR_VIEW_SIZE = 120 # cm
 # how many obstacles to generate
-MOCK_OBSTACLE_COUNT = 8
+MOCK_OBSTACLE_COUNT = 7
 
 
 def rotate_vector_2d(vector, angle_degrees):
@@ -79,7 +79,7 @@ class MockObstacleDetector(Node):
             # pick a point anywhere in the obstacle zone
             x = float(random.randint(0, 548))
             y = float(random.randint(0, 305))
-            radius = float(random.randint(20, 30))
+            radius = float(random.randint(15, 20))
             # check if obstacle would be in start zone
             if x > (348 - radius) and y < (200 + radius):
                 continue
