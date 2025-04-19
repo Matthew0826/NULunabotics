@@ -23,8 +23,18 @@ const String MODE = "1";   // set module to ANCHOR mode
 void sendCommand(const String &cmd) {
   uwbSerial.print(cmd + "\r\n");
   // Serial.print("Sent command: ");
-  // Serial.println(cmd);
-  delay(500);  // wait a bit for module to process
+  Serial.println(cmd);
+  String response = "";
+  // Wait until we get a response
+  while (response.length() == 0) {
+    if (uwbSerial.available()) {
+      response = uwbSerial.readStringUntil('\n');  // Read a line from uwbSerial
+      Serial.println(response);  // Print it to the standard Serial
+    }
+    delay(10);
+  }
+  Serial.println("Command done!");
+  delay(10);
 }
 
 void setup() {
@@ -55,7 +65,7 @@ void performRanging() {
       resp += (char)uwbSerial.read();
     }
   }
-  // Serial.println("Ranging response: " + resp);
+  Serial.println("Ranging response: " + resp);
 
   // 2. Parse out the measured distance from the response
   //    (Assumes response contains ",<distance> cm" at the end)
@@ -79,9 +89,10 @@ void performRanging() {
   // Example: "1" + "040" → "1040"
   char payload[5];  // 4 characters + null terminator
   int distance = distanceStr.toInt();
+  Serial.println(distance);
   sprintf(payload, "%d%03d", ANCHOR_ID, distance);
   String payloadStr = String(payload);
-  // Serial.println("Custom payload: " + payloadStr);
+  Serial.println("Custom payload: " + payloadStr);
 
   // 4. Send the custom message.
   // Using a payload length (here, 4) that is different from the ranging phase to avoid a new measurement.
@@ -91,5 +102,16 @@ void performRanging() {
 
 void loop() {
   performRanging();
-  delay(500);
+  delay(20);
+  // // Check if there's data available on Serial
+  // if (Serial.available()) {
+  //   String command = Serial.readStringUntil('\n');  // Read a line from Serial
+  //   sendCommand(command);  // Send it using your custom function
+  // }
+
+  // // Check if there's data available on uwbSerial
+  // if (uwbSerial.available()) {
+  //   String response = uwbSerial.readStringUntil('\n');  // Read a line from uwbSerial
+  //   Serial.println(response);  // Print it to the standard Serial
+  // }
 }

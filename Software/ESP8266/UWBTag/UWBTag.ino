@@ -78,7 +78,7 @@ void setup() {
   
   // Find accelerometer. Did you forget to plug it in to the header pins?
   if (!mpu.begin()) {
-    Serial.println("Failed to find MPU6050 chip");
+    // Serial.println("Failed to find MPU6050 chip");
     while (1) {
       delay(10);
     }
@@ -102,9 +102,10 @@ void parsePayload(const String &payload) {
     // Serial.println("Invalid payload: " + payload);
     return;
   }
+  // Serial.println(payload);
 
   int anchorID = payload.substring(0, 1).toInt();
-  int distance = payload.substring(2, 5).toInt();
+  int distance = payload.substring(1, 5).toInt();
 
   // Sanitize data a little bit
   if (distance <= 0 || distance > 65533 || anchorID < 0 || anchorID > 3) return;
@@ -154,15 +155,15 @@ void loop() {
   if (angleZ < 0.0)        angleZ = angleZ + 360.0;
   else if (angleZ > 360.0) angleZ = angleZ - 360.0;
   
-  if (c % 30 == 0) {
-    // Write a header for rotation
-    Serial.write(0xFF);
-    Serial.write(0xFD);
+  // if (c % 30 == 0) {
+  //   // Write a header for rotation
+  //   Serial.write(0xFF);
+  //   Serial.write(0xFD);
     
-    // Write data
-    Serial.write((byte*)&angleZ, 4);
-  }
-  c++; // no way! that's the name of the programming language!
+  //   // Write data
+  //   Serial.write((byte*)&angleZ, 4);
+  // }
+  // c++; // no way! that's the name of the programming language!
   delay(20);
 }
 
