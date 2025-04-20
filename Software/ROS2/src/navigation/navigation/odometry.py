@@ -57,6 +57,7 @@ class Odometry(Node):
         # these are functions that calculate the motor power
         self.left_power_calculator = lambda: 0.0
         self.right_power_calculator = lambda: 0.0
+        self.previous_direction = 0
 
         # ros publishers and subscribers
         self.motor_pub = self.create_publisher(
@@ -150,16 +151,12 @@ class Odometry(Node):
     def to_orient(self, final_orientation: float):
         # Fix for the 90-degree offset issue
         # Adjust the target orientation by 90 degrees to compensate for the misalignment
-        adjusted_final_orientation = (final_orientation + 90) % 360
+        adjusted_final_orientation = (final_orientation) % 360
         
         # Calculate shortest path direction to the adjusted target
         def shortest_path_direction():
-            diff = (adjusted_final_orientation - self.orientation + 180) % 360 - 180
+            diff = (adjusted_final_orientation - self.orientation) % 360 - 180
             return -1 if diff < 0 else 1  # -1 for left turn, 1 for right turn
-        
-        # Initialize previous direction on first call
-        if not hasattr(self, 'previous_direction'):
-            self.previous_direction = shortest_path_direction()
         
         # Stop when direction changes, meaning we've gone past the target
         self.stop_motors_predicate = lambda: shortest_path_direction() != self.previous_direction
@@ -170,17 +167,9 @@ class Odometry(Node):
         # Power based on shortest direction
         self.left_power_calculator = lambda: -1.0 if shortest_path_direction() < 0 else 1.0
         self.right_power_calculator = lambda: -self.left_power_calculator()
-    # rotate the robot
-    def to_rotate(self, delta: float):
-        # new orientation (based on how much we rotate)
-        final_orientation = self.orientation + delta
-
-        # now go to new orientation
-        self.to_orient(final_orientation)
 
     # drive forward in a straight line
     def to_line(self, length: float):
-        
         # get the normalized vector of where we face
         new_x = self.position.x + (math.cos(math.radians(self.orientation)) * length)
         new_y = self.position.y + (math.sin(math.radians(self.orientation)) * length)
@@ -201,33 +190,27 @@ class Odometry(Node):
         # calculate orientation to face position
         self.get_logger().info(f"going to {x}, {y}")
         await self.face_position(x, y)
+        
         # drive in a line until we reach the position
-        
         target_point = Point(x=x, y=y)
-        self.approaching_target = False
-        self.prev_position = self.position
-        
-        heading_vector = (math.cos(self.orientation), math.sin(self.orientation))
-        
         # Predicate that checks if we've passed the target along our path
         def passed_target_predicate():
-            # Vector from initial position to target
-            target_vector = (target_point.x - self.initial_position.x, target_point.y - self.initial_position.y)
-            # Vector from initial position to current position
-            current_vector = (self.position.x - self.initial_position.x, self.position.y - self.initial_position.y)
-            
-            # Calculate projections onto the heading direction
-            target_proj = target_vector[0] * heading_vector[0] + target_vector[1] * heading_vector[1]
-            current_proj = current_vector[0] * heading_vector[0] + current_vector[1] * heading_vector[1]
-            
-            # If current projection exceeds target projection, we've passed the target
-            return current_proj >= target_proj
-        
+            # Vector from initial to target
+            to_target = (target_point.x - self.initial_position.x, target_point.y - self.initial_position.y)
+            # Vector from initial to current position
+            to_current = (self.position.x - self.initial_position.x, self.position.y - self.initial_position.y)
+            # Dot product
+            dot_product = to_target[0] * to_current[0] + to_target[1] * to_current[1]
+            # Squared distance to target
+            target_dist_squared = to_target[0]**2 + to_target[1]**2
+            # If dot product < 0, robot is moving away from target
+            # If dot product > target_dist_squared, robot has passed the target
+            return dot_product < 0 or dot_product > target_dist_squared
+
         # Store initial position to use as reference
         self.initial_position = self.position
         
         def calculate_left_power():
-            return 0.5
             # Get ideal orientation to target
             target_orientation = math.atan2(target_point.y - self.position.y, target_point.x - self.position.x)
             # Calculate orientation difference (normalized to [-pi, pi])
@@ -236,12 +219,11 @@ class Odometry(Node):
             base_power = 0.8
             # Adjust power based on deviation (reduce power on the side we need to turn toward)
             if diff > 0:  # Need to turn left
-                return base_power * 0.8  # Reduce left power to turn left
+                return -base_power * 0.8  # Reduce left power to turn left
             else:
-                return base_power * 1.2  # Increase left power to turn right
+                return -base_power * 1.2  # Increase left power to turn right
         
         def calculate_right_power():
-            return 0.5
             # Get ideal orientation to target
             target_orientation = math.atan2(target_point.y - self.position.y, target_point.x - self.position.x)
             # Calculate orientation difference (normalized to [-pi, pi])
@@ -250,9 +232,9 @@ class Odometry(Node):
             base_power = 0.8
             # Adjust power based on deviation (reduce power on the side we need to turn toward)
             if diff > 0:  # Need to turn left
-                return base_power * 1.2  # Increase right power to turn left
+                return -base_power * 1.2  # Increase right power to turn left
             else:
-                return base_power * 0.8  # Reduce right power to turn right
+                return -base_power * 0.8  # Reduce right power to turn right
         
         self.stop_motors_predicate = passed_target_predicate
         self.left_power_calculator = calculate_left_power
@@ -276,21 +258,22 @@ class Odometry(Node):
 
     # orient the rover to face a position
     async def face_position(self, x: float, y: float):
-        delta_x = abs(x - self.position.x)
-        delta_y = abs(y - self.position.y)
-        new_orientation = math.degrees(math.atan2(delta_y, delta_x))
+        angle_rad = math.atan2(y - self.position.y, x - self.position.x)
+        new_orientation = math.degrees(angle_rad)
 
         # rotate to new orientation
         old_orientation = self.orientation
-        self.to_orient(new_orientation)
-        await self.wait_until_destination()
+        while (self.orientation - new_orientation + 360) % 360 > 5:
+            self.to_orient(new_orientation)
+            await self.wait_until_destination()
         self.get_logger().info(f"i got to my orientation! my old one was {old_orientation}, now its {self.orientation}. i wanted {new_orientation}")
 
     async def to_path(self, points, goal_handle, feedback_msg):
         total_points = len(points)
         self.get_logger().info("hello")
         for i, point in enumerate(points):
-            await self.to_position(point.x, point.y)
+            while distance(self.position, point) > 20:
+                await self.to_position(point.x, point.y)
 
             feedback_msg.progress = (i + 1) / total_points
             goal_handle.publish_feedback(feedback_msg)
