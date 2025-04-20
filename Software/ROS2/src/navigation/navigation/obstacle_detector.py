@@ -3,6 +3,7 @@ from rclpy.node import Node
 import math
 
 from lunabotics_interfaces.msg import LidarRotation, Obstacle, Point
+from std_msgs.msg import Float32
 
 import numpy as np
 
@@ -81,7 +82,7 @@ class ObstacleDetector(Node):
             self.position_callback,
             10)
         self.orientation_subscription = self.create_subscription(
-            Point,
+            Float32,
             'sensors/orientation',
             self.orientation_callback,
             10)
