@@ -81,10 +81,7 @@ export default function Map() {
                     <div
                         className={`absolute right-0 aspect-square border-4 border-r-0 border-t-0 border-slate-800 flex flex-col justify-center items-center`}
                         style={{
-                            height: `${Math.floor(
-                                (100 * 2) /
-                                (MAP_HEIGHT - MAP_OBSTACLES_ZONE_HEIGHT)
-                            )}%`,
+                            height: `${(200) / (MAP_HEIGHT - MAP_OBSTACLES_ZONE_HEIGHT)}%`,
                         }}
                     >
                         <p className="text-center text-sm">Start</p>
@@ -101,8 +98,21 @@ export default function Map() {
                     <div className="w-1/2 border-4 border-slate-800">
                         <p className="text-center text-sm">Excavation</p>
                     </div>
-                    <div className="w-1/2 border-4 border-slate-800 border-l-0">
+                    <div className="relative w-1/2 border-4 border-slate-800 border-l-0">
                         <p className="text-center text-sm">Construction</p>
+
+                        <div
+                            className={`absolute border-4 border-slate-800 flex flex-col justify-center items-center`}
+                            style={{
+                                height: `${(200) / (MAP_OBSTACLES_ZONE_HEIGHT)}%`,
+                                width: `${(70) / (MAP_OBSTACLES_ZONE_HEIGHT)}%`,
+                                transform: `translate(0%, -50%)`,
+                                top: "50%",
+                                right: `${(50) / (MAP_WIDTH / 2)}%`
+                            }}
+                        >
+                            <p className="text-center text-sm">Berm</p>
+                        </div>
                     </div>
                 </div>
                 {obstacles.map((obstacle, index) => (
