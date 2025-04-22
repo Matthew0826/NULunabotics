@@ -3,7 +3,7 @@ from rclpy.node import Node
 
 from std_msgs.msg import Float32
 
-from sensors.other_kalman import find_robot_location
+from sensors.kalman_option_2 import find_robot_location
 from sensors.serial_port_client import find_port
 
 from lunabotics_interfaces.msg import Point
@@ -57,13 +57,7 @@ class SpacialDataPublisher(Node):
                     # print("Anchor index: ", anchor_index, "Distance: ", distance)
                     if anchor_index <= 2 and distance < 10_000:
                         # publish new position to the topic
-                        distances[int(anchor_index)] = distance
-                        test_dists.append(distance)
-                        if len(test_dists) == 15:
-                            for i in test_dists:
-                                print(i)
-                            test_dists.clear()
-                            abc = input("waiting...")
+                        distances[int(anchor_index)] = self.calculate_true_distance(distance)
                         # if all distances are received, calculate the position
                         if -1 not in distances:
                             msg = Point()
@@ -84,6 +78,12 @@ class SpacialDataPublisher(Node):
                     self.angle_publisher.publish(msg)
             buffer = buffer[-6:] # keep only the last 6 bytes
             # print(buffer)
+    
+    def calculate_true_distance(measured):
+        # gotten from testing and through spreadsheet analysis
+        # https://docs.google.com/spreadsheets/d/1d8JpcACcQQDd8Mt38nvdwsscAl1u1AYtAX2Nlg1wPS0/edit?usp=sharing
+        # (go to Sheet 2)
+        return (measured + 24) / 1.23
 
 
 def main(args=None):

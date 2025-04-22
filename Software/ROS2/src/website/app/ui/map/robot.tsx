@@ -24,6 +24,15 @@ export default function Robot({
                 left: `${x / MAP_WIDTH}%`,
                 transform: `translate(-50%, -50%) rotate(${rotation + 90}deg)`,
             }}
-        />
+        >
+            <div className="absolute rounded-lg bg-slate-800"
+                style={{
+                    width: `50%`,
+                    height: `40%`,
+                    top: `20%`,
+                    left: `50%`,
+                    transform: `translate(-50%, -50%)`,
+                }} />
+        </div>
     );
 }
