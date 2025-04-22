@@ -1,1 +1,2 @@
-LiDAR[672] points
+LiDAR[] points
+int64 timestamp

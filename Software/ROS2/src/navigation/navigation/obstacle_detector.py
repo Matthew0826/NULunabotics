@@ -25,14 +25,21 @@ class MovingAverage:
 
     def add(self, points):
         for point in points:
-            self.data[int(point.angle)].append(point.distance)
-            self.data[int(point.angle)] = self.data[int(point.angle)][-self.size:]
+            self.data[int(point.angle) % 360].append(point.distance)
+            self.data[int(point.angle) % 360] = self.data[int(point.angle)][-self.size:]
         self.count += 1
         if self.count > self.size:
             self.count = self.size
 
     def get_average(self):
-        return sum(self.data) / len(self.data) if self.data else 0
+        averages = []
+        for distances in self.data:
+            if distances:
+                averages.append(sum(distances) / len(distances))
+            else:
+                averages.append(0)
+        return averages
+
     
     def get_average_points(self):
         avg_distances = self.get_average()
@@ -98,11 +105,11 @@ class ObstacleDetector(Node):
         obstacle = Obstacle()
         position = Point()
         # adjust x and y based on robot orientation
-        x, y = rotate_vector_2d(np.array([x + ROBOT_LIDAR_OFFSET[0], y + ROBOT_LIDAR_OFFSET[1]]), self.robot_orientation)
-        world_x = self.robot_position[0] + x
-        world_y = self.robot_position[1] + y
-        position.x = world_x
-        position.y = world_y
+        # x, y = rotate_vector_2d(np.array([x + ROBOT_LIDAR_OFFSET[0], y + ROBOT_LIDAR_OFFSET[1]]), self.robot_orientation)
+        # world_x = self.robot_position[0] + x
+        # world_y = self.robot_position[1] + y
+        position.x = x#world_x
+        position.y = y#world_y
         obstacle.position = position
         obstacle.radius = radius    
         self.obstacle_publisher.publish(obstacle)
