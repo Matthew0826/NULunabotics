@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'lidar = sensors.lidar:main',
+            'lidar_forwarder = sensors.lidar_forwarder:main',
             'positioning = sensors.positioning:main',
             'power_data = sensors.power_data:main',
             'serial_port_server = sensors.serial_port_server:main',

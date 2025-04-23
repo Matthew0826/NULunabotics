@@ -157,6 +157,7 @@ rclnodejs.init().then(() => {
                 if (distance < 15000)
                     lidarPoints.push({ distance, angle, weight });
             }
+            console.log(data);
             sendToClient("lidar", lidarPoints);
         }
     );

@@ -10,11 +10,15 @@ export default function Obstacle({
     y,
     radius,
     isHole,
+    parentWidth,
+    parentHeight
 }: {
     x: number;
     y: number;
     radius: number;
     isHole: boolean;
+    parentWidth: number;
+    parentHeight: number;
 }) {
     return (
         <div
@@ -23,10 +27,11 @@ export default function Obstacle({
                 : "drop-shadow-[3px_3px_rgba(0,0,0,0.25)] bg-slate-600"
                 }`}
             style={{
-                width: `${(2 * radius) / MAP_WIDTH}%`,
-                height: `${(2 * radius) / MAP_HEIGHT}%`,
-                top: `${y / MAP_HEIGHT}%`,
-                left: `${x / MAP_WIDTH}%`,
+                width: `${(2 * radius) / parentWidth}%`,
+                height: `${(2 * radius) / parentHeight}%`,
+                top: `${y / parentHeight}%`,
+                left: `${x / parentWidth}%`,
+                opacity: `30%`
             }}
         />
     );
