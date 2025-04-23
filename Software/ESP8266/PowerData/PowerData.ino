@@ -1,5 +1,6 @@
 // Calcaultes the voltage and current the battery is using and transmits the data over serial in packets
 // Packet protocol is defined below
+#include <Arduino.h>
 
 #define ESP_BOARD_ID 4
 #define RX_PIN 17 // receives analog inputs
