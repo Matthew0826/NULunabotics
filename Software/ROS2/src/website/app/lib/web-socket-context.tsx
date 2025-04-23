@@ -51,6 +51,8 @@ export default function WebSocketProvider({
     const [messages, setMessages] = useState<Message[]>(
         tempStartingData
     );
+    const messageBuffer = useRef<any[]>([]);
+    const flushing = useRef(false);
 
     useEffect(() => {
         async function handleMessage(event: MessageEvent) {
@@ -58,7 +60,8 @@ export default function WebSocketProvider({
                 typeof event.data === "string"
                     ? event.data
                     : await event.data.text();
-            setMessages((p) => [...p, JSON.parse(payload)]);
+            const message = JSON.parse(payload);
+            messageBuffer.current.push(message);
         }
 
         socketRef.current?.addEventListener("message", handleMessage);
@@ -68,6 +71,17 @@ export default function WebSocketProvider({
         return () =>
             socketRef.current?.removeEventListener("message", handleMessage);
     }, []);
+
+    const interval = setInterval(() => {
+        if (messageBuffer.current.length > 0 && !flushing.current) {
+            flushing.current = true;
+            setMessages((prev) => [
+                ...prev,
+                ...messageBuffer.current.splice(0),
+            ].slice(-100));
+            flushing.current = false;
+        }
+    }, 150);
 
     function sendToServer(messageType: string, message: any) {
         try {

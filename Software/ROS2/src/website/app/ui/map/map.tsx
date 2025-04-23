@@ -9,7 +9,7 @@ export const MAP_OBSTACLES_ZONE_HEIGHT = 2.44; // meters
 export const MAP_HEIGHT = 4.87; // meters
 export const COLUMN_WIDTH = 0.8; // meters
 
-type ObstacleType = {
+export type ObstacleType = {
     x: number;
     y: number;
     radius: number;
@@ -122,6 +122,8 @@ export default function Map() {
                         y={obstacle.y}
                         radius={obstacle.radius}
                         isHole={obstacle.isHole}
+                        parentHeight={MAP_HEIGHT}
+                        parentWidth={MAP_WIDTH}
                     />
                 ))}
                 <RobotPath path={pathData} robot={robot} />

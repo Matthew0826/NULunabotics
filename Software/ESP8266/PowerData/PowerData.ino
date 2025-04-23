@@ -3,15 +3,15 @@
 #include <Arduino.h>
 
 #define ESP_BOARD_ID 4
-#define RX_PIN 17 // receives analog inputs
+#define RX_PIN A4// receives analog inputs
 // TODO: check if reversed
-#define TX_PIN 16 // transmit 0=current and 1=voltage
+#define TX_PIN 2 // transmit 0=current and 1=voltage
 
 #define HALL_EFFECT_SENSOR_SENSITIVITY 133.0/1000.0
 #define MAX_VOLTS 5.0
 #define BOARD_MAX_ANALOG_VALUE 1023.0
 
-
+int val;
 // Protocol for communication with Raspberry Pi:
 // Header: 0xFFFFFFFF
 // Voltage value (4 byte float): The voltage of the battery in volts
@@ -24,7 +24,8 @@
 //   Board ID: 1 byte
 
 void setup() {
-  pinMode(RX_PIN, INPUT);
+  analogReference(DEFAULT);
+
   pinMode(TX_PIN, OUTPUT);
   Serial.begin(9600);
 }
@@ -47,12 +48,12 @@ void writeVoltageCurrent(float volts, float amps) {
 
 // According to the spec sheet of the hall effect sensor
 float voltsToAmps(float volts) {
-  return (volts - MAX_VOLTS/2.0)/HALL_EFFECT_SENSOR_SENSITIVITY;
+  return (volts - 2.5)/0.133;
 }
 
 float readVolts() {
-  int analogValue = analogRead(RX_PIN);
-  return analogValue * (MAX_VOLTS / BOARD_MAX_ANALOG_VALUE);
+  val = analogRead(RX_PIN);
+  return val * (MAX_VOLTS / BOARD_MAX_ANALOG_VALUE);
 }
 
 float readCurrent() {
@@ -77,13 +78,15 @@ void loop() {
   digitalWrite(TX_PIN, LOW);
   // Wait for the MUX to update
   delay(100);
-  float current = readCurrent();
+  float current = readCurrent()/16.0;
+  delay(100);
   
   // Flip bit to 1 to represent a voltage measurement
   digitalWrite(TX_PIN, HIGH);
   // Wait for the MUX to update
   delay(100);
-  int voltage = readVolts();
+  float voltage = readVolts();
+  delay(100);
   
   // Write results to Serial connection
   writeVoltageCurrent(voltage, current);
