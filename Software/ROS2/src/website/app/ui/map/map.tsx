@@ -34,7 +34,7 @@ export default function Map() {
             setRobot(prev => ({ ...prev, x: data.x, y: data.y }));
         } else if (lastMessage.type === "orientation") {
             const data = lastMessage?.message || {};
-            setRobot(prev => ({ ...prev, rotation: data }));
+            setRobot(prev => ({ ...prev, rotation: 360.0 - data }));
         }
         const obstaclesMessages = [...new Set(messages
             .filter((message: Message) => message.type === "obstacles")

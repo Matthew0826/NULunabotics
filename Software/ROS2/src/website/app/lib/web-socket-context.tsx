@@ -78,7 +78,7 @@ export default function WebSocketProvider({
             setMessages((prev) => [
                 ...prev,
                 ...messageBuffer.current.splice(0),
-            ].slice(-100));
+            ]);
             flushing.current = false;
         }
     }, 150);

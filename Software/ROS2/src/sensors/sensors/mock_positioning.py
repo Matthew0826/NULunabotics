@@ -57,15 +57,12 @@ class SpacialDataPublisher(Node):
         motor_power_delta = self.motor_power_right - self.motor_power_left
         
         # Update orientation based on motor difference
-        self.orientation += motor_power_delta * 2.5
+        self.orientation += motor_power_delta * 1.0
         self.orientation = float(self.orientation % 360)
         
-        # Reverse the direction by adding 180 degrees to orientation for movement calculation
-        movement_orientation = (self.orientation + 180) % 360
-        
         # Move forward/backward based on average power with the corrected orientation
-        self.x += math.cos(math.radians(movement_orientation)) * average_power * 3.0
-        self.y += math.sin(math.radians(movement_orientation)) * average_power * 3.0
+        self.x += math.cos(math.radians(360 - self.orientation)) * average_power * 3.0
+        self.y += math.sin(math.radians(360 - self.orientation)) * average_power * 3.0
         
     def timer_callback(self):
         self.update_simulation()

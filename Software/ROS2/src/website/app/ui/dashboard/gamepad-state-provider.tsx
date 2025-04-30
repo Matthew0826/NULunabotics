@@ -43,7 +43,7 @@ const defaultsNormalized = {
 
 const GamepadManagerContext = createContext<GamepadManagerContextType>({
     state: defaults,
-    setState: () => {},
+    setState: () => { },
 });
 
 export const useGamepadManagerContext = () => useContext(GamepadManagerContext);
@@ -71,20 +71,20 @@ export default function GamepadStateProvider({
         function handleKeyDown(event: KeyboardEvent) {
             const newState = { ...defaultsNormalized };
             if (event.key === "ArrowUp" || event.key === "w") {
-                newState.y1 = -1;
-                newState.y2 = -1;
+                newState.y1 = 1;
+                newState.y2 = 1;
             }
             if (event.key === "ArrowDown" || event.key === "s") {
-                newState.y1 = 1;
-                newState.y2 = 1;
+                newState.y1 = -1;
+                newState.y2 = -1;
             }
             if (event.key === "d") {
-                newState.y1 = -1;
-                newState.y2 = 1;
-            }
-            if (event.key === "a") {
                 newState.y1 = 1;
                 newState.y2 = -1;
+            }
+            if (event.key === "a") {
+                newState.y1 = -1;
+                newState.y2 = 1;
             }
             if (event.key === "z" || event.key === "q") {
                 newState.buttonL = !newState.buttonL;
@@ -100,7 +100,7 @@ export default function GamepadStateProvider({
         function handleKeyUp(event: KeyboardEvent) {
             if (defaults !== state) {
                 sendToServer(
-                    "controls", 
+                    "controls",
                     {
                         ...defaultsNormalized,
                         timestamp: Date.now(),
