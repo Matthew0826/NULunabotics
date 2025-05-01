@@ -102,28 +102,39 @@ class Odometry(Node):
     # when position updates
     def on_position(self, position):
         # self.get_logger().info(f"pos: {position.x}, {position.y}")
-        self.position = position
+        self.set_position(position)
 
     # when orientation updates
     def on_orientation(self, orientation):
         # self.get_logger().info(f"orient: {orientation.data}")
         self.set_orientation(orientation.data)
 
+    # enforce orientation (no invariant enforcement yet)
+    def set_position(self, position: Point):
+        self.position = position
+
     # enforce orientation between 0 and 360
     def set_orientation(self, orientation: float):
-        if (orientation < 0 or orientation > 360):
+        if (orientation < 0.0 or orientation > 360.0):
             self.get_logger().info(f"invalid orientation: {orientation}")
             return
         self.orientation = orientation
 
     # set the power of left and right front motors
     def set_motor_power(self, left_power: float, right_power: float):
+        # ensure motor power between -1.0 and 1.0
+        if (abs(left_power) > 1.0 or abs(right_power) > 1.0):
+            self.get_logger.info(f"motor power must be between -1.0 and 1.0: L({left_power}), R({right_power})")
+            return
+
         # message class
         msg = Motors()
         msg.front_left_wheel = left_power
         msg.front_right_wheel = right_power
         msg.back_left_wheel = left_power
         msg.back_right_wheel = right_power
+
+        # not my business
         msg.conveyor = 0.0
         msg.outtake = 0.0
 
@@ -134,28 +145,30 @@ class Odometry(Node):
     # orient the robot (global orientation)
     async def to_orient(self, final_orientation: float):
         # margin of error for rotation to stop (degrees)
-        tolerance = 10
-        delta_orientation = final_orientation - self.orientation
-        while abs(delta_orientation) > tolerance:
-            delta_orientation = final_orientation - self.orientation
-            # delta_orientation/90 means full power when gap > 90
-            # calculate right motor power
-            right_power = clamp(delta_orientation/45, -1.0, 1.0)
+        tol_deg = 10
+        # signed gap between desired and current orientation
+        delta_orientation = self.orientation - final_orientation
+
+        while abs(delta_orientation) > tol_deg:
+            delta_orientation = self.orientation - final_orientation
+            # delta_orientation/45 means full power when gap > 45
             # calculate left motor power
-            left_power = -right_power
+            left_power = clamp(delta_orientation/45.0, -1.0, 1.0)
+            # calculate right motor power
+            right_power = -left_power
             # set motor power
             self.set_motor_power(left_power, right_power)
-            #self.get_logger().info(f"orientation {self.orientation}, target {final_orientation}")
-            #self.get_logger().info(f"delta {delta_orientation}, orient {self.orientation}, left {left_power}, right {right_power}")
+            #self.get_logger().info(f"orientation {self.orientation}, target {final_orientation}
+            #self.get_logger().info(f"left {left_power}, right {right_power}")
             
-            # wait 0.05 seconds
+            # wait 0.05 seconds; TODO: make a helper?
             future = rclpy.task.Future()
             self.create_timer(0.05, lambda: future.set_result(True))
             await future
             
         # stop the motors
-        self.get_logger().info(f"stopping motors, final orientation: {self.orientation}")
         self.set_motor_power(0.0, 0.0)
+        self.get_logger().info(f"cut motors, final orientation: {self.orientation}")
 
     # drive forward in a straight line
     def to_line(self, length: float):
@@ -163,19 +176,22 @@ class Odometry(Node):
         new_x = self.position.x + (math.cos(math.radians(self.orientation)) * length)
         new_y = self.position.y + (math.sin(math.radians(self.orientation)) * length)
 
-        # calculate the x, y we end up at if driving straight
+        # calculate the x, y we end up at if driving straight, trust we get there
         self.to_position(new_x, new_y)
 
+    # TODO: THIS BE THE PROBLEMATIC FUNCTION
     # move the robot from current to new position
     async def to_position(self, x: float, y: float):
+        
         # calculate orientation to face position
-        self.get_logger().info(f"going to {x}, {y}")
+        self.get_logger().info(f"want to go to position {x}, {y}")
         await self.face_position(x, y)
-        self.get_logger().info(f"OHH NO facing {x}, {y}")
+        self.get_logger().info(f"finished facing portion to {x}, {y}")
         
         # drive in a line until we reach the position
         target_point = Point(x=x, y=y)
         initial_position = self.position
+        # delta x and delta y to get to the target position
         to_target = (target_point.x - initial_position.x, target_point.y - initial_position.y)
         
         def passed_target_predicate():
@@ -191,48 +207,56 @@ class Odometry(Node):
         
         # Wait until we reach the point
         while not passed_target_predicate():
+            # calculate the orientation we must be at to face this orientation
             target_orientation = math.atan2(target_point.y - self.position.y, target_point.x - self.position.x)
-            # Calculate orientation difference (normalized to [-pi, pi])
+            
+            # calculate orientation difference (normalized to [-pi, pi])
             diff = ((target_orientation - self.orientation + 180) % 360) - 180
-            # Base power
+            
+            # base power (when no corrections to orientation) 
             base_power = 0.8
-            # Adjust power based on deviation (reduce power on the side we need to turn toward)
+
+            # adjust power based on deviation (reduce power on the side we need to turn toward)
             left_power = 1.0 #base_power + diff/45
             right_power = 1.0 #base_power - diff/45
             
-            # clamp power to [-1, 1]
+            # clamp power between [-1, 1]
             left_power = clamp(left_power, -1.0, 1.0)
             right_power = clamp(right_power, -1.0, 1.0)
             
             # set motor power
             self.set_motor_power(left_power, right_power)
-            # Use rclpy.create_task() + sleep via a future-like way
+
+            # use delayed rclpy.create_task() to wait / sleep
             future = rclpy.task.Future()
             self.create_timer(0.05, lambda: future.set_result(True))
             await future
+            
         self.set_motor_power(0.0, 0.0)
-    
-    def positive_angle(self, angle: float):
-        return (angle + 360) % 360
 
     # orient the rover to face a position
     async def face_position(self, x: float, y: float):
-        self.get_logger().info(f"going to be facing {x}, {y}")
+        self.get_logger().info(f"want to face {x}, {y}")
         angle_rad = math.atan2(- y + self.position.y, x - self.position.x)
-        new_orientation = self.positive_angle(math.degrees(angle_rad))
+        new_orientation = positive_angle(math.degrees(angle_rad))
 
         # rotate to new orientation
         old_orientation = self.orientation
         await self.to_orient(new_orientation)
-        self.get_logger().info(f"i got to my orientation! my old one was {old_orientation}, now its {self.orientation}. i wanted {new_orientation}")
+        self.get_logger().info(f"ok, facing {x}, {y}; old {old_orientation}; new {self.orientation}; desired {new_orientation}")
 
+    # navigate along an entire path worth of coordinates (points)
     async def to_path(self, points, goal_handle, feedback_msg):
-        total_points = len(points)
-        self.get_logger().info("hello")
+        points_len = len(points)
+        
+        # loop through each point and go there on the path
+        # we enumerate to keep track of iterations
         for i, point in enumerate(points):
             await self.to_position(point.x, point.y)
 
-            feedback_msg.progress = (i + 1) / total_points
+            # publish progress traveling the path
+            # e.g. 1 / 2 meaning 1 point reached out of 2 so far
+            feedback_msg.progress = (i + 1) / points_len
             goal_handle.publish_feedback(feedback_msg)
 
 
@@ -241,7 +265,11 @@ class Odometry(Node):
 def clamp(value, min_value, max_value):
     return max(min_value, min(max_value, value))
 
+# helper to ensure angle is its positive counterpart
+def positive_angle(angle: float):
+    return (angle + 360.0) % 360.0
 
+# initialize odometry in our main
 def main(args=None):
     rclpy.init(args=args)
     odometry = Odometry()
