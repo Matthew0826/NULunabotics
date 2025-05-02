@@ -2,7 +2,6 @@ import rclpy
 from rclpy.node import Node
 
 from lunabotics_interfaces.msg import Motors
-from sensors.serial_port_client import find_port
 
 import serial
 import os
@@ -57,7 +56,7 @@ class MotorDriver(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    motor_driver = MotorDriver(find_port(ESP_BOARD_ID, os.getpid(), BAUD_RATE))
+    motor_driver = MotorDriver("/dev/ttyUSB0")
 
     rclpy.spin(motor_driver)
 

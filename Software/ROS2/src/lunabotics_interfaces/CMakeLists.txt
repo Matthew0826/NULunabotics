@@ -20,7 +20,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Point.msg"
   "msg/Obstacle.msg"
   "msg/PathVisual.msg"
-  "srv/SerialPort.srv"
   "srv/Path.srv"
   "action/SelfDriver.action"
   "action/Plan.action"

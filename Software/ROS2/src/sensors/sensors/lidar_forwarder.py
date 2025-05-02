@@ -1,13 +1,12 @@
 import rclpy
 from rclpy.node import Node
-import serial
+
 from lunabotics_interfaces.msg import LidarRotation, LiDAR
 from sensor_msgs.msg import LaserScan
-from sensors.serial_port_client import find_port
 from collections import deque
 import math
-import os
-from time import time
+
+from sensors.spin_node_helper import spin_nodes
 
 
 # constants
@@ -108,13 +107,7 @@ class LidarForwarder(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
-    lidar_forwarder = LidarForwarder()
-
-    rclpy.spin(lidar_forwarder)
-
-    lidar_forwarder.destroy_node()
-    rclpy.shutdown()
+    spin_nodes(LidarForwarder())
 
 
 if __name__ == '__main__':

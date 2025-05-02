@@ -21,7 +21,6 @@ setup(
     entry_points={
         'console_scripts': [
             'motor_driver = physical_robot.motor_driver:main',
-            'controller = physical_robot.controller:main',
         ],
     },
 )

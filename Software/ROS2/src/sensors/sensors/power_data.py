@@ -2,11 +2,10 @@ import rclpy
 from rclpy.node import Node
 import serial
 from std_msgs.msg import Float32
-from sensors.serial_port_client import find_port
 from collections import deque
-import math
-import os
 import struct
+
+from sensors.spin_node_helper import spin_nodes
 
 
 # constants
@@ -14,7 +13,7 @@ BAUD_RATE = 9600
 ESP_BOARD_ID = 4
 
 
-class PowerDataPublisher(Node):
+class PowerData(Node):
     def __init__(self, port: str):
         super().__init__('power_data')
         self.voltage_publisher = self.create_publisher(Float32, 'sensors/voltage', 10)
@@ -43,13 +42,7 @@ class PowerDataPublisher(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
-    power_publisher = PowerDataPublisher(find_port(ESP_BOARD_ID, os.getpid(), BAUD_RATE))
-
-    rclpy.spin(power_publisher)
-
-    power_publisher.destroy_node()
-    rclpy.shutdown()
+    spin_nodes(PowerData("/dev/ttyUSB0"))
 
 
 if __name__ == '__main__':

@@ -3,8 +3,9 @@ from rclpy.node import Node
 
 from std_msgs.msg import Float32
 
-from sensors.kalman_option_2 import find_robot_location
-from sensors.serial_port_client import find_port
+# from sensors.kalman_option_2 import find_robot_location
+from sensors.other_kalman import find_robot_location
+from sensors.spin_node_helper import spin_nodes
 
 from lunabotics_interfaces.msg import Point
 
@@ -88,15 +89,7 @@ class SpacialDataPublisher(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    # port = find_port(ESP_BOARD_ID, os.getpid(), BAUD_RATE)
-    spacial_data_publisher = SpacialDataPublisher("/dev/ttyUSB1")
-    rclpy.spin(spacial_data_publisher)
-
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    spacial_data_publisher.destroy_node()
-    rclpy.shutdown()
+    spin_nodes(SpacialDataPublisher("/dev/ttyUSB1"))
 
 
 if __name__ == '__main__':
