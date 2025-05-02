@@ -2,6 +2,8 @@ import rclpy
 from rclpy.node import Node
 import math
 
+from sensors.spin_node_helper import spin_nodes
+
 from lunabotics_interfaces.msg import LidarRotation, Obstacle, Point
 from std_msgs.msg import Float32
 
@@ -180,16 +182,8 @@ class ObstacleDetector(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
-    obstacle_detector = ObstacleDetector()
-    print("Obstacle detector is running!")
-    rclpy.spin(obstacle_detector)
-
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    obstacle_detector.destroy_node()
-    rclpy.shutdown()
+    spin_nodes(ObstacleDetector())
+    
 
 
 if __name__ == '__main__':

@@ -11,6 +11,7 @@ from lunabotics_interfaces.msg import Point, Motors
 from lunabotics_interfaces.action import SelfDriver
 from navigation.pathfinder_helper import distance
 
+from sensors.spin_node_helper import spin_nodes
 
 from std_msgs.msg import Float32
 import math
@@ -145,7 +146,7 @@ class Odometry(Node):
     # orient the robot (global orientation)
     async def to_orient(self, final_orientation: float):
         # margin of error for rotation to stop (degrees)
-        tol_deg = 10
+        tol_deg = 1
         # signed gap between desired and current orientation
         delta_orientation = self.orientation - final_orientation
 
@@ -248,16 +249,18 @@ class Odometry(Node):
     # navigate along an entire path worth of coordinates (points)
     async def to_path(self, points, goal_handle, feedback_msg):
         points_len = len(points)
+        await self.to_position(0.0, 0.0)
+        await self.to_position(348.0, 200.0)
         
-        # loop through each point and go there on the path
-        # we enumerate to keep track of iterations
-        for i, point in enumerate(points):
-            await self.to_position(point.x, point.y)
+        # # loop through each point and go there on the path
+        # # we enumerate to keep track of iterations
+        # for i, point in enumerate(points):
+        #     await self.to_position(point.x, point.y)
 
-            # publish progress traveling the path
-            # e.g. 1 / 2 meaning 1 point reached out of 2 so far
-            feedback_msg.progress = (i + 1) / points_len
-            goal_handle.publish_feedback(feedback_msg)
+        #     # publish progress traveling the path
+        #     # e.g. 1 / 2 meaning 1 point reached out of 2 so far
+        #     feedback_msg.progress = (i + 1) / points_len
+        #     goal_handle.publish_feedback(feedback_msg)
 
 
 # clamp a value between a range
@@ -272,16 +275,7 @@ def positive_angle(angle: float):
 # initialize odometry in our main
 def main(args=None):
     rclpy.init(args=args)
-    odometry = Odometry()
-
-    executor = MultiThreadedExecutor()
-    executor.add_node(odometry)
-
-    try:
-        executor.spin()
-    finally:
-        odometry.destroy_node()
-        rclpy.shutdown()
+    spin_nodes(Odometry(), is_async=True)
 
 
 if __name__ == '__main__':

@@ -4,15 +4,11 @@ from rclpy.node import Node
 
 from std_msgs.msg import Float32
 
-from sensors.triangulation import find_robot_location
-from sensors.serial_port_client import find_port
+from sensors.spin_node_helper import spin_nodes
 
 from lunabotics_interfaces.msg import Point
 from lunabotics_interfaces.msg import Motors
 
-import serial
-import os
-import time
 import random
 
 ESP_BOARD_ID = 2
@@ -80,16 +76,7 @@ class SpacialDataPublisher(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    
-    # create publisher node, start it up
-    spacial_data_publisher = SpacialDataPublisher()
-    rclpy.spin(spacial_data_publisher)
-
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    spacial_data_publisher.destroy_node()
-    rclpy.shutdown()
+    spin_nodes(SpacialDataPublisher())
 
 
 if __name__ == '__main__':

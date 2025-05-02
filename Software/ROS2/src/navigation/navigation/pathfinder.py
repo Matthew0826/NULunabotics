@@ -5,7 +5,7 @@ from lunabotics_interfaces.msg import Point, Obstacle, PathVisual
 from lunabotics_interfaces.srv import Path
 
 from navigation.pathfinder_helper import *
-import random
+from sensors.spin_node_helper import spin_nodes
 import math
 
 # Note: 0, 0 is defined as the top left corner of the map
@@ -20,8 +20,6 @@ HIGHEST_CONFIDENCE_THRESHOLD = 0.7
 OBSTACLE_SIZE_THRESHOLD = 10  # units: cm
 # amount that each obstacle detection adds to the grid cells
 OBSTACLE_CONFIDENCE_STRENGTH = 0.12
-
-
 
 
 class Pathfinder(Node):
@@ -142,10 +140,7 @@ class Pathfinder(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    pathfinder = Pathfinder()
-    print("Pathfinder is running!")
-    rclpy.spin(pathfinder)
-    rclpy.shutdown()
+    spin_nodes(Pathfinder())
 
 
 if __name__ == '__main__':

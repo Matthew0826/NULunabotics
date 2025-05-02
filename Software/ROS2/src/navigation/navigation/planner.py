@@ -3,16 +3,15 @@ from rclpy.action import ActionClient, ActionServer
 from rclpy.node import Node
 
 from lunabotics_interfaces.action import SelfDriver, Plan
-from lunabotics_interfaces.msg import Point
-from lunabotics_interfaces.srv import Path
 
 from rclpy.callback_groups import ReentrantCallbackGroup
-from rclpy.executors import MultiThreadedExecutor
 from threading import Event
 
 from navigation.pathfinder_client import PathfinderClient, use_pathfinder
 from navigation.zone import Zone
 from navigation.pathfinder_helper import distance
+
+from sensors.spin_node_helper import spin_nodes
 
 # Goals:
 # 1. Travel to the excavation zone and dig
@@ -217,16 +216,7 @@ class Planner(Node):
 def main(args=None):
     rclpy.init(args=args)
     pathfinder_client = PathfinderClient()
-    planner = Planner(pathfinder_client)
-    executor = MultiThreadedExecutor()
-    executor.add_node(planner)
-    executor.add_node(pathfinder_client)
-    try:
-        executor.spin()
-    finally:
-        planner.destroy_node()
-        pathfinder_client.destroy_node()
-        rclpy.shutdown()
+    spin_nodes(Planner(pathfinder_client), pathfinder_client, is_async=True)
 
 
 if __name__ == '__main__':
