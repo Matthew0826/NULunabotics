@@ -209,7 +209,7 @@ class Odometry(Node):
             target_dist_squared = to_target.x**2 + to_target.y**2
             # If dot product < 0, robot is moving away from target
             # If dot product > target_dist_squared, robot has passed the target
-            return dot_product < 0
+            return dot_product < 0 or dot_product > target_dist_squared
         
         
         # Wait until we reach within the point
@@ -235,6 +235,7 @@ class Odometry(Node):
             if passed_target_predicate():
                 left_power = -left_power
                 right_power = -right_power
+                self.get_logger().info("going backwards")
             
             # clamp power between [-1, 1]
             #left_power = clamp(left_power, -1.0, 1.0)
@@ -249,6 +250,8 @@ class Odometry(Node):
             await future
 
         self.set_motor_power(0.0, 0.0)
+        self.get_logger().info(f"wanted to go to {x},{y}; ended at {self.position.x}, {self.position.y}; overshot by {int(distance(self.position, target_point))}")
+
 
     # orient the rover to face a position
     async def face_position(self, x: float, y: float):
