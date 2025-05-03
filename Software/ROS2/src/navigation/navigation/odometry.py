@@ -209,11 +209,12 @@ class Odometry(Node):
             target_dist_squared = to_target.x**2 + to_target.y**2
             # If dot product < 0, robot is moving away from target
             # If dot product > target_dist_squared, robot has passed the target
-            return dot_product < 0 or dot_product > target_dist_squared
+            return dot_product < 0
         
         
-        # Wait until we reach the point
-        while not passed_target_predicate():
+        # Wait until we reach within the point
+        while (distance(target_point, self.position) > self.cm_tolerance):
+            
             # calculate the orientation we must be at to face this orientation
             target_orientation = math.atan2(target_point.y - self.position.y, target_point.x - self.position.x)
             
@@ -224,11 +225,16 @@ class Odometry(Node):
             base_power = 0.8
 
             # difference between current and ending position
-            diff_cm = distance(target_point.x - self.position.x, target_point.y - self.position.y)
+            diff_cm = distance(target_point, self.position)
 
             # adjust power based on deviation (reduce power on the side we need to turn toward)
             left_power = clamp(diff_cm, -1.0, 1.0) #base_power + diff/45
             right_power = clamp(diff_cm, -1.0, 1.0) #base_power - diff/45
+
+            # passed so reverse power
+            if passed_target_predicate():
+                left_power = -left_power
+                right_power = -right_power
             
             # clamp power between [-1, 1]
             #left_power = clamp(left_power, -1.0, 1.0)
