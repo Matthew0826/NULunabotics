@@ -202,7 +202,7 @@ class Odometry(Node):
         
         # TODO: works perfectly, except passes a bit
         def passed_target_predicate():
-            to_current = (self.position.x - initial_position.x, self.position.y - initial_position.y)
+            to_current = Point(x=self.position.x - initial_position.x, y=self.position.y - initial_position.y)
             # Dot product
             dot_product = to_target.x * to_current.x + to_target.y * to_current.y
             # Squared distance to target
