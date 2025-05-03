@@ -11,7 +11,6 @@ from lunabotics_interfaces.msg import Point, Motors
 from lunabotics_interfaces.action import SelfDriver
 from navigation.pathfinder_helper import distance
 
-from sensors.spin_node_helper import spin_nodes
 
 from std_msgs.msg import Float32
 import math
@@ -40,6 +39,12 @@ class Odometry(Node):
         
         # action values to store for when its done
         self.goal_handle = None
+
+        # fields
+        # margin of error for rotation (degrees)
+        self.deg_tolerance = 1.0 
+        # margin of error for movement (centimeters)
+        self.cm_tolerance = 5.0
 
         # initalize position
         self.position = Point()
@@ -95,6 +100,7 @@ class Odometry(Node):
         # send the result
         goal_handle.succeed()
         result = SelfDriver.Result()
+
         # find total time used to drive
         end_time = self.get_clock().now()
         result.time_elapsed_millis = (end_time - start_time).nanoseconds // 1_000_000
@@ -145,12 +151,11 @@ class Odometry(Node):
 
     # orient the robot (global orientation)
     async def to_orient(self, final_orientation: float):
-        # margin of error for rotation to stop (degrees)
-        tol_deg = 1
         # signed gap between desired and current orientation
         delta_orientation = self.orientation - final_orientation
 
-        while abs(delta_orientation) > tol_deg:
+        # continue to rotate toward target orientation until close enough
+        while abs(delta_orientation) > self.deg_tolerance:
             delta_orientation = self.orientation - final_orientation
             # delta_orientation/45 means full power when gap > 45
             # calculate left motor power
@@ -193,18 +198,19 @@ class Odometry(Node):
         target_point = Point(x=x, y=y)
         initial_position = self.position
         # delta x and delta y to get to the target position
-        to_target = (target_point.x - initial_position.x, target_point.y - initial_position.y)
+        to_target = Point(x=target_point.x - initial_position.x, y=target_point.y - initial_position.y)
         
+        # TODO: works perfectly, except passes a bit
         def passed_target_predicate():
             to_current = (self.position.x - initial_position.x, self.position.y - initial_position.y)
             # Dot product
-            dot_product = to_target[0] * to_current[0] + to_target[1] * to_current[1]
+            dot_product = to_target.x * to_current.x + to_target.y * to_current.y
             # Squared distance to target
-            target_dist_squared = to_target[0]**2 + to_target[1]**2
+            target_dist_squared = to_target.x**2 + to_target.y**2
             # If dot product < 0, robot is moving away from target
             # If dot product > target_dist_squared, robot has passed the target
-            return dot_product < 0 or dot_product > target_dist_squared or distance(self.position, target_point) < 10.0
-
+            return dot_product < 0 or dot_product > target_dist_squared
+        
         
         # Wait until we reach the point
         while not passed_target_predicate():
@@ -217,13 +223,16 @@ class Odometry(Node):
             # base power (when no corrections to orientation) 
             base_power = 0.8
 
+            # difference between current and ending position
+            diff_cm = distance(target_point.x - self.position.x, target_point.y - self.position.y)
+
             # adjust power based on deviation (reduce power on the side we need to turn toward)
-            left_power = base_power + diff/45
-            right_power = base_power - diff/45
+            left_power = clamp(diff_cm, -1.0, 1.0) #base_power + diff/45
+            right_power = clamp(diff_cm, -1.0, 1.0) #base_power - diff/45
             
             # clamp power between [-1, 1]
-            left_power = clamp(left_power, -1.0, 1.0)
-            right_power = clamp(right_power, -1.0, 1.0)
+            #left_power = clamp(left_power, -1.0, 1.0)
+            #right_power = clamp(right_power, -1.0, 1.0)
             
             # set motor power
             self.set_motor_power(left_power, right_power)
@@ -232,7 +241,7 @@ class Odometry(Node):
             future = rclpy.task.Future()
             self.create_timer(0.05, lambda: future.set_result(True))
             await future
-        self.get_logger().info(f"off by ({int(x - self.position.x)}, {int(y - self.position.y)}) cm. distance of {distance(self.position, target_point)}")
+
         self.set_motor_power(0.0, 0.0)
 
     # orient the rover to face a position
@@ -249,8 +258,6 @@ class Odometry(Node):
     # navigate along an entire path worth of coordinates (points)
     async def to_path(self, points, goal_handle, feedback_msg):
         points_len = len(points)
-        # await self.to_position(0.0, 0.0)
-        # await self.to_position(348.0, 200.0)
         
         # loop through each point and go there on the path
         # we enumerate to keep track of iterations
@@ -275,7 +282,16 @@ def positive_angle(angle: float):
 # initialize odometry in our main
 def main(args=None):
     rclpy.init(args=args)
-    spin_nodes(Odometry(), is_async=True)
+    odometry = Odometry()
+
+    executor = MultiThreadedExecutor()
+    executor.add_node(odometry)
+
+    try:
+        executor.spin()
+    finally:
+        odometry.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':
