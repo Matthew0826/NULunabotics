@@ -3,8 +3,10 @@ from rclpy.node import Node
 from rclpy.action import ActionServer
 from std_msgs.msg import Float32
 
-from lunabotics_interfaces.msg import Point, Motors
+from lunabotics_interfaces.msg import Point
 from lunabotics_interfaces.action import SelfDriver
+
+from sensors.spin_node_helper import spin_nodes
 
 import random
 import math
@@ -157,17 +159,7 @@ class MockOdometry(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
-    mock_odometry = MockOdometry()
-
-    # spin initializes the class as a node
-    rclpy.spin(mock_odometry)
-
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    mock_odometry.destroy_node()
-    rclpy.shutdown()
+    spin_nodes(MockOdometry())
 
 
 if __name__ == '__main__':

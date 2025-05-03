@@ -203,7 +203,7 @@ class Odometry(Node):
             target_dist_squared = to_target[0]**2 + to_target[1]**2
             # If dot product < 0, robot is moving away from target
             # If dot product > target_dist_squared, robot has passed the target
-            return dot_product < 0 or dot_product > target_dist_squared
+            return dot_product < 0 or dot_product > target_dist_squared or distance(self.position, target_point) < 10.0
 
         
         # Wait until we reach the point
@@ -218,8 +218,8 @@ class Odometry(Node):
             base_power = 0.8
 
             # adjust power based on deviation (reduce power on the side we need to turn toward)
-            left_power = 1.0 #base_power + diff/45
-            right_power = 1.0 #base_power - diff/45
+            left_power = base_power + diff/45
+            right_power = base_power - diff/45
             
             # clamp power between [-1, 1]
             left_power = clamp(left_power, -1.0, 1.0)
@@ -232,7 +232,7 @@ class Odometry(Node):
             future = rclpy.task.Future()
             self.create_timer(0.05, lambda: future.set_result(True))
             await future
-            
+        self.get_logger().info(f"off by ({int(x - self.position.x)}, {int(y - self.position.y)}) cm. distance of {distance(self.position, target_point)}")
         self.set_motor_power(0.0, 0.0)
 
     # orient the rover to face a position
@@ -249,18 +249,18 @@ class Odometry(Node):
     # navigate along an entire path worth of coordinates (points)
     async def to_path(self, points, goal_handle, feedback_msg):
         points_len = len(points)
-        await self.to_position(0.0, 0.0)
-        await self.to_position(348.0, 200.0)
+        # await self.to_position(0.0, 0.0)
+        # await self.to_position(348.0, 200.0)
         
-        # # loop through each point and go there on the path
-        # # we enumerate to keep track of iterations
-        # for i, point in enumerate(points):
-        #     await self.to_position(point.x, point.y)
+        # loop through each point and go there on the path
+        # we enumerate to keep track of iterations
+        for i, point in enumerate(points):
+            await self.to_position(point.x, point.y)
 
-        #     # publish progress traveling the path
-        #     # e.g. 1 / 2 meaning 1 point reached out of 2 so far
-        #     feedback_msg.progress = (i + 1) / points_len
-        #     goal_handle.publish_feedback(feedback_msg)
+            # publish progress traveling the path
+            # e.g. 1 / 2 meaning 1 point reached out of 2 so far
+            feedback_msg.progress = (i + 1) / points_len
+            goal_handle.publish_feedback(feedback_msg)
 
 
 # clamp a value between a range

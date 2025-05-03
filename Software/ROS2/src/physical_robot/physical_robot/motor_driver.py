@@ -2,9 +2,9 @@ import rclpy
 from rclpy.node import Node
 
 from lunabotics_interfaces.msg import Motors
+from sensors.spin_node_helper import spin_nodes
 
 import serial
-import os
 
 ESP_BOARD_ID = 1
 BAUD_RATE = 9600
@@ -55,16 +55,7 @@ class MotorDriver(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
-    motor_driver = MotorDriver("/dev/ttyUSB0")
-
-    rclpy.spin(motor_driver)
-
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    motor_driver.destroy_node()
-    rclpy.shutdown()
+    spin_nodes(MotorDriver("/dev/ttyUSB0"))
 
 
 if __name__ == '__main__':
