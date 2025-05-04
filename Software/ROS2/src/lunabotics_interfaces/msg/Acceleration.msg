@@ -1,0 +1,4 @@
+float32 orientation
+float32 acceleration_x
+float32 acceleration_y
+float32 acceleration_z

@@ -20,6 +20,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Point.msg"
   "msg/Obstacle.msg"
   "msg/PathVisual.msg"
+  "msg/Acceleration.msg"
   "srv/Path.srv"
   "action/SelfDriver.action"
   "action/Plan.action"

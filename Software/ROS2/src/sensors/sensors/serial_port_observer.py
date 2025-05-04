@@ -1,5 +1,6 @@
 import re
 import pyudev
+from pyudev import Device
 
 
 class SerialPortObserver:
@@ -19,6 +20,8 @@ class SerialPortObserver:
 
         observer = pyudev.MonitorObserver(monitor, callback=self.device_event, name='usb-monitor')
         observer.start()
+        
+        self.find_existing_ports(context)
     
     def is_usb_serial(self, device):
         """Checks if a device is a USB connection such as /dev/ttyUSB0"""
@@ -30,16 +33,16 @@ class SerialPortObserver:
         )
 
 
-    def device_event(self, action, device):
+    def device_event(self, device: Device):
         """Handles USB serial device events. Listens for add/remove events."""
         if not self.is_usb_serial(device):
             return
 
         port = device.device_node
-        if action == 'add':
+        if device.action == 'add':
             print(f"USB serial device connected: {port}")
             self.begin_serial_callback(port)
-        elif action == 'remove':
+        elif device.action == 'remove':
             print(f"USB serial device disconnected: {port}")
             self.end_serial_callback(port)
 
