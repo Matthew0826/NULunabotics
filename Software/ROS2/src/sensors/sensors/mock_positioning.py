@@ -13,6 +13,8 @@ import random
 
 ESP_BOARD_ID = 2
 BAUD_RATE = 9600
+TOP_SPEED = 100.0 # cm/s
+REFRESH_RATE = 10 # Hz
 
 class SpacialDataPublisher(Node):
 
@@ -38,7 +40,7 @@ class SpacialDataPublisher(Node):
         self.motor_power_left = 0.0
         self.motor_power_right = 0.0
         
-        self.timer = self.create_timer(0.1, self.timer_callback)
+        self.timer = self.create_timer(1/REFRESH_RATE, self.timer_callback)
                    
     def on_motor(self, motors: Motors):
         self.motor_power_left = motors.front_left_wheel
@@ -52,13 +54,15 @@ class SpacialDataPublisher(Node):
         # Calculate turning based on difference between motors
         motor_power_delta = self.motor_power_right - self.motor_power_left
         
+        tick_speed = TOP_SPEED / REFRESH_RATE
+        
         # Update orientation based on motor difference
-        self.orientation += motor_power_delta * 1.0
+        self.orientation += motor_power_delta * tick_speed/3.0
         self.orientation = float(self.orientation % 360)
         
         # Move forward/backward based on average power with the corrected orientation
-        self.x += math.cos(math.radians(360 - self.orientation)) * average_power * 3.0
-        self.y += math.sin(math.radians(360 - self.orientation)) * average_power * 3.0
+        self.x += math.cos(math.radians(360 - self.orientation)) * average_power * tick_speed
+        self.y += math.sin(math.radians(360 - self.orientation)) * average_power * tick_speed
         
     def timer_callback(self):
         self.update_simulation()
