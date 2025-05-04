@@ -149,6 +149,27 @@ class Odometry(Node):
         self.motor_pub.publish(msg)
         # can save current motor power for future reference
 
+    # set the power of the conveyor and outtake motors on the excavator
+    def set_excavator_power(self, conveyor_power: float, outtake_power: float):
+        # ensure motor power between -1.0 and 1.0
+        if (abs(conveyor_power) > 1.0 or abs(outtake_power) > 1.0):
+            self.get_logger.info(f"motor power must be between -1.0 and 1.0: L({left_power}), R({right_power})")
+            return
+
+        # message class (cannot move and excavate)
+        msg = Motors()
+        msg.front_left_wheel = 0.0
+        msg.front_right_wheel = 0.0
+        msg.back_left_wheel = 0.0
+        msg.back_right_wheel = 0.0
+
+        # now my business
+        msg.conveyor = conveyor_power
+        msg.outtake = outtake_power
+
+        # then publish it like usual
+        self.motor_pub.publish(msg)
+
     # orient the robot (global orientation)
     async def to_orient(self, final_orientation: float):
         # signed gap between desired and current orientation
@@ -229,7 +250,8 @@ class Odometry(Node):
 
             # passed so reverse power
             multiply = min(1, diff_cm/100)
-            base_power *= multiply
+            # max is base_power and min is 0.2 to ensure it keeps moving
+            base_power = clamp(0.8 * multiply, 0.2, base_power)
             if go_back:
                 diff = ((target_orientation - self.orientation + 180) % 360)
 
