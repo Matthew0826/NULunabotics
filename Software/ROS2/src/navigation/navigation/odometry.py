@@ -6,7 +6,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 
 
 # the self driver agent action
-from lunabotics_interfaces.msg import Point, Motors
+from lunabotics_interfaces.msg import Point, Motors, Excavate
 from lunabotics_interfaces.action import SelfDriver
 from navigation.pathfinder_helper import distance
 from sensors.spin_node_helper import spin_nodes
@@ -58,6 +58,12 @@ class Odometry(Node):
         self.motor_pub = self.create_publisher(
             Motors,
             'physical_robot/motors',
+            10
+        )
+        
+        self.excavate_pub = self.create_publisher(
+            Excavation,
+            'physical_robot/excavate',
             10
         )
         
@@ -141,34 +147,25 @@ class Odometry(Node):
         msg.back_left_wheel = left_power
         msg.back_right_wheel = right_power
 
-        # not my business
-        msg.conveyor = 0.0
-        msg.outtake = 0.0
-
         # then publish it like usual
         self.motor_pub.publish(msg)
         # can save current motor power for future reference
 
     # set the power of the conveyor and outtake motors on the excavator
-    def set_excavator_power(self, conveyor_power: float, outtake_power: float):
+    def set_excavate_power(self, elevator_power: float, conveyor_power: float, outtake_power: float):
         # ensure motor power between -1.0 and 1.0
-        if (abs(conveyor_power) > 1.0 or abs(outtake_power) > 1.0):
+        if (abs(elevator_power) > 1.0 or abs(outtake_power) > 1.0 or abs(outtake_power) > 1.0):
             self.get_logger.info(f"motor power must be between -1.0 and 1.0: L({left_power}), R({right_power})")
             return
 
         # message class (cannot move and excavate)
-        msg = Motors()
-        msg.front_left_wheel = 0.0
-        msg.front_right_wheel = 0.0
-        msg.back_left_wheel = 0.0
-        msg.back_right_wheel = 0.0
-
-        # now my business
+        msg = Excavate()
+        msg.elevator = elevator_power
         msg.conveyor = conveyor_power
         msg.outtake = outtake_power
 
         # then publish it like usual
-        self.motor_pub.publish(msg)
+        self.excavate_pub.publish(msg)
 
     # orient the robot (global orientation)
     async def to_orient(self, final_orientation: float):
