@@ -3,13 +3,13 @@ from rclpy.node import Node
 from rclpy.action import ActionServer
 
 from rclpy.callback_groups import ReentrantCallbackGroup
-from rclpy.executors import MultiThreadedExecutor
 
 
 # the self driver agent action
 from lunabotics_interfaces.msg import Point, Motors
 from lunabotics_interfaces.action import SelfDriver
 from navigation.pathfinder_helper import distance
+from sensors.spin_node_helper import spin_nodes
 
 
 from std_msgs.msg import Float32
@@ -199,26 +199,17 @@ class Odometry(Node):
         initial_position = self.position
         # delta x and delta y to get to the target position
         to_target = Point(x=target_point.x - initial_position.x, y=target_point.y - initial_position.y)
-        
-        # TODO: works perfectly, except passes a bit
-        def passed_target_predicate():
-            to_current = Point(x=self.position.x - initial_position.x, y=self.position.y - initial_position.y)
-            # Dot product
-            dot_product = to_target.x * to_current.x + to_target.y * to_current.y
-            # Squared distance to target
-            target_dist_squared = to_target.x**2 + to_target.y**2
-            # If dot product < 0, robot is moving away from target
-            # If dot product > target_dist_squared, robot has passed the target
-            return dot_product < 0 or dot_product > target_dist_squared
-        
+        distance_start_end = distance(initial_position, target_point)
         
         # Wait until we reach within the point
         while (distance(target_point, self.position) > self.cm_tolerance):
             
             # calculate the orientation we must be at to face this orientation
-            target_orientation = math.atan2(target_point.y - self.position.y, target_point.x - self.position.x)
+            angle_rad = math.atan2(- target_point.y + self.position.y, target_point.x - self.position.x)
+            target_orientation = positive_angle(math.degrees(angle_rad))
+            # target_orientation = math.degrees(math.atan2(self.position.y - target_point.y, self.position.x - target_point.x))
             
-            # calculate orientation difference (normalized to [-pi, pi])
+            # calculate orientation difference (normalized to [-180, 180])
             diff = ((target_orientation - self.orientation + 180) % 360) - 180
             
             # base power (when no corrections to orientation) 
@@ -226,16 +217,20 @@ class Odometry(Node):
 
             # difference between current and ending position
             diff_cm = distance(target_point, self.position)
+            self.get_logger().info(f"diff: {diff}, diff_cm: {diff_cm}")
+            self.get_logger().info(f"current_orient: {self.orientation}, target_orient: {target_orientation}")
 
-            # adjust power based on deviation (reduce power on the side we need to turn toward)
-            left_power = clamp(diff_cm, -1.0, 1.0) #base_power + diff/45
-            right_power = clamp(diff_cm, -1.0, 1.0) #base_power - diff/45
+            # distance from where we are to start
+            distance_start_current = distance(initial_position, self.position)
 
             # passed so reverse power
-            if passed_target_predicate():
-                left_power = -left_power
-                right_power = -right_power
-                self.get_logger().info("going backwards")
+            if distance_start_current > distance_start_end:
+                left_power = clamp(-base_power + diff/180, -1.0, 1.0) #base_power + diff/45
+                right_power = clamp(-base_power - diff/180, -1.0, 1.0) #base_power - diff/45
+            else:
+                # adjust power based on deviation (reduce power on the side we need to turn toward)
+                left_power = clamp(base_power - diff/180, -1.0, 1.0) #base_power + diff/45
+                right_power = clamp(base_power + diff/180, -1.0, 1.0) #base_power - diff/45
             
             # clamp power between [-1, 1]
             #left_power = clamp(left_power, -1.0, 1.0)
@@ -266,17 +261,20 @@ class Odometry(Node):
 
     # navigate along an entire path worth of coordinates (points)
     async def to_path(self, points, goal_handle, feedback_msg):
-        points_len = len(points)
+        await self.to_position(0, 0)
+        await self.to_position(348, 200)
+        await self.to_position(340, 215)
+        # points_len = len(points)
         
-        # loop through each point and go there on the path
-        # we enumerate to keep track of iterations
-        for i, point in enumerate(points):
-            await self.to_position(point.x, point.y)
+        # # loop through each point and go there on the path
+        # # we enumerate to keep track of iterations
+        # for i, point in enumerate(points):
+        #     await self.to_position(point.x, point.y)
 
-            # publish progress traveling the path
-            # e.g. 1 / 2 meaning 1 point reached out of 2 so far
-            feedback_msg.progress = (i + 1) / points_len
-            goal_handle.publish_feedback(feedback_msg)
+        #     # publish progress traveling the path
+        #     # e.g. 1 / 2 meaning 1 point reached out of 2 so far
+        #     feedback_msg.progress = (i + 1) / points_len
+        #     goal_handle.publish_feedback(feedback_msg)
 
 
 # clamp a value between a range
@@ -292,15 +290,8 @@ def positive_angle(angle: float):
 def main(args=None):
     rclpy.init(args=args)
     odometry = Odometry()
-
-    executor = MultiThreadedExecutor()
-    executor.add_node(odometry)
-
-    try:
-        executor.spin()
-    finally:
-        odometry.destroy_node()
-        rclpy.shutdown()
+    spin_nodes(odometry, is_async=True)
+    
 
 
 if __name__ == '__main__':
