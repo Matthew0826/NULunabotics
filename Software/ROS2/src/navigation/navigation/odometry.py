@@ -185,6 +185,7 @@ class Odometry(Node):
         # calculate the x, y we end up at if driving straight, trust we get there
         self.to_position(new_x, new_y)
 
+
     # TODO: THIS BE THE PROBLEMATIC FUNCTION
     # move the robot from current to new position
     async def to_position(self, x: float, y: float):
@@ -223,14 +224,19 @@ class Odometry(Node):
             # distance from where we are to start
             distance_start_current = distance(initial_position, self.position)
 
+            overshoot_cm = distance_start_current - distance_start_end
+            go_back = overshoot_cm > 2.0
+
             # passed so reverse power
-            if distance_start_current > distance_start_end:
-                left_power = clamp(-base_power + diff/180, -1.0, 1.0) #base_power + diff/45
-                right_power = clamp(-base_power - diff/180, -1.0, 1.0) #base_power - diff/45
+            if go_back:
+                diff = ((target_orientation - self.orientation + 180) % 360)
+
+                left_power = clamp((-base_power + diff/45) * dist_cm, -1.0, 1.0) #base_power + diff/45
+                right_power = clamp((-base_power - diff/45) * dist_cm, -1.0, 1.0) #base_power - diff/45
             else:
                 # adjust power based on deviation (reduce power on the side we need to turn toward)
-                left_power = clamp(base_power - diff/180, -1.0, 1.0) #base_power + diff/45
-                right_power = clamp(base_power + diff/180, -1.0, 1.0) #base_power - diff/45
+                left_power = clamp((base_power - diff/45) * dist_cm, -1.0, 1.0) #base_power + diff/45
+                right_power = clamp((base_power + diff/45) * dist_cm, -1.0, 1.0) #base_power - diff/45
             
             # clamp power between [-1, 1]
             #left_power = clamp(left_power, -1.0, 1.0)
@@ -246,7 +252,6 @@ class Odometry(Node):
 
         self.set_motor_power(0.0, 0.0)
         self.get_logger().info(f"wanted to go to {x},{y}; ended at {self.position.x}, {self.position.y}; overshot by {int(distance(self.position, target_point))}")
-
 
     # orient the rover to face a position
     async def face_position(self, x: float, y: float):
