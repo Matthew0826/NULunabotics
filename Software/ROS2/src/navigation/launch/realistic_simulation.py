@@ -21,11 +21,11 @@ def generate_launch_description():
             executable='planner',
             output='screen'
         ),
-        # Node(
-        #     package='navigation',
-        #     executable='mock_obstacle_detector',
-        #     output='screen'
-        # ),
+        Node(
+            package='navigation',
+            executable='mock_obstacle_detector',
+            output='screen'
+        ),
         Node(
             package='sensors',
             executable='mock_positioning',

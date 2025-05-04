@@ -203,7 +203,8 @@ class Planner(Node):
         # we don't know about obstacles that are too far away, so we need to prune those points from the path
         pruned_path = self.prune_path(path)
         # send_drive_goal() will eventually call this function again through a callback
-        self.send_drive_goal(pruned_path)
+        # remove first point so the robot doesn't drive to itself
+        self.send_drive_goal(pruned_path[1:])
         # update the previous position so we know where we are for the next leg of the journey
         self.previous_position = pruned_path[-1]
         # update with feedback on the progress its made

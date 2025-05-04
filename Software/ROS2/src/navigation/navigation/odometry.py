@@ -218,8 +218,8 @@ class Odometry(Node):
 
             # difference between current and ending position
             diff_cm = distance(target_point, self.position)
-            self.get_logger().info(f"diff: {diff}, diff_cm: {diff_cm}")
-            self.get_logger().info(f"current_orient: {self.orientation}, target_orient: {target_orientation}")
+            # self.get_logger().info(f"diff: {diff}, diff_cm: {diff_cm}")
+            # self.get_logger().info(f"current_orient: {self.orientation}, target_orient: {target_orientation}")
 
             # distance from where we are to start
             distance_start_current = distance(initial_position, self.position)
@@ -229,15 +229,16 @@ class Odometry(Node):
 
             # passed so reverse power
             multiply = min(1, diff_cm/100)
+            base_power *= multiply
             if go_back:
                 diff = ((target_orientation - self.orientation + 180) % 360)
 
-                left_power = clamp((-base_power + diff/45) * multiply, -1.0, 1.0)
-                right_power = clamp((-base_power - diff/45) * multiply, -1.0, 1.0)
+                left_power = clamp((-base_power + diff/45), -1.0, 1.0)
+                right_power = clamp((-base_power - diff/45), -1.0, 1.0)
             else:
                 # adjust power based on deviation (reduce power on the side we need to turn toward)
-                left_power = clamp((base_power - diff/45) * multiply, -1.0, 1.0)
-                right_power = clamp((base_power + diff/45) * multiply, -1.0, 1.0)
+                left_power = clamp((base_power - diff/45), -1.0, 1.0)
+                right_power = clamp((base_power + diff/45), -1.0, 1.0)
             
             # clamp power between [-1, 1]
             #left_power = clamp(left_power, -1.0, 1.0)
