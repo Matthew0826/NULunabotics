@@ -4,7 +4,7 @@ package_name = 'physical_robot'
 
 setup(
     name=package_name,
-    version='0.0.0',
+    version='1.0.0',
     packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -14,7 +14,7 @@ setup(
     install_requires=['setuptools', 'lunabotics_interfaces'],
     zip_safe=True,
     maintainer='nulunabotics-software-team',
-    maintainer_email='selene@todo.todo',
+    maintainer_email='spool.i@northeastern.edu',
     description="Controls the robot's motors.",
     license='Apache-2.0',
     tests_require=['pytest'],

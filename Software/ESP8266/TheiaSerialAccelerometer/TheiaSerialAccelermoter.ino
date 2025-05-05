@@ -35,16 +35,20 @@ typedef struct {
 
 typedef struct {
     float initialOrientation;
+    bool shouldReset;
 } Correction;
 
 void handleCorrection(const Correction& correction) {
     initialAngleZ = correction.initialOrientation;
+    if (correction.shouldReset) {
+        angleZ = 0.0;
+    }
 }
 
 void setup() {
     TheiaSerial::begin();
 
-    // id of 0, and no callback function
+    // Acceleration data has an id of 0, and no callback function
     TheiaSerial::addId<Acceleration>(0, NULL);
     TheiaSerial::addId<Correction>(1, handleCorrection);
 

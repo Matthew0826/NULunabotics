@@ -1,5 +1,5 @@
 import serial
-from collections import deque
+import json
 
 import rclpy
 from rclpy.node import Node
@@ -9,22 +9,24 @@ from rclpy.serialization import serialize_message, deserialize_message
 
 from sensors.serial_port_observer import SerialPortObserver
 from sensors.spin_node_helper import spin_nodes
+from rosidl_runtime_py.utilities import get_message
+from ament_index_python.packages import get_package_share_directory
 
 from lunabotics_interfaces.msg import Acceleration
+
 
 # the universal BAUDRATE we are forcing for every board
 # bit rate is AT LEAST baud rate
 BAUD_RATE = 9600
 
+# according to Fast-CDR, the first 2 bytes of the serialized message are 0x0001 if the message is little-endian, and 0x0000 if the message is big-endian
 LITTLE_ENDIAN = b'\x00\x01'
 BIG_ENDIAN = b'\x00\x00'
 
 
 def deserialize(message: bytes, ros_type: any):
-    # the first 2 bytes of the serialized message are 0x0001 if the message is little-endian, and 0x0000 if the message is big-endian
-    # the next 2 bytes are always 0
-    
-    # add 4 bytes to the beginning of the message to represent little-endianess
+    # add 2 bytes to the beginning of the message to represent little-endianess
+    # and 2 more 0 bytes to fill the 4 byte header of a CDR message
     message = LITTLE_ENDIAN + b'\x00\x00' + message
     # deserialize the message
     deserialized_msg = deserialize_message(message, ros_type)
@@ -34,7 +36,7 @@ def deserialize(message: bytes, ros_type: any):
 def serialize(message: any):
     # serialize the message
     serialized_msg = serialize_message(message)
-    # remove the first 4 bytes
+    # remove the first 4 bytes (CDR header, we don't need it)
     serialized_msg = serialized_msg[4:]
     return serialized_msg
 
@@ -104,7 +106,7 @@ class SerialPortManager(Node):
             if pub_id in serial_obj.publisher_ids:
                 # write the message to the serial port
                 serial_obj.write_msg_to_serial(pub_id, msg)
-                print(f"Sent message {msg} to serial port {port} with id {pub_id}")
+                break
         else:
             print(f"Id {pub_id} not found in any serial ports")
 
@@ -124,7 +126,7 @@ class SerialPortManager(Node):
             # create a new ros subscription
             # it calls the on_new_msg function with the pub_id
             new_sub = self.create_subscription(ros_msg_type, topic, lambda msg: self.on_new_msg(pub_id, msg), 10)
-            self.ros_pubs[pub_id] = new_sub
+            self.ros_subs[pub_id] = new_sub
             print(f"Added ROS subscriber {topic} with ID {pub_id}")
         else:
             print(f"Subscriber ID {pub_id} already exists")
@@ -163,38 +165,35 @@ class SerialPort:
             return
         pub_id_byte = [header_bytes[0]]
         message_length = int.from_bytes([header_bytes[2]]) << 8 | int.from_bytes([header_bytes[1]])
-        print(f"Header bytes: {header_bytes}, pub_id: {pub_id_byte}, message_length: {message_length}")
+        # print(f"Header bytes: {header_bytes}, pub_id: {pub_id_byte}, message_length: {message_length}")
 
         # this is the number representing the type of data that will be published by ROS
         # (for example, id of 5 could mean the Motors message)
         pub_id = int.from_bytes(pub_id_byte)
-        print(f"Publisher ID: {pub_id}")
         # record the publisher id
         if pub_id not in self.publisher_ids:
             # check if the pub_id exists
-            if pub_id not in self.node.ros_pubs:
-                print(f"Publisher ID {pub_id} not found in ROS publishers")
+            if pub_id not in self.node.ros_pubs and pub_id not in self.node.ros_subs:
+                print(f"Publisher ID {pub_id} not found in ROS publishers or subscribers")
                 return
             self.publisher_ids.append(pub_id)
             print(f"Added message type id {pub_id}")
         
-        # read in message_length bytes
-        message_bytes = self.serial.read(message_length)
-        print(f"Read {len(message_bytes)} bytes from serial port {self.port} with id {pub_id}")
-        bytes_read = self.decode_message(pub_id, message_bytes)
-        if bytes_read != message_length:
-            print(f"Warning: read {bytes_read} bytes, message claimed to contain {message_length} bytes (id: {pub_id})")
+        if pub_id in self.node.ros_pubs:
+            # read in message_length bytes
+            message_bytes = self.serial.read(message_length)
+            # print(f"Read {len(message_bytes)} bytes from serial port {self.port} with id {pub_id}")
+            bytes_read = self.decode_message(pub_id, message_bytes)
+            if bytes_read != message_length:
+                print(f"Warning: read {bytes_read} bytes, message claimed to contain {message_length} bytes (id: {pub_id})")
 
     def decode_message(self, pub_id: int, message: bytes):
-        if pub_id not in self.node.ros_pubs:
-            print(f"Publisher ID {pub_id} not found in ROS publishers")
-            return 0
         # get ros msg type
         ros_pub: Publisher = self.node.ros_pubs[pub_id]
         ros_msg_type = ros_pub.msg_type
         # deserialize
         ros_msg = deserialize(message, ros_msg_type)
-        print(f"Deserialized message: {ros_msg}")
+        # print(f"Deserialized message: {ros_msg}")
         # publish to ros
         ros_pub.publish(ros_msg)
         # find size of the message
@@ -205,7 +204,6 @@ class SerialPort:
         # serialize the msg
         serialized_msg: bytes = serialize(msg)
         
-        # write to serial
         # write the header
         self.serial.write(b'\xAB\xCD')
         # write the pub_id
@@ -218,10 +216,32 @@ class SerialPort:
         print(f"Sent message {msg} to serial port {self.port} with id {pub_id} and length {msg_length}")
 
 
+def read_id_map_file(node: SerialPortManager, file_path: str):
+    # read the id map file
+    json_data = '[]'
+    with open(file_path, 'r') as f:
+        json_data = f.read()
+    # parse the json data
+    ids = json.loads(json_data)
+    for i in ids:
+        pub_id = i['id']
+        ros_type = i['message_type']
+        topic = i['topic']
+        is_ros_pub = i['ros_pub_or_sub'] == 'pub'
+        ros_msg_type = get_message(ros_type)
+        if is_ros_pub:
+            node.add_ros_pub(pub_id, ros_msg_type, topic)
+        else:
+            node.add_ros_sub(pub_id, ros_msg_type, topic)
+
+
 def main(args=None):
     rclpy.init(args=args)
     manager = SerialPortManager()
-    manager.add_ros_pub(0, Acceleration, '/test1')
+    # read the id map file from ros resource
+    resource_name = 'serial_port_id_map.json'
+    resource_path = get_package_share_directory("sensors") + '/' + resource_name
+    read_id_map_file(manager, resource_path)
     spin_nodes(manager, shutdown_callback=lambda n: n.close_serial_ports())
 
 

@@ -6,7 +6,7 @@ package_name = 'navigation'
 
 setup(
     name=package_name,
-    version='0.0.0',
+    version='1.0.0',
     packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -18,7 +18,7 @@ setup(
     zip_safe=True,
     maintainer='nulunabotics-software-team',
     maintainer_email='spool.i@northeastern.edu',
-    description='Handles autonomous navigation of the robot.',
+    description='Handles autonomous navigation and planning for the robot.',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
@@ -29,6 +29,6 @@ setup(
             'mock_odometry = navigation.mock_odometry:main',
             'planner = navigation.planner:main',
             'mock_obstacle_detector = navigation.mock_obstacle_detector:main',        
-            ],
+        ],
     },
 )

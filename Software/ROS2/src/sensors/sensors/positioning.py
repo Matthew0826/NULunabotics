@@ -3,84 +3,59 @@ from rclpy.node import Node
 
 from std_msgs.msg import Float32
 
-# from sensors.kalman_option_2 import find_robot_location
-from sensors.other_kalman import find_robot_location
+from sensors.kalman_option_2 import find_robot_location
+# from sensors.other_kalman import find_robot_location
 from sensors.spin_node_helper import spin_nodes
 
-from lunabotics_interfaces.msg import Point
-
-import serial
-import os
-import math
+from lunabotics_interfaces.msg import Point, Acceleration, BeaconDistances
 
 ESP_BOARD_ID = 2
 BAUD_RATE = 9600
 
-import struct
-
-test_dists = []
-
 class SpacialDataPublisher(Node):
 
-    def __init__(self, port: str):
-        global test_dists
+    def __init__(self):
         super().__init__('positioning')
         self.position_publisher = self.create_publisher(Point, '/sensors/position', 10)
         self.angle_publisher = self.create_publisher(Float32, '/sensors/orientation', 10)
-        self.get_logger().info("Spacial data publisher started")
-        ser = serial.Serial(port, BAUD_RATE, timeout=1)
-        # wait until serial is open
-        self.get_logger().info(f"Serial port {port} opened successfully")
-        # from esp c++ code:
-        # // Protocol for communication with Raspberry Pi:
-        # // Header: 0xFF
-        # // If next byte is 0xFF, that means its sending a distance to a beacon
-        # // Anchor index: 1 byte (0, 1, or 2)
-        # // Distance: 2 bytes (in centimeters)
-        # // 
-        # // If the next bytes after the header was 0xFD, its sending an accelerometer value
-        # // Right now it sends:
-        # // Angle on Z axis: 4 bytes (float from 0.0 to 360.0)
-        distances = [-1, -1, -1]
-        buffer = []
-        while True:
-            new_byte = ser.read(1)
-            if new_byte != b'':
-                buffer.append(new_byte)
-            if len(buffer) < 2: continue
-            # print(buffer)
-            if buffer[0] == b'\xFF':
-                if buffer[1] == b'\xFF' and len(buffer) > 4:
-                    # read the anchor index and distance
-                    anchor_index = int.from_bytes(buffer[2])
-                    distance = int.from_bytes(buffer[4]) * 256 + int.from_bytes(buffer[3])
-                    self.get_logger().info(f"Anchor index: {anchor_index}, Distance: {distance}, Len: {len(test_dists)}")
-                    # print("Anchor index: ", anchor_index, "Distance: ", distance)
-                    if anchor_index <= 2 and distance < 10_000:
-                        # publish new position to the topic
-                        distances[int(anchor_index)] = self.calculate_true_distance(distance)
-                        # if all distances are received, calculate the position
-                        if -1 not in distances:
-                            msg = Point()
-                            position = find_robot_location(distances[0], distances[1], distances[2])
-                            msg.x = position[0]
-                            msg.y = position[1]
-                            # self.get_logger().info(str(position))
-                            distances = [-1, -1, -1]
-                            self.position_publisher.publish(msg)
-                elif buffer[1] == b'\xFD' and len(buffer) > 5:
-                    print("got angle")
-                    # reads the accelerometer value by
-                    # decoding a 32 bit float from the buffer
-                    angle = struct.unpack("<f", b''.join(buffer[2:6]))[0]
-                    # self.get_logger().info(f"Angle: {angle}")
-                    msg = Float32()
-                    msg.data = float(angle)
-                    self.angle_publisher.publish(msg)
-            buffer = buffer[-6:] # keep only the last 6 bytes
-            # print(buffer)
+        self.acceleration_subscription = self.create_subscription(
+            Acceleration,
+            '/sensors/acceleration',
+            self.accel_callback,
+            10)
+        self.beacon_subscription = self.create_subscription(
+            BeaconDistances,
+            '/sensors/beacon_distances',
+            self.beacon_callback,
+            10)
+        
+        # ignore z axis on acceleration
+        self.linear_acceleration_vector = (0, 0)
+        # distances in cm to each beacon
+        self.true_distances_to_beacons = (0, 0, 0)
     
-    def calculate_true_distance(measured):
+    def publish_position(self):
+        position = Point()
+        found_location = find_robot_location(*self.true_distances_to_beacons, *self.linear_acceleration_vector)
+        position.x = found_location[0]
+        position.y = found_location[1]
+        self.position_publisher.publish(position)
+    
+    def accel_callback(self, msg: Acceleration):
+        self.angle_publisher.publish(msg.orientation)
+        self.linear_acceleration_vector = (msg.acceleration_x, msg.acceleration_y)
+        self.publish_position()
+    
+    def beacon_callback(self, msg: BeaconDistances):
+        # convert the distances to true distances
+        self.true_distances_to_beacons = (
+            self.calculate_true_distance(msg.distance_0),
+            self.calculate_true_distance(msg.distance_1),
+            self.calculate_true_distance(msg.distance_2)
+        )
+        self.publish_position()
+        
+    def calculate_true_distance(self, measured):
         # gotten from testing and through spreadsheet analysis
         # https://docs.google.com/spreadsheets/d/1d8JpcACcQQDd8Mt38nvdwsscAl1u1AYtAX2Nlg1wPS0/edit?usp=sharing
         # (go to Sheet 2)
@@ -89,7 +64,7 @@ class SpacialDataPublisher(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    spin_nodes(SpacialDataPublisher("/dev/ttyUSB1"))
+    spin_nodes(SpacialDataPublisher())
 
 
 if __name__ == '__main__':

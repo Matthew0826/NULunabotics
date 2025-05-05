@@ -1,0 +1,38 @@
+[
+    {
+        "id": 0,
+        "message_type": "lunabotics_interfaces/msg/Acceleration",
+        "topic": "sensors/acceleration",
+        "ros_pub_or_sub": "pub"
+    },
+    {
+        "id": 1,
+        "message_type": "lunabotics_interfaces/msg/AccelerometerCorrection",
+        "topic": "sensors/accelerometer_correction",
+        "ros_pub_or_sub": "sub"
+    },
+    {
+        "id": 2,
+        "message_type": "lunabotics_interfaces/msg/BeaconDistances",
+        "topic": "sensors/beacon_distances",
+        "ros_pub_or_sub": "pub"
+    },
+    {
+        "id": 3,
+        "message_type": "lunabotics_interfaces/msg/PowerData",
+        "topic": "sensors/power_data",
+        "ros_pub_or_sub": "pub"
+    },
+    {
+        "id": 4,
+        "message_type": "lunabotics_interfaces/msg/Motors",
+        "topic": "physical_robot/motors",
+        "ros_pub_or_sub": "sub"
+    },
+    {
+        "id": 5,
+        "message_type": "lunabotics_interfaces/msg/Excavate",
+        "topic": "sensors/excavator",
+        "ros_pub_or_sub": "sub"
+    }
+]
