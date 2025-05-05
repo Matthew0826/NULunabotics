@@ -18,6 +18,7 @@ from lunabotics_interfaces.msg import Acceleration
 # the universal BAUDRATE we are forcing for every board
 # bit rate is AT LEAST baud rate
 BAUD_RATE = 9600
+DELIMITER = b'\xAB\xCD'
 
 # according to Fast-CDR, the first 2 bytes of the serialized message are 0x0001 if the message is little-endian, and 0x0000 if the message is big-endian
 LITTLE_ENDIAN = b'\x00\x01'
@@ -40,9 +41,6 @@ def serialize(message: any):
     serialized_msg = serialized_msg[4:]
     return serialized_msg
 
-def are_bytes_delimiter(bytes: bytes):
-    return bytes == b'\xAB\xCD'
-
 
 # event that tells us when we have a new usb connected
 # hires and fires serial port nodes 
@@ -63,15 +61,16 @@ class SerialPortManager(Node):
     
     def serial_timer_callback(self):
         # check if any serial ports are open
-        for port, serial_obj in self.serial_ports.items():
-            if not serial_obj.is_open: continue
+        for port in list(self.serial_ports.keys()):
+            if not self.serial_ports[port].is_open: continue
             # read from the serial port
-            byte = serial_obj.serial.read(1)
+            byte = self.serial_ports[port].read_serial_bytes(1)
             if byte != b'':
-                serial_obj.parse_byte(byte)
+                self.serial_ports[port].parse_byte(byte)
     
     def close_serial_ports(self):
         for port, serial_obj in self.serial_ports.items():
+            serial_obj.is_open = False
             serial_obj.serial.close()
     
     # add a serial port to the list
@@ -91,6 +90,7 @@ class SerialPortManager(Node):
     # this is called when the serial port is disconnected
     def remove_serial_port(self, port: str):
         if port in self.serial_ports:
+            self.serial_ports[port].is_open = False
             # close the serial port
             self.serial_ports[port].serial.close()
             # remove the serial port from the list
@@ -102,10 +102,10 @@ class SerialPortManager(Node):
     def on_new_msg(self, pub_id: int, msg: any):
         # this is called when a new message is received from a ros subscription
         # find all serial ports with matching publisher id
-        for port, serial_obj in self.serial_ports.items():
-            if pub_id in serial_obj.publisher_ids:
+        for port in list(self.serial_ports.keys()):
+            if pub_id in self.serial_ports[port].publisher_ids:
                 # write the message to the serial port
-                serial_obj.write_msg_to_serial(pub_id, msg)
+                self.serial_ports[port].write_msg_to_serial(pub_id, msg)
                 break
         else:
             print(f"Id {pub_id} not found in any serial ports")
@@ -150,18 +150,33 @@ class SerialPort:
             except serial.SerialException as e:
                 print(f"Failed to open serial port {self.port}: {e}")
     
+    def read_serial_bytes(self, num_bytes: int):
+        if not self.is_open: return b''
+        try:
+            return self.serial.read(num_bytes)
+        except serial.SerialException as e:
+            # self.node.remove_serial_port(self.port)
+            return b''
+    
+    def write_serial_bytes(self, data: bytes):
+        if not self.is_open: return
+        try:
+            self.serial.write(data)
+        except serial.SerialException as e:
+            pass#self.node.remove_serial_port(self.port)
+    
     def parse_byte(self, byte: bytes):
         # check for delimiter to indicate start of message
         # print(f"Received byte: {byte}")
-        if not are_bytes_delimiter(self.previous_byte + byte):
+        if (self.previous_byte + byte) != DELIMITER:
             self.previous_byte = byte
             return
         self.previous_byte = byte
 
         # read 3 more bytes of header
-        header_bytes = self.serial.read(3)
+        header_bytes = self.read_serial_bytes(3)
         if len(header_bytes) < 3:
-            print(f"Warning: not enough bytes read from serial port {self.port}")
+            print(f"Warning: not enough bytes read from serial port {self.port} for the header")
             return
         pub_id_byte = [header_bytes[0]]
         message_length = int.from_bytes([header_bytes[2]]) << 8 | int.from_bytes([header_bytes[1]])
@@ -181,9 +196,16 @@ class SerialPort:
         
         if pub_id in self.node.ros_pubs:
             # read in message_length bytes
-            message_bytes = self.serial.read(message_length)
+            message_bytes = self.read_serial_bytes(message_length)
             # print(f"Read {len(message_bytes)} bytes from serial port {self.port} with id {pub_id}")
-            bytes_read = self.decode_message(pub_id, message_bytes)
+            if len(message_bytes) < message_length:
+                print(f"Warning: not enough bytes read from serial port {self.port} with id {pub_id} for the message")
+                return
+            try:
+                bytes_read = self.decode_message(pub_id, message_bytes)
+            except Exception as e:
+                print(f"Failed to decode message from serial port {self.port} with id {pub_id}: {e}")
+                return
             if bytes_read != message_length:
                 print(f"Warning: read {bytes_read} bytes, message claimed to contain {message_length} bytes (id: {pub_id})")
 
@@ -204,15 +226,16 @@ class SerialPort:
         # serialize the msg
         serialized_msg: bytes = serialize(msg)
         
-        # write the header
-        self.serial.write(b'\xAB\xCD')
+        # write the delimiter
+        self.write_serial_bytes(DELIMITER)
+        # write the header:
         # write the pub_id
-        self.serial.write(pub_id.to_bytes(1))
+        self.write_serial_bytes(pub_id.to_bytes(1))
         # write the length of the message
         msg_length = len(serialized_msg)
-        self.serial.write(msg_length.to_bytes(2))
+        self.write_serial_bytes(msg_length.to_bytes(2))
         # write the message itself
-        self.serial.write(serialized_msg)
+        self.write_serial_bytes(serialized_msg)
         print(f"Sent message {msg} to serial port {self.port} with id {pub_id} and length {msg_length}")
 
 
