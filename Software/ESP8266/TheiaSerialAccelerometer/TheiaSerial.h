@@ -71,16 +71,9 @@ public:
         
         handlerMap<T>()[pub_id] = handler;
 
-        // Broadcast type after 2s delay
-        if (!initialized()) {
-            initTime() = millis();
-            initialized() = true;
-        }
-
-        if (millis() - initTime() >= 2000) {
-            T empty{};
-            sendFramedMessage(pub_id, empty);
-        }
+        delay(1000);
+        T empty{};
+        sendFramedMessage(pub_id, empty);
     }
 
     // Send a struct with framing
@@ -133,13 +126,10 @@ public:
 
                 case READ_PUB_ID:
                     pub_id = byte_in;
-                    Serial.print("Got id:");
-                    Serial.println(pub_id);
                     if (registry().find(pub_id) != registry().end()) {
                         state = READ_LEN_1;
                     } else {
                         state = WAIT_HEADER_1;  // unknown ID
-                        Serial.println("unknown id");
                     }
                     break;
 
@@ -150,10 +140,7 @@ public:
 
                 case READ_LEN_2:
                     payload_len |= byte_in;
-                    Serial.print("Len:");
-                    Serial.println(payload_len);
-                    if (payload_len > sizeof(payload_buffer)) { 
-                        Serial.println("Too big");
+                    if (payload_len > sizeof(payload_buffer)) {
                         state = WAIT_HEADER_1;  // too big
                     } else {
                         payload_index = 0;

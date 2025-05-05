@@ -57,11 +57,6 @@ def generate_launch_description():
             executable='positioning',
             output='screen'
         ),
-        Node(
-            package='sensors',
-            executable='power_data',
-            output='screen'
-        ),
         
         # driving nodes
         Node(

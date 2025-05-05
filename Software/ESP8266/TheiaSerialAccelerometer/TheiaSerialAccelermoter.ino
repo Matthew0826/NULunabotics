@@ -45,11 +45,15 @@ void handleCorrection(const Correction& correction) {
     }
 }
 
+void nothing(const Acceleration& acceleration) {
+    // nothing
+}
+
 void setup() {
     TheiaSerial::begin();
 
-    // Acceleration data has an id of 0, and no callback function
-    TheiaSerial::addId<Acceleration>(0, NULL);
+    // id of 0, and no callback function
+    TheiaSerial::addId<Acceleration>(0, nothing);
     TheiaSerial::addId<Correction>(1, handleCorrection);
 
     // Find accelerometer. Did you forget to plug it in to the header pins?
