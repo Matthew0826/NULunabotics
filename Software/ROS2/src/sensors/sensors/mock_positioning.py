@@ -11,8 +11,6 @@ from lunabotics_interfaces.msg import Motors
 
 import random
 
-ESP_BOARD_ID = 2
-BAUD_RATE = 9600
 TOP_SPEED = 100.0 # cm/s
 REFRESH_RATE = 10 # Hz
 
@@ -48,6 +46,10 @@ class SpacialDataPublisher(Node):
         # self.get_logger().info(f"got motors: {motors.front_left_wheel}, {motors.front_right_wheel}")
     
     def update_simulation(self):
+        if abs(self.motor_power_left) < 0.1 and abs(self.motor_power_right) < 0.1:
+            # If both motors are off, do not update position
+            return
+        
         # Calculate average motor power for forward/backward movement
         average_power = (self.motor_power_left + self.motor_power_right) / 2.0
         
@@ -57,7 +59,7 @@ class SpacialDataPublisher(Node):
         tick_speed = TOP_SPEED / REFRESH_RATE
         
         # Update orientation based on motor difference
-        self.orientation += motor_power_delta * tick_speed/3.0
+        self.orientation += motor_power_delta * tick_speed/4.0
         self.orientation = float(self.orientation % 360)
         
         # Move forward/backward based on average power with the corrected orientation

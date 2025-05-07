@@ -33,6 +33,14 @@ export default function Robot({
                     left: `50%`,
                     transform: `translate(-50%, -50%)`,
                 }} />
+            <div className="absolute rounded-full bg-white"
+                style={{
+                    width: `10%`,
+                    height: `7.5%`,
+                    top: `50%`,
+                    left: `50%`,
+                    transform: `translate(-50%, -50%)`,
+                }} />
         </div>
     );
 }
