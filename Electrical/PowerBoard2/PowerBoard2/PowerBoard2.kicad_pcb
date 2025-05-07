@@ -513,7 +513,7 @@
 		(descr "Resistor SMD 2010 (5025 Metric), square (rectangular) end terminal, IPC_7351 nominal with elongated pad for handsoldering. (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "resistor handsolder")
 		(property "Reference" "ShuntResistor1"
-			(at -0.1 2.17 0)
+			(at -2.2 2.32 0)
 			(layer "F.SilkS")
 			(uuid "dd8898df-edf1-465b-a40b-b6f3d5b8d1bd")
 			(effects
@@ -726,7 +726,7 @@
 		(descr "Connector XT60 Horizontal PCB Male, https://www.bto.pl/pdf/08988/XT60IPW-M3.pdf")
 		(tags "RC Connector XT60")
 		(property "Reference" "J1"
-			(at 3.6 -7.15 90)
+			(at 3.6 -7.15 180)
 			(layer "F.SilkS")
 			(uuid "a087a2a1-cbed-400d-acd5-5b8deb26ab76")
 			(effects
@@ -1227,7 +1227,7 @@
 		(uuid "35a30a48-f880-429d-97b7-0adfe94e71ef")
 		(at 201.05 81.03325 180)
 		(property "Reference" "C5"
-			(at 0 0 90)
+			(at 0 0 180)
 			(layer "F.SilkS")
 			(uuid "2001ba2d-1dd5-4642-b3bd-2d1619f617f1")
 			(effects
@@ -1423,7 +1423,7 @@
 		(uuid "35c7d68a-0220-4c0f-b80d-1d1b9e6a5ab3")
 		(at 190.5 69.5 90)
 		(property "Reference" "U2"
-			(at -0.46 -2.508 90)
+			(at -0.2 -2.85 180)
 			(layer "F.SilkS")
 			(uuid "9b785e3f-9524-48a1-bc73-517ced187e33")
 			(effects
@@ -1723,7 +1723,7 @@
 		(at 201.1 68.8 -90)
 		(tags "PLF1E470MDO2TD ")
 		(property "Reference" "C1"
-			(at 2.5 0 90)
+			(at 2.5 0 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "6d1e5e8b-0150-4a23-b6d5-124d091e00a7")
@@ -2469,7 +2469,7 @@
 		(descr "Connector XT60 Horizontal PCB Male, https://www.bto.pl/pdf/08988/XT60IPW-M3.pdf")
 		(tags "RC Connector XT60")
 		(property "Reference" "J5"
-			(at 3.6 -7.15 90)
+			(at 3.6 -7.15 180)
 			(layer "F.SilkS")
 			(uuid "177367f0-9b88-4fcc-9569-1080f1a42051")
 			(effects
@@ -2971,7 +2971,7 @@
 		(at 178.770101 82.250003 -90)
 		(tags "USB-A-S-RA-TSMT ")
 		(property "Reference" "U3"
-			(at 2.999999 0 -90)
+			(at 2.949997 4.220101 0)
 			(unlocked yes)
 			(layer "F.SilkS")
 			(uuid "51da2892-e416-4e50-bd80-3660c1d49e70")
@@ -3310,7 +3310,7 @@
 		(uuid "def0b10a-73d1-420f-9c67-a631abf532d4")
 		(at 201.05 89.73325 180)
 		(property "Reference" "C4"
-			(at -0.05 -0.1 90)
+			(at -0.05 -0.1 180)
 			(layer "F.SilkS")
 			(uuid "57433ccf-45b8-4eac-a902-5da88e85c68e")
 			(effects
@@ -3508,7 +3508,7 @@
 		(descr "Connector XT60 Horizontal PCB Male, https://www.bto.pl/pdf/08988/XT60IPW-M3.pdf")
 		(tags "RC Connector XT60")
 		(property "Reference" "J2"
-			(at 3.6 -7.15 90)
+			(at 3.6 -7.15 180)
 			(layer "F.SilkS")
 			(uuid "e069daaa-aa82-4485-a350-96033e6b81b6")
 			(effects
