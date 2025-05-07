@@ -20,6 +20,7 @@ export type ObstacleType = {
 export default function Map() {
     const { messages, sendToServer } = useWebSocketContext();
     const [pathData, setPathData] = useState<Point[]>([]);
+    const [odometryPathData, setOdometryPathData] = useState<Point[]>([]);
     const [obstacles, setObstacles] = useState<ObstacleType[]>([]);
     const [robot, setRobot] = useState({ x: 448, y: 100, width: 71, height: 98, rotation: 0 });
     useEffect(() => {
@@ -29,6 +30,10 @@ export default function Map() {
             const data = (lastMessage?.message || []).map((point: any) => ([point.x, point.y]));
             // console.log("Path data", data);
             setPathData(data);
+        } else if (lastMessage.type === "odometry_path") {
+            const data = (lastMessage?.message || []).map((point: any) => ([point.x, point.y]));
+            // console.log("Odometry path data", data);
+            setOdometryPathData(data);
         } else if (lastMessage.type === "position") {
             const data = lastMessage?.message || {};
             setRobot(prev => ({ ...prev, x: data.x, y: data.y }));
@@ -126,8 +131,8 @@ export default function Map() {
                         parentWidth={MAP_WIDTH}
                     />
                 ))}
-                <RobotPath path={pathData} robot={robot} />
                 <Robot x={robot.x} y={robot.y} width={robot.width} height={robot.height} rotation={robot.rotation} />
+                <RobotPath path={pathData} odometryPath={odometryPathData} robot={robot} />
             </div>
         </div>
     );

@@ -6,7 +6,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 
 
 # the self driver agent action
-from lunabotics_interfaces.msg import Point, Motors, Excavate
+from lunabotics_interfaces.msg import Point, Motors, Excavate, PathVisual
 from lunabotics_interfaces.action import SelfDriver
 from navigation.pathfinder_helper import distance
 from sensors.spin_node_helper import spin_nodes
@@ -62,7 +62,7 @@ class Odometry(Node):
         )
         
         self.excavate_pub = self.create_publisher(
-            Excavation,
+            Excavate,
             'physical_robot/excavate',
             10
         )
@@ -78,6 +78,8 @@ class Odometry(Node):
             'sensors/orientation',
             self.on_orientation,
             10)
+        
+        self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/odometry_path', 10)
 
     # when someone calls this action
     # SelfDriver.action:
@@ -154,9 +156,9 @@ class Odometry(Node):
     # set the power of the conveyor and outtake motors on the excavator
     def set_excavate_power(self, elevator_power: float, conveyor_power: float, outtake_power: float):
         # ensure motor power between -1.0 and 1.0
-        if (abs(elevator_power) > 1.0 or abs(outtake_power) > 1.0 or abs(outtake_power) > 1.0):
-            self.get_logger.info(f"motor power must be between -1.0 and 1.0: L({left_power}), R({right_power})")
-            return
+        # if (abs(elevator_power) > 1.0 or abs(outtake_power) > 1.0 or abs(outtake_power) > 1.0):
+        #     self.get_logger.info(f"motor power must be between -1.0 and 1.0: L({left_power}), R({right_power})")
+        #     return
 
         # message class (cannot move and excavate)
         msg = Excavate()
@@ -210,6 +212,7 @@ class Odometry(Node):
         
         # calculate orientation to face position
         self.get_logger().info(f"want to go to position {x}, {y}")
+        self.website_path_visualizer.publish(PathVisual(nodes=[self.position, Point(x=x, y=y)]))
         await self.face_position(x, y)
         self.get_logger().info(f"finished facing portion to {x}, {y}")
         

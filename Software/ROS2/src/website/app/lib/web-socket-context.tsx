@@ -61,7 +61,12 @@ export default function WebSocketProvider({
                     ? event.data
                     : await event.data.text();
             const message = JSON.parse(payload);
-            messageBuffer.current.push(message);
+            // messageBuffer.current.push(message);
+            if (message.type === "obstacles") {
+                messageBuffer.current.push(message);
+            } else {
+                setMessages((prev) => [...(prev.filter(a => a.type != message.type)), message]);
+            }
         }
 
         socketRef.current?.addEventListener("message", handleMessage);
@@ -81,7 +86,7 @@ export default function WebSocketProvider({
             ]);
             flushing.current = false;
         }
-    }, 150);
+    }, 20);
 
     function sendToServer(messageType: string, message: any) {
         try {

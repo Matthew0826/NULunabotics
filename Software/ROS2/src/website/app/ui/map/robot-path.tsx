@@ -33,7 +33,8 @@ function pointAwayFromPoint(
  *  */
 function pointsToPathWithQuadraticCurves(
     path: Point[],
-    radius: number
+    radius: number,
+    drawArrow: boolean = true
 ): string {
     if (path.length === 0) return "";
 
@@ -60,7 +61,7 @@ function pointsToPathWithQuadraticCurves(
 
         // Draw a straight line to the point that is just short of x1 y1
         pathString += ` L ${short[0]} ${short[1]}`;
-        if (i == duplicatePath.length - 2) {
+        if (i == duplicatePath.length - 2 && drawArrow) {
             // At the last point, draw an arrow, accounting for the direction of the path
             const lineToLastPoint = `L ${pointI[0]} ${pointI[1]}`;
             pathString += lineToLastPoint;
@@ -83,7 +84,7 @@ function pointsToPathWithQuadraticCurves(
             pathString += ` L ${arrowComponent2[0]} ${arrowComponent2[1]}`;
             // Mostly removes the dotted line
             pathString += lineToLastPoint;
-        } else {
+        } else if (i < duplicatePath.length - 2) {
             // Unless its the last point,
             // Draw a curve (Q means quadratic) to the point in the direction of the future point
             // "far" is the end point of the curve, which is the point in the direction of the future point: i+1
@@ -97,7 +98,7 @@ function pointsToPathWithQuadraticCurves(
 /**
  * This component represents the path the robot intends to take through the map.
  */
-export default function RobotPath({ path, robot }: { path?: Point[], robot: any }) {
+export default function RobotPath({ path, odometryPath, robot }: { path?: Point[], odometryPath: Point[], robot: any }) {
     const { messages, sendToServer } = useWebSocketContext();
     const pathRef = React.useRef<HTMLDivElement>(null);
     const [previousClickPosition, setPreviousClickPosition] = React.useState<Point | null>(null);
@@ -121,6 +122,14 @@ export default function RobotPath({ path, robot }: { path?: Point[], robot: any 
             >
                 <path
                     d={pointsToPathWithQuadraticCurves(path ?? [], 10)}
+                    stroke="#312B63"
+                    strokeWidth="4"
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    strokeDasharray="10 10"
+                />
+                <path
+                    d={pointsToPathWithQuadraticCurves(odometryPath ?? [], 10, false)}
                     stroke="#E85252"
                     strokeWidth="4"
                     strokeLinejoin="round"

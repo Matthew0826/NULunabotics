@@ -192,6 +192,14 @@ rclnodejs.init().then(() => {
             sendToClient("path", msg.nodes);
         }
     );
+    node.createSubscription(
+        LUNABOTICS_PATH_VISUAL_TYPE,
+        "navigation/odometry_path",
+        (msg: any) => {
+            sendToClient("odometry_path", msg.nodes);
+        }
+    );
+
     rosClient = node.createClient(
         LUNABOTICS_PATH_TYPE,
         'pathfinder'
