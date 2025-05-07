@@ -2,7 +2,7 @@
 
 import { IncomingMessage } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
-import { lidarPoints, publishMockObstacle, publishToROS2, sendPathfindingRequest, sendPlanAction } from "../lib/ros2";
+import { lidarPoints, publishMockObstacle, publishToROS2, sendPathfindingRequest, sendPlanAction, startLoopingAction, stopLoopingAction } from "../lib/ros2";
 import { sendToClient, sockets } from "../lib/sockets";
 
 export function GET() {
@@ -33,29 +33,13 @@ export function SOCKET(
                 const point1 = messageJson.message.point1;
                 const point2 = messageJson.message.point2;
                 const robot = messageJson.message.robot;
-                const isPoint2BelowObstacles = point2[1] >= 244.0;
-                const isPoint2DumpZone = point2[0] >= 274.0;
-                if (isPoint2BelowObstacles) {
-                    if (isPoint2DumpZone) {
-                        console.log("Sending plan to dump zone");
-                        sendPlanAction({ x: robot.x, y: robot.y }, false, true);
-                    } else {
-                        console.log("Sending plan to excavation zone");
-                        sendPlanAction({ x: robot.x, y: robot.y }, true, false);
-                    }
-                } else {
-                    // console.log("Sending pathfinding request");
-                    // sendPathfindingRequest(
-                    //     point1,
-                    //     point2,
-                    //     (points) => {
-                    //         sendToClient("path", points);
-                    //     }
-                    // )
-                    console.log("Making mock obstacle");
-                    publishMockObstacle({ x: point2[0], y: point2[1], radius: 20 });
-                }
-
+                sendPlanAction({ x: robot.x, y: robot.y }, false, false, { x: point2[0], y: point2[1] });
+                // console.log("Making mock obstacle");
+                // publishMockObstacle({ x: point2[0], y: point2[1], radius: 20 });
+            } else if (messageJson.type === "beginAutonomous") {
+                startLoopingAction(true);
+            } else if (messageJson.type === "stopAutonomous") {
+                stopLoopingAction();
             } else if (messageJson.type === "controls") {
                 publishToROS2(messageJson.message);
             }
