@@ -1,4 +1,4 @@
-24269533503697058
+24271280155839059
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -98265,6 +98265,13 @@ USB-A-S-RA-TSMT
 0
 8
 8
+bigcapacitor
+CAP_YX_8X11P5_RUB
+
+16ZLJ470MTA8X11.5 
+0
+2
+2
 footprints 1
 PWP14_2P31X2P46_TEX
 
