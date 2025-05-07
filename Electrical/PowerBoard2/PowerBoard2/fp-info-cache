@@ -1,4 +1,4 @@
-24255560462553968
+24259053614181237
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -13,6 +13,13 @@ audio belton reverb
 0
 7
 7
+B4B-XH-A_LF__SN_
+JST_B4B-XH-A_LF__SN_
+
+
+0
+4
+4
 Battery
 BatteryClip_Keystone_54_D16-19mm
 Battery clip for batteries with a diameter between 16-19 mm: https://www.keyelco.com/product.cfm/product_id/826
@@ -98076,6 +98083,13 @@ TMUX1204DGSR
 0
 10
 10
+_Footprints
+JST_B4B-XH-A_LF__SN_
+
+
+0
+4
+4
 _Footprints
 PCAP_SVP_C6_PAN
 
