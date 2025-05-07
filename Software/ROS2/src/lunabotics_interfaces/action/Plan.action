@@ -2,6 +2,8 @@
 Point start
 bool should_excavate
 bool should_dump
+# default is -1, -1, so no position
+Point destination
 ---
 # Result
 int64 time_elapsed_millis

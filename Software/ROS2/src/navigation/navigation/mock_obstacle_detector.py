@@ -105,7 +105,7 @@ class MockObstacleDetector(Node):
         robot_pos = np.array(self.robot_position)
 
         # Step 1: Forward-facing unit vector
-        forward_vector = rotate_vector_2d(np.array([1.0, 0.0]), self.robot_orientation)
+        forward_vector = rotate_vector_2d(np.array([-1.0, 0.0]), self.robot_orientation)
         forward_vector /= np.linalg.norm(forward_vector)
 
         # Step 2: LIDAR position

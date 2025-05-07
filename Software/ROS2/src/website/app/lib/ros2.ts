@@ -76,7 +76,9 @@ export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, c
     });
 };
 
-export async function sendPlanAction(start: any, should_excavate: boolean, should_dump: boolean) {
+let goalHandle: rclnodejs.ClientGoalHandle<typeof LUNABOTICS_PLAN_TYPE>;
+
+export async function sendPlanAction(start: any, should_excavate: boolean, should_dump: boolean, destination: any) {
     console.log('Waiting for action server...');
     await planActionClient.waitForServer(2000);
 
@@ -84,10 +86,11 @@ export async function sendPlanAction(start: any, should_excavate: boolean, shoul
     goal.start = start;
     goal.should_excavate = should_excavate;
     goal.should_dump = should_dump;
+    goal.destination = destination;
 
     console.log('Sending goal request...');
 
-    const goalHandle = await planActionClient.sendGoal(goal, (feedback: rclnodejs.lunabotics_interfaces.action.Plan_Feedback) =>
+    goalHandle = await planActionClient.sendGoal(goal, (feedback: rclnodejs.lunabotics_interfaces.action.Plan_Feedback) =>
         console.log(`Received feedback: ${feedback.progress}`)
     );
 
@@ -109,6 +112,35 @@ export async function sendPlanAction(start: any, should_excavate: boolean, shoul
         console.log(`Goal succeeded in ${result.time_elapsed_millis} ms`);
     } else {
         console.log(`Goal failed with status: ${result}`);
+    }
+    return result;
+}
+let doLoopAction = false;
+
+function loopActionForever(excavate: boolean) {
+    if (!doLoopAction) return;
+    let promise;
+    promise = sendPlanAction(robotPosition, excavate, !excavate, { x: -1, y: -1 });
+    // wait for the promise to resolve
+    promise.then((response: any) => {
+        loopActionForever(!excavate);
+    });
+
+}
+
+export function startLoopingAction(excavate: boolean) {
+    doLoopAction = true;
+    loopActionForever(excavate);
+}
+
+export async function stopLoopingAction() {
+    doLoopAction = false;
+    const response = await goalHandle.cancelGoal();
+
+    if (response.goals_canceling.length > 0) {
+        console.log('Goal successfully canceled');
+    } else {
+        console.log('Goal failed to cancel');
     }
 }
 
@@ -132,6 +164,8 @@ let rosControlsPublisher: rclnodejs.Publisher<typeof LUNABOTICS_MOTORS_TYPE>;
 let rosMockObstaclePublisher: rclnodejs.Publisher<typeof LUNABOTICS_OBSTACLE_TYPE>;
 let rosClient: rclnodejs.Client<typeof LUNABOTICS_PATH_TYPE>;
 let planActionClient: rclnodejs.ActionClient<typeof LUNABOTICS_PLAN_TYPE>;
+
+let robotPosition = { x: 448, y: 100 };
 
 rclnodejs.init().then(() => {
     const node = new rclnodejs.Node("website_backend");
@@ -175,6 +209,8 @@ rclnodejs.init().then(() => {
         LUNABOTICS_POINT_TYPE,
         "sensors/position",
         (msg: any) => {
+            robotPosition.x = msg.x;
+            robotPosition.y = msg.y;
             sendToClient("position", msg);
         }
     );

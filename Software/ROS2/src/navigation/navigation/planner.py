@@ -78,10 +78,14 @@ class Planner(Node):
         start_time = self.get_clock().now()
         should_excavate = goal_handle.request.should_excavate
         should_dump = goal_handle.request.should_dump
+        destination = goal_handle.request.destination
         start = goal_handle.request.start
         self.get_logger().info(f"Should excavate: {should_excavate}, should dump: {should_dump}")
         zone = None
-        if should_excavate:
+        if destination.x >= 0 and destination.y >= 0:
+            # make a fake zone because the destination was overridden
+            zone = Zone(destination.x, destination.y, 1, 1)
+        elif should_excavate:
             zone = excavation_zone
         elif should_dump:
             zone = berm_zone
@@ -107,9 +111,14 @@ class Planner(Node):
             result.time_elapsed_millis = (current_time - start_time).nanoseconds // 1000000
             return result
         
+        # TODO: make this all async so cancelling works
         # check for cancellation
         while not self.was_travel_successful:
             if goal_handle.is_cancel_requested:
+                print("CANCELLED!!")
+                print("CANCELLED!!")
+                print("CANCELLED!!")
+                print("CANCELLED!!")
                 self._travel_done_event.set()
                 goal_handle.canceled()
                 result = Plan.Result()
