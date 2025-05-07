@@ -206,6 +206,329 @@
 				)
 			)
 		)
+		(symbol "2025-05-07_20-00-53:CSNL2010FT2L00"
+			(pin_names
+				(offset 0.254)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "R"
+				(at 5.715 3.81 0)
+				(effects
+					(font
+						(size 1.524 1.524)
+					)
+				)
+			)
+			(property "Value" "CSNL2010FT2L00"
+				(at 6.35 -3.81 0)
+				(effects
+					(font
+						(size 1.524 1.524)
+					)
+				)
+			)
+			(property "Footprint" "STA_CSNL2010<=3_STP"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+						(italic yes)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "CSNL2010FT2L00"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+						(italic yes)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_locked" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "CSNL2010FT2L00"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "STA_CSNL2010<=3_STP STA_CSNL2010<=3_STP-M STA_CSNL2010<=3_STP-L"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "CSNL2010FT2L00_1_1"
+				(polyline
+					(pts
+						(xy 2.54 0) (xy 3.175 1.27)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 3.175 1.27) (xy 4.445 -1.27)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 4.445 -1.27) (xy 5.715 1.27)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 5.715 1.27) (xy 6.985 -1.27)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 6.985 -1.27) (xy 8.255 1.27)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 8.255 1.27) (xy 9.525 -1.27)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 9.525 -1.27) (xy 10.16 0)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin unspecified line
+					(at 0 0 0)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at 12.7 0 180)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(symbol "CSNL2010FT2L00_1_2"
+				(polyline
+					(pts
+						(xy -1.27 3.175) (xy 1.27 4.445)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.27 5.715) (xy 1.27 6.985)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.27 8.255) (xy 1.27 9.525)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 2.54) (xy -1.27 3.175)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.27 4.445) (xy -1.27 5.715)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.27 6.985) (xy -1.27 8.255)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.27 9.525) (xy 0 10.16)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin unspecified line
+					(at 0 12.7 270)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at 0 0 90)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "B4B-XH-A_LF__SN_:B4B-XH-A_LF__SN_"
 			(pin_names
 				(offset 1.016)
@@ -1761,12 +2084,6 @@
 		(uuid "05d90db8-bb08-4bda-8482-80b6d69bdb65")
 	)
 	(junction
-		(at 43.18 76.2)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "1996013d-2f76-4c4b-8d52-64f15422443c")
-	)
-	(junction
 		(at 43.18 72.39)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -1777,6 +2094,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "2ccfad5b-f959-4b47-b576-db0e5417c309")
+	)
+	(junction
+		(at 43.18 73.66)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "4241eec3-ddea-4e31-ba40-371a733ef9a4")
 	)
 	(junction
 		(at 135.89 160.02)
@@ -1801,12 +2124,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "6cb5c184-8cd9-4d2d-b9e8-8e49beee806a")
-	)
-	(junction
-		(at 43.18 83.82)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "7b65ac42-295f-4505-b601-15ba7f6f95bd")
 	)
 	(junction
 		(at 110.49 138.43)
@@ -1886,6 +2203,12 @@
 		(color 0 0 0 0)
 		(uuid "f3da2602-64c6-4098-813e-3410351fd378")
 	)
+	(junction
+		(at 43.18 86.36)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "f89b58db-0b79-4993-bed9-47eecd686b6c")
+	)
 	(no_connect
 		(at 99.06 168.91)
 		(uuid "2c928c39-613f-48c3-ad4f-c13000ffca6f")
@@ -1916,7 +2239,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "14a6d9c9-44bd-4f2a-8331-18a6ca795221")
+		(uuid "10c74b04-9d4a-445e-9baf-331240ee799a")
 	)
 	(wire
 		(pts
@@ -2030,7 +2353,7 @@
 	)
 	(wire
 		(pts
-			(xy 45.72 76.2) (xy 43.18 76.2)
+			(xy 45.72 73.66) (xy 43.18 73.66)
 		)
 		(stroke
 			(width 0)
@@ -2240,7 +2563,7 @@
 	)
 	(wire
 		(pts
-			(xy 43.18 83.82) (xy 45.72 83.82)
+			(xy 45.72 86.36) (xy 43.18 86.36)
 		)
 		(stroke
 			(width 0)
@@ -2260,7 +2583,7 @@
 	)
 	(wire
 		(pts
-			(xy 45.72 83.82) (xy 45.72 81.28)
+			(xy 45.72 86.36) (xy 45.72 81.28)
 		)
 		(stroke
 			(width 0)
@@ -2330,7 +2653,7 @@
 	)
 	(wire
 		(pts
-			(xy 43.18 83.82) (xy 43.18 113.03)
+			(xy 43.18 86.36) (xy 43.18 113.03)
 		)
 		(stroke
 			(width 0)
@@ -2370,7 +2693,7 @@
 	)
 	(wire
 		(pts
-			(xy 43.18 72.39) (xy 43.18 76.2)
+			(xy 43.18 72.39) (xy 43.18 73.66)
 		)
 		(stroke
 			(width 0)
@@ -2550,7 +2873,7 @@
 	)
 	(wire
 		(pts
-			(xy 45.72 78.74) (xy 45.72 76.2)
+			(xy 45.72 78.74) (xy 45.72 73.66)
 		)
 		(stroke
 			(width 0)
@@ -4502,69 +4825,71 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R")
-		(at 43.18 80.01 180)
+		(lib_id "2025-05-07_20-00-53:CSNL2010FT2L00")
+		(at 43.18 73.66 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "df846f32-d97f-4c5f-a777-6e0f7db5925a")
-		(property "Reference" "ShuntResistor1"
-			(at 40.894 80.518 0)
+		(uuid "d5264d1c-fa7b-4790-9020-0030ef7d843b")
+		(property "Reference" "R5"
+			(at 38.1 79.248 90)
 			(effects
 				(font
-					(size 1.27 1.27)
+					(size 1.524 1.524)
 				)
 				(justify left)
 			)
 		)
-		(property "Value" "0.005 R"
-			(at 37.846 78.486 0)
+		(property "Value" "CSNL2010FT2L00"
+			(at 21.59 81.2799 90)
 			(effects
 				(font
-					(size 1.27 1.27)
+					(size 1.524 1.524)
 				)
 				(justify left)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_2010_5025Metric_Pad1.40x2.65mm_HandSolder"
-			(at 44.958 80.01 90)
+		(property "Footprint" "Shuntresistor:STA_CSNL2010&lessthan_=3_STP"
+			(at 43.18 73.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "CSNL2010FT2L00"
+			(at 43.18 73.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 43.18 73.66 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 				(hide yes)
 			)
-		)
-		(property "Datasheet" "~"
-			(at 43.18 80.01 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 43.18 80.01 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "57ab16a4-7829-42a0-a519-0097cd7bd428")
 		)
 		(pin "2"
-			(uuid "fcd1160e-698b-4d4d-9d30-d04c3e59c876")
+			(uuid "9705646c-e738-416c-992b-519092fdbf37")
+		)
+		(pin "1"
+			(uuid "c05b45ab-09aa-485a-97ca-7a495ab6b711")
 		)
 		(instances
 			(project ""
 				(path "/f95f296f-a4bf-4952-bdc7-66087a6cc347"
-					(reference "ShuntResistor1")
+					(reference "R5")
 					(unit 1)
 				)
 			)
