@@ -1791,6 +1791,12 @@
 		(uuid "4ece6551-8cc8-47eb-802b-235c8d6c1f5d")
 	)
 	(junction
+		(at 106.68 66.04)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "621af043-8529-4171-b5df-750f0ac2dc18")
+	)
+	(junction
 		(at 67.31 88.9)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2054,6 +2060,16 @@
 	)
 	(wire
 		(pts
+			(xy 106.68 55.88) (xy 106.68 58.42)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4949e4da-c17b-4159-9e4c-868da6047993")
+	)
+	(wire
+		(pts
 			(xy 64.77 83.82) (xy 64.77 102.87)
 		)
 		(stroke
@@ -2094,7 +2110,7 @@
 	)
 	(wire
 		(pts
-			(xy 104.14 68.58) (xy 114.3 68.58)
+			(xy 104.14 68.58) (xy 119.38 68.58)
 		)
 		(stroke
 			(width 0)
@@ -2144,7 +2160,7 @@
 	)
 	(wire
 		(pts
-			(xy 111.76 66.04) (xy 104.14 66.04)
+			(xy 111.76 66.04) (xy 106.68 66.04)
 		)
 		(stroke
 			(width 0)
@@ -2174,7 +2190,7 @@
 	)
 	(wire
 		(pts
-			(xy 114.3 53.34) (xy 54.61 53.34)
+			(xy 119.38 53.34) (xy 54.61 53.34)
 		)
 		(stroke
 			(width 0)
@@ -2394,7 +2410,7 @@
 	)
 	(wire
 		(pts
-			(xy 114.3 68.58) (xy 114.3 53.34)
+			(xy 119.38 68.58) (xy 119.38 53.34)
 		)
 		(stroke
 			(width 0)
@@ -2451,6 +2467,16 @@
 			(type default)
 		)
 		(uuid "d710cf18-f67c-4e96-8962-3a54ae6b66a9")
+	)
+	(wire
+		(pts
+			(xy 106.68 66.04) (xy 104.14 66.04)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d7dddca0-d8fd-44ac-91cd-34c6b9076927")
 	)
 	(wire
 		(pts
@@ -2991,6 +3017,76 @@
 			(project ""
 				(path "/f95f296f-a4bf-4952-bdc7-66087a6cc347"
 					(reference "#PWR09")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 106.68 62.23 180)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "2283b15c-193c-40c6-960b-1bc407c60239")
+		(property "Reference" "C8"
+			(at 110.49 60.9599 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "0.1uF"
+			(at 110.49 63.4999 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder"
+			(at 105.7148 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 106.68 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Unpolarized capacitor"
+			(at 106.68 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "cc2387c0-9edb-487a-868a-000ac127bebf")
+		)
+		(pin "1"
+			(uuid "b32c62a9-7466-47aa-9073-bb0bb1cf727b")
+		)
+		(instances
+			(project "PowerBoard2"
+				(path "/f95f296f-a4bf-4952-bdc7-66087a6cc347"
+					(reference "C8")
 					(unit 1)
 				)
 			)
@@ -4469,6 +4565,73 @@
 			(project ""
 				(path "/f95f296f-a4bf-4952-bdc7-66087a6cc347"
 					(reference "ShuntResistor1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 106.68 55.88 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "e4f2c13d-c97f-4020-b29c-b9f7a0e1bd0c")
+		(property "Reference" "#PWR012"
+			(at 100.33 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 102.87 55.8799 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 106.68 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 106.68 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 106.68 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "253a056e-55d0-4e83-a31f-e15cad6af98b")
+		)
+		(instances
+			(project ""
+				(path "/f95f296f-a4bf-4952-bdc7-66087a6cc347"
+					(reference "#PWR012")
 					(unit 1)
 				)
 			)
