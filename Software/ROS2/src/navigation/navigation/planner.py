@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.action import ActionClient, ActionServer
+from action_msgs.msg import GoalStatus
 from rclpy.node import Node
 
 from lunabotics_interfaces.action import SelfDriver, Plan
@@ -28,11 +29,10 @@ from sensors.spin_node_helper import spin_nodes
 
 
 # TODO: use actual values
-LIDAR_VIEW_DISTANCE = 100 # cm
+LIDAR_VIEW_DISTANCE = 60 # cm
 ROBOT_WIDTH = 71
 ROBOT_LENGTH = 98
-LIDAR_VIEW_DISTANCE = 100
-HAS_REACHED_TARGET_THRESHOLD = 10
+HAS_REACHED_TARGET_THRESHOLD = 20
 
 
 # define zones in cm and shrink them so the robot doesn't hit the walls
@@ -63,7 +63,7 @@ class Planner(Node):
         
         self.pathfinder_client = pathfinder_client
     
-    def plan_callback(self, goal_handle):
+    async def plan_callback(self, goal_handle):
         """
         Gets run whenever a new goal is sent to the planner.
         The plan can either travel to the excavation zone or the dump zone.
@@ -98,32 +98,25 @@ class Planner(Node):
         self.current_target = zone.pop_next_point()
         self.get_logger().info(f"zone: {zone.x}, {zone.y}, {zone.x + zone.width}, {zone.y + zone.height} n = {zone.n}")
         self.get_logger().info(f"Current target: {self.current_target.x}, {self.current_target.y}")
-        self.start = start
-
-        self.was_travel_successful = False
-        # keep looping until it finds a point that it can travel to
-        self.drive_time = 0
-        should_travel = self.travel_to_target()
-        if not should_travel:
-            goal_handle.abort()
-            result = Plan.Result()
-            current_time = self.get_clock().now()
-            result.time_elapsed_millis = (current_time - start_time).nanoseconds // 1000000
-            return result
         
-        # TODO: make this all async so cancelling works
-        # check for cancellation
+            
+        self.start = start
+        self.was_travel_successful = False
+        self.drive_time = 0
+
         while not self.was_travel_successful:
             if goal_handle.is_cancel_requested:
-                print("CANCELLED!!")
-                print("CANCELLED!!")
-                print("CANCELLED!!")
-                print("CANCELLED!!")
-                self._travel_done_event.set()
+                self.get_logger().info("Goal was cancelled.")
                 goal_handle.canceled()
                 result = Plan.Result()
-                current_time = self.get_clock().now()
-                result.time_elapsed_millis = (current_time - start_time).nanoseconds // 1000000
+                result.time_elapsed_millis = (self.get_clock().now() - start_time).nanoseconds // 1000000
+                return result
+            
+            should_continue = await self.travel_to_target()
+            if not should_continue:
+                goal_handle.abort()
+                result = Plan.Result()
+                result.time_elapsed_millis = (self.get_clock().now() - start_time).nanoseconds // 1_000_000
                 return result
         
         # "Je gagne!"
@@ -134,35 +127,40 @@ class Planner(Node):
         self.get_logger().info("Done. Planner took " + str(result.time_elapsed_millis - self.drive_time) + " ms to plan.")
         return result
 
-    def send_drive_goal(self, targets):
-        """Sends a drive goal to the odometry action server."""
+    async def send_drive_goal(self, targets):
+        """Sends a drive goal to the odometry action server, and waits for the response."""
+        # make sure the action server is available
+        self.odometry_action_client.wait_for_server()
+        
+        # send in this driving goal
         goal_msg = SelfDriver.Goal()
         goal_msg.targets = targets
-
-        self.odometry_action_client.wait_for_server()
-        self._send_goal_future = self.odometry_action_client.send_goal_async(goal_msg, feedback_callback=self.driving_feedback_callback)
-        self._send_goal_future.add_done_callback(self.drive_goal_response_callback)
-
-    def drive_goal_response_callback(self, future):
-        """Gets called after the drive goal is sent to the odometry action server."""
-        goal_handle = future.result()
-        # this will occur when the action server is not available
-        if not goal_handle.accepted:
-            self.get_logger().info("Traveling was rejected")
-            return
-        # wait for the result
-        self._get_result_future = goal_handle.get_result_async()
-        self._get_result_future.add_done_callback(self.get_drive_result_callback)
+        goal_handle = await self.odometry_action_client.send_goal_async(
+            goal_msg,
+            feedback_callback=self.driving_feedback_callback
+        )
         
-    def get_drive_result_callback(self, future):
-        """Gets called when the drive goal is complete. Moves on to the next leg of journey, and keeps track of how long it took."""
-        result = future.result().result
-        time_elapsed = result.time_elapsed_millis
-        self.get_logger().info(f"Travel to ({self.current_target.x}, {self.current_target.y}) took {time_elapsed} ms")
-
-        self.drive_time += time_elapsed
-        self._travel_done_event.set()
-        self.travel_to_target()
+        if not goal_handle.accepted:
+            self.get_logger().warn("Drive goal rejected.")
+            return False
+    
+        # drive goal was accepted, so we can wait for the result
+        self.get_logger().info("Drive goal accepted.")
+        res = await goal_handle.get_result_async()
+        
+        # proccess the result
+        result = res.result
+        status = res.status
+        if status == GoalStatus.STATUS_SUCCEEDED:
+            # the drive goal was successful
+            # so, count the time it took to drive
+            time_elapsed = result.time_elapsed_millis
+            self.drive_time += time_elapsed
+            self.get_logger().info(f"Travel to ({self.current_target.x}, {self.current_target.y}) took {time_elapsed} ms")
+            return True
+        else:
+            self.get_logger().warn("Drive failed.")
+            return False
         
     def driving_feedback_callback(self, feedback_msg):
         """Gets called when the drive goal is in progress. 
@@ -189,7 +187,7 @@ class Planner(Node):
                 break
         return new_path
     
-    def travel_to_target(self):
+    async def travel_to_target(self):
         """
         Makes a path to the target, then sends a drive goal to the odometry action server.
         If the path is empty, it either means the plan is complete, or the robot is stuck.
@@ -211,9 +209,11 @@ class Planner(Node):
                 return False
         # we don't know about obstacles that are too far away, so we need to prune those points from the path
         pruned_path = self.prune_path(path)
-        # send_drive_goal() will eventually call this function again through a callback
         # remove first point so the robot doesn't drive to itself
-        self.send_drive_goal(pruned_path[1:])
+        # then wait for the robot to drive to the next point
+        drive_success = await self.send_drive_goal(pruned_path[1:])
+        if not drive_success:
+            return False
         # update the previous position so we know where we are for the next leg of the journey
         self.previous_position = pruned_path[-1]
         # update with feedback on the progress its made

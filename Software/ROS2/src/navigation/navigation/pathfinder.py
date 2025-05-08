@@ -13,6 +13,7 @@ import math
 # TODO: make this a ros parameter
 ROBOT_WIDTH = 71 # units: cm
 ROBOT_LENGTH = 98  # units: cm
+ROBOT_RADIUS = int(math.sqrt((ROBOT_WIDTH**2 + ROBOT_LENGTH**2)) / 2.0)
 
 # threshold needed for a cell to be considered an obstacle between 0 and 1
 INITIAL_OBSTACLE_CONFIDENCE_THRESHOLD = 0.2
@@ -20,6 +21,8 @@ HIGHEST_CONFIDENCE_THRESHOLD = 0.7
 OBSTACLE_SIZE_THRESHOLD = 10  # units: cm
 # amount that each obstacle detection adds to the grid cells
 OBSTACLE_CONFIDENCE_STRENGTH = 0.12
+
+# NOTE: some constants are in pathfinder_helper.py!
 
 
 class Pathfinder(Node):
@@ -44,7 +47,14 @@ class Pathfinder(Node):
         # represents the map as a grid of GRID_RESOLUTION cm squares
         # each square is a float from 0 to 1 representing the probability of that square being an obstacle
         # 0 = no obstacle, 1 = obstacle
-        self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+        # begin with all obstacles, then clear the center of the map. this is because the robot should not drive near the edges
+        self.grid = [[1 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+        # remove everything that is ROBOT_RADIUS cm away from the edges
+        print(ROBOT_RADIUS)
+        for i in range(int(ROBOT_RADIUS), int(MAP_WIDTH - ROBOT_RADIUS)):
+            for j in range(int(ROBOT_RADIUS), int(MAP_HEIGHT - ROBOT_RADIUS)):
+                grid_x, grid_y = world_to_grid(i, j)
+                self.grid[grid_y][grid_x] = 0
         
         self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/path', 10)
 
@@ -74,12 +84,12 @@ class Pathfinder(Node):
         world_y = msg.position.y
         radius = int(math.ceil(msg.radius))
         if radius < OBSTACLE_SIZE_THRESHOLD: return
-        radius += ROBOT_WIDTH // 2 + 5 # add a bit of padding to the obstacle size to account for robot width
+        radius += int(ROBOT_RADIUS) # add a bit of padding to the obstacle size to account for robot dimensions
         # find all cm^2 that are within the radius of the obstacle
         for i in range(-radius, radius + 1):
             for j in range(-radius, radius + 1):
                 # only use points inside of the circle
-                if i ** 2 + j ** 2 <= radius ** 2:
+                if i ** 2 + j ** 2 <= ROBOT_RADIUS ** 2:
                     # add a small bit of confidence such that squares fully within the radius are more likely to be an obstacle
                     # grid cells only partially covered by the circle are less likely to be an obstacle
                     # my thinking is that as the robot tries to find an obstacle many times,
@@ -123,7 +133,7 @@ class Pathfinder(Node):
         response.nodes = [Point(x=point[0],y=point[1]) for point in filtered_path]
         print("Path found with confidence threshold:", confidence_threshold)
         print("Start:", start.x, ",", start.y, "  End:", end.x, ",", end.y)
-        # self.debug_map()
+        self.debug_map()
         self.website_path_visualizer.publish(PathVisual(nodes=response.nodes))
         return response
     

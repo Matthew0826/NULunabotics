@@ -33,15 +33,16 @@ def spin_nodes(*nodes, shutdown_callback=lambda n: None, is_async=False):
         # logging could be added here if needed
         # this occurs when the user presses Ctrl+C
         pass
-    except Exception as e:
-        for node in nodes:
-            try:
-                print(f"[{type(node).__name__}] Unexpected exception: {e}")
-                if rclpy.ok(context=node.context):
-                    node.get_logger().error(f'Unexpected exception: {e}')
-            except Exception:
-                print(f"[{type(node).__name__}] Logger unavailable during exception.")
-        # raise  # re-raise to propagate crash
+    # except Exception as e:
+    #     for node in nodes:
+    #         try:
+    #             if rclpy.ok(context=node.context):
+    #                 node.get_logger().error(f'Unexpected exception: {e} traceback:')
+    #                 for line in e.__traceback__.tb_next.tb_frame.f_code.co_lines:
+    #                     node.get_logger().error(line)
+    #         except Exception:
+    #             print(f"[{type(node).__name__}] Logger unavailable during exception.")
+    #     # raise  # re-raise to propagate crash
     finally:
         if executor is not None:
             executor.shutdown()

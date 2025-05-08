@@ -33,6 +33,16 @@ export default function Obstacle({
                 left: `${x / parentWidth}%`,
                 opacity: `30%`
             }}
-        />
+        >
+            {/*a ring around the obstacle */}
+            <div
+                className={`absolute rounded-full -translate-y-1/2 -translate-x-1/2 border-2 border-red-100`}
+                style={{
+                    width: `${100 * (60.5 + 2 * radius) / (2 * radius)}%`,
+                    height: `${100 * (60.5 + 2 * radius) / (2 * radius)}%`,
+                    top: `50%`,
+                    left: `50%`
+                }} />
+        </div>
     );
 }

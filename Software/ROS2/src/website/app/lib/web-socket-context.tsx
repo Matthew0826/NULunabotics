@@ -63,7 +63,7 @@ export default function WebSocketProvider({
             const message = JSON.parse(payload);
             // messageBuffer.current.push(message);
             if (message.type === "obstacles") {
-                messageBuffer.current.push(message);
+                setMessages((prev) => [...prev, message]);
             } else {
                 setMessages((prev) => [...(prev.filter(a => a.type != message.type)), message]);
             }

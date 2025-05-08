@@ -55,6 +55,9 @@ class Odometry(Node):
         # initalize orientation
         self.orientation = 0.0
         self.last_orientation_time = self.get_clock().now()
+        
+        # dummy timer to keep event loop alive :)
+        # self.create_timer(0.05, lambda: None)
 
         # ros publishers and subscribers
         self.motor_pub = self.create_publisher(Motors, 'physical_robot/motors', 10)
@@ -78,7 +81,7 @@ class Odometry(Node):
             # Too much = system becomes unresponsive.
         self.orientation_pid = PIDController(Kp=0.015, Ki=0.0005, Kd=0.002, output_limits=(-0.8, 0.8))
         self.linear_drive_pid = PIDController(Kp=0.03, Ki=0.001, Kd=0.01, output_limits=(-0.8, 0.8))
-        self.angular_drive_pid = PIDController(Kp=0.01, Ki=0.0005, Kd=0.001, output_limits=(-0.5, 0.5))
+        self.angular_drive_pid = PIDController(Kp=0.008, Ki=0.0, Kd=0.0, output_limits=(-0.5, 0.5))
 
     # when someone calls this action
     # SelfDriver.action:
@@ -186,7 +189,18 @@ class Odometry(Node):
         self.set_motor_power(left_power, right_power)
         # wait before next update
         future = rclpy.task.Future()
-        self.create_timer(seconds, lambda: future.set_result(True))
+        def set_once():
+            future.set_result(True)
+            timer.cancel()  # clean up to prevent growth
+        timer = self.create_timer(seconds, set_once)
+        await future
+    
+    async def yield_once(self, delay: float = 0.01):
+        future = rclpy.task.Future()
+        def set_ready():
+            future.set_result(True)
+            timer.cancel()
+        timer = self.create_timer(delay, set_ready)
         await future
 
     def get_orientation_error(self, destination: Point):
@@ -214,6 +228,7 @@ class Odometry(Node):
                 power = 0.1 if power > 0 else -0.1
             # drive the motors for a bit
             await self.drive(-power, power, seconds=0.2)
+            await self.yield_once()
 
         # stop the motors
         self.set_motor_power(0.0, 0.0)
@@ -221,10 +236,12 @@ class Odometry(Node):
 
     async def to_position(self, destination: Point):
         """Drives to a given destination with PID control."""
+        start_time = self.get_clock().now()
         # calculate orientation to face position
         self.get_logger().info(f"want to go to position {destination.x}, {destination.y}")
         self.website_path_visualizer.publish(PathVisual(nodes=[self.position, destination]))
         await self.face_position(destination)
+        after_orientation_time = self.get_clock().now()
         
         # reset the PID controllers
         self.linear_drive_pid.reset()
@@ -244,9 +261,18 @@ class Odometry(Node):
             left_power = clamp(forward_power - turn_power, -1.0, 1.0)
             right_power = clamp(forward_power + turn_power, -1.0, 1.0)
             await self.drive(left_power, right_power, seconds=0.2)
+            await self.yield_once()
+
 
         self.set_motor_power(0.0, 0.0)
         self.get_logger().info(f"drove to {int(self.position.x)}, {int(self.position.y)} (wanted {int(destination.x)}, {int(destination.y)})")
+        after_moving_time = self.get_clock().now()
+        # calculate time taken to move
+        time_taken = (after_moving_time - start_time).nanoseconds // 1_000_000
+        self.get_logger().info(f"took {time_taken} milliseconds to move")
+        # calculate time taken to orient
+        orientation_time = (after_orientation_time - start_time).nanoseconds // 1_000_000
+        self.get_logger().info(f"took {orientation_time} milliseconds to orient")
 
     # orient the rover to face a position
     async def face_position(self, destination: Point):
@@ -274,6 +300,7 @@ class Odometry(Node):
             # e.g. 1 / 2 meaning 1 point reached out of 2 so far
             feedback_msg.progress = (i + 1) / points_len
             goal_handle.publish_feedback(feedback_msg)
+            await self.yield_once()
         
         # empty list to show its done
         self.website_path_visualizer.publish(PathVisual(nodes=[]))

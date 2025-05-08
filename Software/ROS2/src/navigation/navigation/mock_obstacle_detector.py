@@ -18,7 +18,7 @@ ROBOT_LIDAR_OFFSET = (30, 0, 20) # X, Y, Z (in cm)
 LIDAR_VIEW_DISTANCE = 100 # cm
 LIDAR_VIEW_SIZE = 120 # cm
 # how many obstacles to generate
-MOCK_OBSTACLE_COUNT = 7
+MOCK_OBSTACLE_COUNT = 4
 
 
 def rotate_vector_2d(vector, angle_degrees):
@@ -64,7 +64,7 @@ class MockObstacleDetector(Node):
         
     def publish_obstacle(self, x, y, radius):
         """Publish an obstacle at the given coordinates 10 times to ensure pathfinder has confidence in it."""
-        for _ in range(10):  # to make condifence of this fake obstacle 100%
+        for _ in range(5):  # to make condifence of this fake obstacle 100%
             ob = Obstacle()
             ob.position.x = float(x)
             ob.position.y = float(y)
@@ -77,14 +77,14 @@ class MockObstacleDetector(Node):
         #TODO: add obstacles around the edge so the robot doesn't think it can go outside of the map
         while len(self.mock_obstacles) < MOCK_OBSTACLE_COUNT:
             # pick a point anywhere in the obstacle zone
-            x = float(random.randint(0, 548))
-            y = float(random.randint(0, 305))
-            radius = float(random.randint(15, 20))
+            radius = random.randint(15, 20)
+            x = float(random.randint(radius, 548-radius))
+            y = float(random.randint(radius, 244-radius))
             # check if obstacle would be in start zone
             if x > (348 - radius) and y < (200 + radius):
                 continue
             # False means the robot hasn't seen it yet
-            self.mock_obstacles.append([x, y, radius, False])
+            self.mock_obstacles.append([x, y, float(radius), False])
         # generates the line of rocks between the obstacle and construction zones
         for i in range(1,9): # loop between 1 and 8
             x = 548.0 - i*34.25 + 34.25/2
@@ -92,6 +92,14 @@ class MockObstacleDetector(Node):
             radius = 34.25/2
             # False means the robot hasn't seen it yet
             self.mock_obstacles.append([x, y, radius, False])
+        # # generate a grid of rocks to test the algorithm across the map
+        # for i in range(0, 548, 20):
+        #     for j in range(0, 487, 20):
+        #         x = float(i)
+        #         y = float(j)
+        #         radius = 20
+        #         # False means the robot hasn't seen it yet
+        #         self.mock_obstacles.append([x, y, radius, False])
         
     # I thought of the idea for the algorithm!
     # Numpy is hard ok?
@@ -105,7 +113,7 @@ class MockObstacleDetector(Node):
         robot_pos = np.array(self.robot_position)
 
         # Step 1: Forward-facing unit vector
-        forward_vector = rotate_vector_2d(np.array([-1.0, 0.0]), self.robot_orientation)
+        forward_vector = rotate_vector_2d(np.array([1.0, 0.0]), self.robot_orientation)
         forward_vector /= np.linalg.norm(forward_vector)
 
         # Step 2: LIDAR position
@@ -164,7 +172,7 @@ class MockObstacleDetector(Node):
     
     def orientation_callback(self, msg):
         """Called whenever the robot's orientation is updated. Updates the robot's orientation and check for obstacles."""
-        self.robot_orientation = msg.data
+        self.robot_orientation = 360.0 - msg.data
         self.check_obstacles()
 
 
