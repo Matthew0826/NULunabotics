@@ -3,6 +3,15 @@
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
 
+// id for acceleration
+#define ACCELERATION_ID 0
+
+// id for acceleration correction
+#define CORRECTION_ID 1
+
+// id for transmitting data about beacons
+#define BEACON_ID 2
+
 // For accelerometer
 Adafruit_MPU6050 mpu;
 
@@ -26,6 +35,9 @@ float angleZ = 0.0;
 
 int c = 0;
 
+// save most recent distance values
+float beaconDistances[3] = {-1, -1, -1};
+
 typedef struct {
     float orientation;
     float accelerationX;
@@ -38,6 +50,12 @@ typedef struct {
     bool shouldReset;
 } Correction;
 
+typedef struct {
+    float distance_0;
+    float distance_1;
+    float distance_2;
+} BeaconDistances;
+
 void handleCorrection(const Correction& correction) {
     initialAngleZ = correction.initialOrientation;
     if (correction.shouldReset) {
@@ -45,7 +63,7 @@ void handleCorrection(const Correction& correction) {
     }
 }
 
-void nothing(const Acceleration& acceleration) {
+void mockCallback(const Acceleration& acceleration) {
     // nothing
 }
 
@@ -53,8 +71,11 @@ void setup() {
     TheiaSerial::begin();
 
     // id of 0, and no callback function
-    TheiaSerial::addId<Acceleration>(0, nothing);
-    TheiaSerial::addId<Correction>(1, handleCorrection);
+    TheiaSerial::addId<Acceleration>(ACCELERATION_ID, mockCallback);
+    TheiaSerial::addId<Correction>(CORRECTION_ID, handleCorrection);
+
+    // add the beacons to be published to pi
+    TheiaSerial::addId<BeaconDistances>(BEACON_ID, mockCallback)
 
     // Find accelerometer. Did you forget to plug it in to the header pins?
     if (!mpu.begin()) {
@@ -94,7 +115,59 @@ void loop() {
     acceleration.accelerationZ = a.acceleration.z;
     TheiaSerial::sendFramedMessage(0, acceleration);
 
-    delay(80);
+    // handle beacon data (distance from center to each beacon)
+    updateUWBTag();
+
+    delay(20);
+}
+
+// Parse the custom payload from an anchor.
+// Expected format: "A1XXYYDDD"
+// - First char: Anchor ID (e.g. "1")
+// - Last 3 chars: Distance (in cm)
+void parsePayload(const String &payload) {
+    if (payload.length() < 4) {
+      // Serial.println("Invalid payload: " + payload);
+      return;
+    }
+    // Serial.println(payload);
+  
+    int anchorID = payload.substring(0, 1).toInt();
+    int distance = payload.substring(1, 5).toInt();
+  
+    // Sanitize data a little bit (check good distance data and valid anchor ids)
+    if (distance <= 0 || distance > 65533 || anchorID < 0 || anchorID > 3) return;
+
+    // save new value
+    beaconDistances[anchorID] = distance
+}
+
+void updateUWBTag() {
+    // Listen for incoming data from the UWB module.
+    if (uwbSerial.available()) {
+        String line = uwbSerial.readStringUntil('\n');
+        line.trim();
+        // Serial.println("Raw received: " + line);
+        // Expected incoming format: "+TAG_RCV=<payload_length>,<payload>"
+        int commaIndex = line.indexOf(",");
+        if (commaIndex != -1 && commaIndex < line.length()-1) {
+        String payload = line.substring(commaIndex+1);
+        parsePayload(payload);
+        }
+    }
+
+    // publish data about the beacons
+    if (beaconDistances[0] != -1 && beaconDistances[1] != -1 && beaconDistances[2] != -1) {
+
+        // prepare beacon distances to send via Serial
+        BeaconDistances distances;
+        distances.distance_0 = beaconDistances[0];
+        distances.distance_1 = beaconDistances[1];
+        distances.distance_2 = beaconDistances[2];
+
+        // Use Theia Serial with id for PowerData
+        TheiaSerial::sendFramedMessage(BEACON_ID, distances);
+    }
 }
 
 

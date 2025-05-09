@@ -76,5 +76,5 @@ void loop() {
   // Use Theia Serial with id for PowerData
   TheiaSerial::sendFramedMessage(POWER_ID, power);
 
-  delay(80);
+  delay(20);
 }
