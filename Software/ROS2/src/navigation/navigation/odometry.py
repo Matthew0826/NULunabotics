@@ -81,7 +81,9 @@ class Odometry(Node):
             # Too much = system becomes unresponsive.
         self.orientation_pid = PIDController(Kp=0.015, Ki=0.0005, Kd=0.002, output_limits=(-0.8, 0.8))
         self.linear_drive_pid = PIDController(Kp=0.03, Ki=0.001, Kd=0.01, output_limits=(-0.8, 0.8))
-        self.angular_drive_pid = PIDController(Kp=0.008, Ki=0.0, Kd=0.0, output_limits=(-0.5, 0.5))
+        # for some reason this one starts doing big loops around the target when you give it some Ki and Kd on the simulation
+        # especially when the speed of the simulation is increased
+        self.angular_drive_pid = PIDController(Kp=0.008, Ki=0.0, Kd=0.0, output_limits=(-0.35, 0.35))
 
     # when someone calls this action
     # SelfDriver.action:

@@ -1,6 +1,6 @@
 #ifndef THEIA_SERIAL_H
 #define THEIA_SERIAL_H
-#include <map>
+#include "Hashtable.h"
 #include <Arduino.h>
 
 
@@ -14,15 +14,15 @@ private:
     };
 
     // Registry: pub_id -> handler
-    static inline std::map<uint8_t, HandlerEntry>& registry() {
-        static std::map<uint8_t, HandlerEntry> reg;
+    static inline Hashtable<int, HandlerEntry>& registry() {
+        static Hashtable<int, HandlerEntry> reg;
         return reg;
     }
 
     // Per-type handler storage (map pub_id -> handler function)
     template<typename T>
-    static inline std::map<uint8_t, void(*)(const T&)>& handlerMap() {
-        static std::map<uint8_t, void(*)(const T&)> handlers;
+    static inline Hashtable<int, void(*)(const T&)>& handlerMap() {
+        static Hashtable<int, void(*)(const T&)> handlers;
         return handlers;
     }
 
@@ -46,10 +46,21 @@ public:
         memcpy(&obj, data, sizeof(T));
 
         auto& map = handlerMap<T>();
-        for (auto& kv : map) {
-            if (registry()[kv.first].parser == genericParser<T>) {
-                kv.second(obj);
-                return;
+        auto keysVector = map.keys();
+        // for (unsigned int i = 0; i < keysVector.elements(); i++) {
+        //     int id = keysVector.get(i);
+        //     auto entry = registry().get(id);
+        //     if (entry && entry->parser == genericParser<T>) {
+        //         auto handlerPtr = map.get(id);
+        //         if (handlerPtr) (*handlerPtr)(obj);
+        //         return;
+        //     }
+        // }
+        
+        for (int id : map.keys()) {
+            auto handlerPtr = map.get(id);
+            if (handlerPtr) {
+                (*handlerPtr)(obj);
             }
         }
     }
@@ -63,13 +74,13 @@ public:
 
     // Register an ID and its handler
     template <typename T>
-    static void addId(uint8_t pub_id, void (*handler)(const T&)) {
+    static void addId(int pub_id, void (*handler)(const T&)) {
         HandlerEntry entry;
         entry.parser = &genericParser<T>;
         entry.structSize = sizeof(T);
-        registry()[pub_id] = entry;
+        registry().put(pub_id, entry);
         
-        handlerMap<T>()[pub_id] = handler;
+        handlerMap<T>().put(pub_id, handler);
 
         delay(1000);
         T empty{};
@@ -78,10 +89,10 @@ public:
 
     // Send a struct with framing
     template <typename T>
-    static void sendFramedMessage(uint8_t pub_id, const T& data) {
+    static void sendFramedMessage(int pub_id, const T& data) {
         const uint8_t header[] = {0xAB, 0xCD};
         Serial.write(header, 2);
-        Serial.write(&pub_id, 1);
+        Serial.write(reinterpret_cast<const uint8_t*>(&pub_id), 1);
 
         uint16_t payload_len = sizeof(T);
         Serial.write(reinterpret_cast<const uint8_t*>(&payload_len), 2);
@@ -126,7 +137,7 @@ public:
 
                 case READ_PUB_ID:
                     pub_id = byte_in;
-                    if (registry().find(pub_id) != registry().end()) {
+                    if (registry().exists((int)pub_id)) {
                         state = READ_LEN_1;
                     } else {
                         state = WAIT_HEADER_1;  // unknown ID
@@ -151,8 +162,8 @@ public:
                 case READ_PAYLOAD:
                     payload_buffer[payload_index++] = byte_in;
                     if (payload_index >= payload_len) {
-                        auto& entry = registry()[pub_id];
-                        entry.parser(payload_buffer, payload_len);
+                        auto entry = registry().get(pub_id);
+                        entry->parser(payload_buffer, payload_len);
                         state = WAIT_HEADER_1;
                     }
                     break;

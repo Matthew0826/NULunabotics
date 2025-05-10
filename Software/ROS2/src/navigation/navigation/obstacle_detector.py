@@ -16,6 +16,10 @@ ROBOT_LIDAR_OFFSET = (30, 0, 20) # X, Y, Z (in cm)
 BUMP_SIZE_GUESS = 3 # degrees
 BUMP_THRESHOLD = 10 # cm
 
+# new strategy:
+# - record a history of lidar rotations
+# - when the accelerometer begins to move, clear the history
+# - 
 
 class MovingAverage:
     """A simple moving average class to keep track of the last N LiDAR rotations."""
