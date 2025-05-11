@@ -75,9 +75,18 @@ Adafruit_MPU6050 mpu;
 // To find delta time
 unsigned long previousTime = 0;
 
-// Initialise algorithms for accelerometer
+// Does algorithms for accelerometer to calculate orientation
 FusionOffset offset;
-FusionAhrs ahrs;
+FusionAhrs ahrs;  
+// set AHRS algorithm settings
+const FusionAhrsSettings settings = {
+    .convention = FusionConventionNwu,
+    .gain = 0.4,  // or tune between 0.3 and 0.5
+    .gyroscopeRange = GYRO_RANGE_DEGREES,
+    .accelerationRejection = 10.0,  // keep high to reject motion
+    .magneticRejection = 0.0,  // unused since magnetometer is disabled
+    .recoveryTriggerPeriod = 5 * SAMPLE_RATE,
+};
 
 // save most recent distance values
 // -1 means no value yet
@@ -141,6 +150,7 @@ void setup() {
     // Set up accelerometer algorithm
     FusionOffsetInitialise(&offset, SAMPLE_RATE);
     FusionAhrsInitialise(&ahrs);
+    FusionAhrsSetSettings(&ahrs, &settings);
 
     delay(20);
 }
@@ -167,19 +177,10 @@ void loop() {
 }
 
 Acceleration updateAccelerometer(sensors_event_t a, sensors_event_t g, float dt) {
-    // set AHRS algorithm settings
-    const FusionAhrsSettings settings = {
-            .convention = FusionConventionNwu,
-            .gain = 0.5,
-            .gyroscopeRange = GYRO_RANGE_DEGREES,
-            .accelerationRejection = 10.0,
-            .magneticRejection = 0.0,
-            .recoveryTriggerPeriod = 5 * SAMPLE_RATE, // 5 seconds
-    };
-    FusionAhrsSetSettings(&ahrs, &settings);
-
-    FusionVector gyroscope = {g.gyro.x, g.gyro.y, g.gyro.z};
-    FusionVector accelerometer = {a.acceleration.x, a.acceleration.y, a.acceleration.z};
+    // Convert gyroscope data to degrees per second
+    FusionVector gyroscope = {FusionRadiansToDegrees(g.gyro.x), FusionRadiansToDegrees(g.gyro.y), FusionRadiansToDegrees(g.gyro.z)};
+    // Convert to g's (1g = 9.81 m/s^2)
+    FusionVector accelerometer = {a.acceleration.x / 9.81, a.acceleration.y / 9.81, a.acceleration.z / 9.81};
 
     // update gyroscope offset correction algorithm
     gyroscope = FusionOffsetUpdate(&offset, gyroscope);
@@ -187,7 +188,7 @@ Acceleration updateAccelerometer(sensors_event_t a, sensors_event_t g, float dt)
     const FusionEuler euler = FusionQuaternionToEuler(FusionAhrsGetQuaternion(&ahrs));
     
     Acceleration acceleration;
-    acceleration.orientation = fmod((euler.angle.yaw + initialAngle) + 360.0, 360.0);
+    acceleration.orientation = fmod(euler.angle.yaw + initialAngle + 360.0, 360.0);
     acceleration.accelerationX = a.acceleration.x;
     acceleration.accelerationY = a.acceleration.y;
     acceleration.accelerationZ = a.acceleration.z;

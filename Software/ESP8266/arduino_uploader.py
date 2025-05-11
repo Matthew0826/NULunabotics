@@ -18,13 +18,15 @@ def upload_sketch(port: str, sketch_name: str, is_nano: bool):
     if is_nano:
         fqbn = "arduino:avr:nano"
         additional_flags = ["--build-property", "upload.speed=57600"]
+        board_name = "Arduino Nano"
     else:
         fqbn = "esp8266:esp8266:nodemcuv2"
         additional_flags = []
+        board_name = "ESP8266"
 
     try:
         # Step 1: Compile the sketch
-        print(f"Compiling sketch in {sketch_dir} for {'Nano' if is_nano else 'ESP8266'}...")
+        print(f"Compiling sketch in {sketch_dir} for {board_name}...")
         subprocess.run(["arduino-cli", "compile", "--fqbn", fqbn, sketch_dir], check=True)
 
         # Step 2: Upload the compiled binary
@@ -36,6 +38,7 @@ def upload_sketch(port: str, sketch_name: str, is_nano: bool):
         print("✅ Upload successful.")
     except subprocess.CalledProcessError as e:
         print("❌ Error during upload process:", e)
+
 
 def main(args=None):
 
