@@ -15,6 +15,9 @@ from collections import deque
 MARGIN_OF_ERROR = 0.12
 STANDARD_DEVIATION = MARGIN_OF_ERROR / 1.96
 
+# A larger value of "sigma_a" means the sensors are untrustworthy and the motion model is actually more trustworthy. 
+# TODO: 0.05 might be a better value!
+sigma_a = 0.02  # process noise due to acceleration uncertainty
 
 # Define the Point class
 class Point:
@@ -139,13 +142,13 @@ def generate_moving_points(start_point, num_steps=50, step_size=0.1):
 
 
 # Set up fixed reference points (keep the original three)
-a = Point(0, 0)
-b = Point(0, 200)
-c = Point(200, 0)
+a = Point(200, 0)
+b = Point(0, 0)
+c = Point(0, 200)
 fixed_points = [a, b, c]
 
 # Note: this is the number of seconds between each time we get new distance values from find_robot_location
-dt = 0.8
+dt = 0.5
 
 # State transition matrix (x, vx, y, vy)
 F = np.array([
@@ -155,9 +158,6 @@ F = np.array([
     [0, 0, 0, 1]  # vy = vy
 ])
 
-# A larger value of "sigma_a" means the sensors are untrustworthy and the motion model is actually more trustworthy. 
-# TODO: 0.05 might be a better value!
-sigma_a = 0.02  # process noise due to acceleration uncertainty
 G = np.array([
     [dt ** 2 / 2, 0],
     [dt, 0],
@@ -192,7 +192,7 @@ measurement_buffer = deque(maxlen=3)  # You can also try 2
 
 last_time = time.time()
 def find_robot_location(da, db, dc):
-    global last_time
+    global last_time, dt
     current_time = time.time()
     # continuously update dt depending on how long it takes to get a new location
     dt = current_time - last_time

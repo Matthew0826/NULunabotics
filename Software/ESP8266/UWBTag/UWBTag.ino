@@ -1,8 +1,16 @@
-#include "TheiaSerial.h"
+#include <TheiaSerial.h>
+// For accelerometer data
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
+// For UWB data
 #include <SoftwareSerial.h>
+// For accelerometer algorithms
+#include <Fusion.h>
+
+// rate at which the accelerometer is sampled
+#define SAMPLE_RATE 15
+#define GYRO_RANGE_DEGREES 250.0
 
 // id for acceleration
 #define ACCELERATION_ID 0
@@ -67,31 +75,21 @@ Adafruit_MPU6050 mpu;
 // To find delta time
 unsigned long previousTime = 0;
 
-// Variables for dealing with accelerometer error (check calculateIMUerror function)
-float AccX = 0.0;
-float AccY = 0.0;
-float AccZ = 0.0;
-float GyroX = 0.0;
-float GyroY = 0.0;
-float GyroZ = 0.0;
-float AccErrorX = 0.0;
-float AccErrorY = 0.0;
-float GyroErrorX = 0.0;
-float GyroErrorY = 0.0;
-float GyroErrorZ = 0.0;
-float initialAngleZ = 0.0;
-float angleZ = 0.0;
-
-int c = 0;
+// Initialise algorithms for accelerometer
+FusionOffset offset;
+FusionAhrs ahrs;
 
 // save most recent distance values
 // -1 means no value yet
 float beaconDistances[3] = {-1.0, -1.0, -1.0};
 
+float initialAngle = 0.0;
 void handleCorrection(const Correction& correction) {
-    initialAngleZ = correction.initialOrientation;
+    initialAngle = correction.initialOrientation;
     if (correction.shouldReset) {
-        angleZ = 0.0;
+        // reset the ahrs
+        FusionAhrsInitialise(&ahrs);
+        FusionOffsetInitialise(&offset, SAMPLE_RATE);
     }
 }
 
@@ -136,9 +134,14 @@ void setup() {
     }
 
     // Set up accelerometer
-    mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
-    mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+    mpu.setAccelerometerRange(MPU6050_RANGE_4_G);
+    mpu.setGyroRange(MPU6050_RANGE_250_DEG);
     mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
+
+    // Set up accelerometer algorithm
+    FusionOffsetInitialise(&offset, SAMPLE_RATE);
+    FusionAhrsInitialise(&ahrs);
+
     delay(20);
 }
 
@@ -154,22 +157,41 @@ void loop() {
     float dt = (currentTime - previousTime) / 1000.0;
     previousTime = currentTime;
 
-    // Remove gyro bias
-    float gyroZ = g.gyro.z - GyroErrorZ;
-    angleZ += gyroZ * dt;
-
-    Acceleration acceleration;
-    float angleZDegrees = fmod(((angleZ * 180.0) / 3.1415) + 360.0, 360.0);
-    acceleration.orientation = angleZDegrees + initialAngleZ;
-    acceleration.accelerationX = a.acceleration.x + AccErrorX;
-    acceleration.accelerationY = a.acceleration.y + AccErrorY;
-    acceleration.accelerationZ = a.acceleration.z;
+    Acceleration acceleration = updateAccelerometer(a, g, dt);
     TheiaSerial::sendFramedMessage(ACCELERATION_ID, acceleration);
 
     // handle beacon data (distance from center to each beacon)
     updateUWBTag();
 
-    delay(80);
+    delay(20);
+}
+
+Acceleration updateAccelerometer(sensors_event_t a, sensors_event_t g, float dt) {
+    // set AHRS algorithm settings
+    const FusionAhrsSettings settings = {
+            .convention = FusionConventionNwu,
+            .gain = 0.5,
+            .gyroscopeRange = GYRO_RANGE_DEGREES,
+            .accelerationRejection = 10.0,
+            .magneticRejection = 0.0,
+            .recoveryTriggerPeriod = 5 * SAMPLE_RATE, // 5 seconds
+    };
+    FusionAhrsSetSettings(&ahrs, &settings);
+
+    FusionVector gyroscope = {g.gyro.x, g.gyro.y, g.gyro.z};
+    FusionVector accelerometer = {a.acceleration.x, a.acceleration.y, a.acceleration.z};
+
+    // update gyroscope offset correction algorithm
+    gyroscope = FusionOffsetUpdate(&offset, gyroscope);
+    FusionAhrsUpdateNoMagnetometer(&ahrs, gyroscope, accelerometer, dt);
+    const FusionEuler euler = FusionQuaternionToEuler(FusionAhrsGetQuaternion(&ahrs));
+    
+    Acceleration acceleration;
+    acceleration.orientation = fmod((euler.angle.yaw + initialAngle) + 360.0, 360.0);
+    acceleration.accelerationX = a.acceleration.x;
+    acceleration.accelerationY = a.acceleration.y;
+    acceleration.accelerationZ = a.acceleration.z;
+    return acceleration;
 }
 
 // Parse the custom payload from an anchor.
