@@ -46,16 +46,6 @@ public:
         memcpy(&obj, data, sizeof(T));
 
         auto& map = handlerMap<T>();
-        auto keysVector = map.keys();
-        // for (unsigned int i = 0; i < keysVector.elements(); i++) {
-        //     int id = keysVector.get(i);
-        //     auto entry = registry().get(id);
-        //     if (entry && entry->parser == genericParser<T>) {
-        //         auto handlerPtr = map.get(id);
-        //         if (handlerPtr) (*handlerPtr)(obj);
-        //         return;
-        //     }
-        // }
         
         for (int id : map.keys()) {
             auto handlerPtr = map.get(id);
@@ -66,7 +56,7 @@ public:
     }
 
     static void begin() {
-        Serial.begin(9600);
+        Serial.begin(19200);
         while (!Serial) {
             delay(10);
         }
@@ -74,28 +64,26 @@ public:
 
     // Register an ID and its handler
     template <typename T>
-    static void addId(int pub_id, void (*handler)(const T&)) {
+    static void addId(int pubId, void (*handler)(const T&)) {
         HandlerEntry entry;
         entry.parser = &genericParser<T>;
         entry.structSize = sizeof(T);
-        registry().put(pub_id, entry);
-        
-        handlerMap<T>().put(pub_id, handler);
 
-        delay(1000);
-        T empty{};
-        sendFramedMessage(pub_id, empty);
+        registry().put(pubId, entry);
+        handlerMap<T>().put(pubId, handler);
+    }
+
+    static void sendHeader(int pubId, int payloadLen) {
+        const uint8_t header[] = {0xAB, 0xCD};
+        Serial.write(header, 2);
+        Serial.write(reinterpret_cast<const uint8_t*>(&pubId), 1);
+        Serial.write(reinterpret_cast<const uint8_t*>(&payloadLen), 2);
     }
 
     // Send a struct with framing
     template <typename T>
-    static void sendFramedMessage(int pub_id, const T& data) {
-        const uint8_t header[] = {0xAB, 0xCD};
-        Serial.write(header, 2);
-        Serial.write(reinterpret_cast<const uint8_t*>(&pub_id), 1);
-
-        uint16_t payload_len = sizeof(T);
-        Serial.write(reinterpret_cast<const uint8_t*>(&payload_len), 2);
+    static void sendFramedMessage(int pubId, const T& data) {
+        sendHeader(pubId, sizeof(T));
         Serial.write(reinterpret_cast<const uint8_t*>(&data), sizeof(T));
     }
 
@@ -107,8 +95,25 @@ public:
         return true;
     }
 
+    // Tell the Raspberry Pi all of the ids used by this board
+    static void broadcastIds() {
+        auto& map = registry();
+        for (int id : map.keys()) {
+            auto entry = map.get(id);
+            size_t payloadLen = entry->structSize;
+            sendHeader(id, payloadLen);
+            delay(10);
+            // Write a blank message
+            for (int i; i < payloadLen; i++) {
+                Serial.write(0x00);
+                delay(10);
+            }
+        }
+    }
+
     // Read and dispatch incoming messages
     static void tick() {
+
         static enum {
             WAIT_HEADER_1,
             WAIT_HEADER_2,
@@ -118,52 +123,58 @@ public:
             READ_PAYLOAD
         } state = WAIT_HEADER_1;
 
-        static uint8_t pub_id = 0;
-        static uint16_t payload_len = 0;
-        static uint16_t payload_index = 0;
-        static uint8_t payload_buffer[256];
+        static uint8_t pubId = 0;
+        static uint16_t payloadLength = 0;
+        static uint16_t payloadIndex = 0;
+        static uint8_t payloadBuffer[256];
 
-        while (Serial.available()) {
-            uint8_t byte_in = Serial.read();
+        if (Serial.available()) {
+            uint8_t byteIn = Serial.read();
 
             switch (state) {
                 case WAIT_HEADER_1:
-                    if (byte_in == 0xAB) state = WAIT_HEADER_2;
+                    if (byteIn == 0xAB) state = WAIT_HEADER_2;
                     break;
 
                 case WAIT_HEADER_2:
-                    state = (byte_in == 0xCD) ? READ_PUB_ID : WAIT_HEADER_1;
+                    state = (byteIn == 0xCD) ? READ_PUB_ID : WAIT_HEADER_1;
                     break;
 
                 case READ_PUB_ID:
-                    pub_id = byte_in;
-                    if (registry().exists((int)pub_id)) {
+                    pubId = byteIn;
+                    // Check if byte represents a "re-broadcast of ids" request
+                    if (byteIn == 0xFF) {
+                        broadcastIds();
+                        state = WAIT_HEADER_1;
+                    // Check if the id was registered for this board
+                    } else if (registry().exists((int)pubId)) {
                         state = READ_LEN_1;
+                    // So it must be an unknown id
                     } else {
-                        state = WAIT_HEADER_1;  // unknown ID
+                        state = WAIT_HEADER_1;
                     }
                     break;
 
                 case READ_LEN_1:
-                    payload_len = byte_in << 8;
+                    payloadLength = byteIn << 8;
                     state = READ_LEN_2;
                     break;
 
                 case READ_LEN_2:
-                    payload_len |= byte_in;
-                    if (payload_len > sizeof(payload_buffer)) {
+                    payloadLength |= byteIn;
+                    if (payloadLength > sizeof(payloadBuffer)) {
                         state = WAIT_HEADER_1;  // too big
                     } else {
-                        payload_index = 0;
+                        payloadIndex = 0;
                         state = READ_PAYLOAD;
                     }
                     break;
 
                 case READ_PAYLOAD:
-                    payload_buffer[payload_index++] = byte_in;
-                    if (payload_index >= payload_len) {
-                        auto entry = registry().get(pub_id);
-                        entry->parser(payload_buffer, payload_len);
+                    payloadBuffer[payloadIndex++] = byteIn;
+                    if (payloadIndex >= payloadLength) {
+                        auto entry = registry().get((int)pubId);
+                        entry->parser(payloadBuffer, payloadLength);
                         state = WAIT_HEADER_1;
                     }
                     break;

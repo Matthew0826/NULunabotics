@@ -1,5 +1,7 @@
 import serial
 import json
+from functools import partial
+import threading
 
 import rclpy
 from rclpy.node import Node
@@ -17,7 +19,7 @@ from lunabotics_interfaces.msg import Acceleration
 
 # the universal BAUDRATE we are forcing for every board
 # bit rate is AT LEAST baud rate
-BAUD_RATE = 9600
+BAUD_RATE = 19200
 DELIMITER = b'\xAB\xCD'
 
 # according to Fast-CDR, the first 2 bytes of the serialized message are 0x0001 if the message is little-endian, and 0x0000 if the message is big-endian
@@ -54,19 +56,19 @@ class SerialPortManager(Node):
         self.ros_subs: dict[int, Subscription] = {}
         # keep track of the serial ports
         self.serial_ports: dict[str, SerialPort] = {}
-        self.serial_timer = self.create_timer(0.001, self.serial_timer_callback)
+        # self.serial_timer = self.create_timer(0.05, self.serial_timer_callback)
         
         # the observer observers the serial ports and calls the callback functions when a port is added or removed
         self.observer = SerialPortObserver(self.add_serial_port, self.remove_serial_port)
     
     def serial_timer_callback(self):
         # check if any serial ports are open
-        for port in list(self.serial_ports.keys()):
-            if not self.serial_ports[port].is_open: continue
+        for port in self.serial_ports.values():
+            if not port.is_open: continue
             # read from the serial port
-            byte = self.serial_ports[port].read_serial_bytes(1)
+            byte = port.read_serial_bytes(1)
             if byte != b'':
-                self.serial_ports[port].parse_byte(byte)
+                port.parse_byte(byte) 
     
     def close_serial_ports(self):
         for port, serial_obj in self.serial_ports.items():
@@ -125,7 +127,7 @@ class SerialPortManager(Node):
         if pub_id not in self.ros_subs:
             # create a new ros subscription
             # it calls the on_new_msg function with the pub_id
-            new_sub = self.create_subscription(ros_msg_type, topic, lambda msg: self.on_new_msg(pub_id, msg), 10)
+            new_sub = self.create_subscription(ros_msg_type, topic, partial(self.on_new_msg, pub_id), 10)
             self.ros_subs[pub_id] = new_sub
             print(f"Added ROS subscriber {topic} with ID {pub_id}")
         else:
@@ -134,25 +136,97 @@ class SerialPortManager(Node):
 
 class SerialPort:
     def __init__(self, node: Node, port):
-        self.previous_byte = b''
         self.port = port
         self.node = node
         self.publisher_ids = []
         self.is_open = False
         self.serial = None
 
+        self.read_thread = None
+        self.running = False
+        self.read_buffer = bytearray()
+
     def open(self):
         if not self.is_open:
             try:
-                self.serial = serial.Serial(self.port, BAUD_RATE, timeout=2)
+                self.serial = serial.Serial(self.port, BAUD_RATE, timeout=0.01)
                 self.is_open = True
+                self.running = True
+                self.read_thread = threading.Thread(target=self.read_loop, daemon=True)
+                self.read_thread.start()
+                self.request_broadcast_ids()
                 print(f"Opened serial port: {self.port}")
             except serial.SerialException as e:
                 print(f"Failed to open serial port {self.port}: {e}")
+
+    def close(self):
+        self.running = False
+        self.is_open = False
+        if self.serial:
+            self.serial.close()
+
+    def read_loop(self):
+        while self.running and self.is_open:
+            try:
+                data = self.serial.read(64)
+                if data:
+                    self.read_buffer.extend(data)
+                    self.process_buffer()
+            except serial.SerialException:
+                break
+
+    def process_buffer(self):
+        """Process the read buffer to extract messages."""
+        while True:
+            # check for delimiter to indicate start of message
+            delimiter = self.read_buffer.find(DELIMITER)
+            if delimiter == -1:
+                return
+            if delimiter > 0:
+                self.read_buffer = self.read_buffer[delimiter:]
+
+            # wait for 3 more bytes for the header
+            if len(self.read_buffer) < len(DELIMITER) + 3:
+                return
+
+            # read the header bytes
+            header_start = len(DELIMITER)
+            pub_id = self.read_buffer[header_start]
+            # the "message length" is itself 2 bytes long
+            msg_len_bytes = self.read_buffer[header_start + 1:header_start + 3]
+            msg_len = msg_len_bytes[1] << 8 | msg_len_bytes[0]
+
+            # wait for full message
+            total_length = len(DELIMITER) + 3 + msg_len
+            if len(self.read_buffer) < total_length:
+                return
+
+            # read in the message bytes
+            message_bytes = self.read_buffer[len(DELIMITER) + 3:total_length]
+            self.read_buffer = self.read_buffer[total_length:]
+
+            # add the id to the list of publisher ids
+            if pub_id not in self.publisher_ids:
+                if pub_id not in self.node.ros_pubs and pub_id not in self.node.ros_subs:
+                    print(f"Publisher ID {pub_id} not found in ROS publishers or subscribers")
+                    return
+                self.publisher_ids.append(pub_id)
+                print(f"Added message type id {pub_id}")
+
+            # decode the message with error handling
+            if pub_id in self.node.ros_pubs:
+                try:
+                    bytes_read = self.decode_message(pub_id, message_bytes)
+                    if bytes_read != msg_len:
+                        print(f"Warning: decoded {bytes_read} bytes but expected {msg_len}")
+                except Exception as e:
+                    print(f"Failed to decode message for id {pub_id}: {e}")
+                    print(message_bytes)
     
     def read_serial_bytes(self, num_bytes: int):
         if not self.is_open: return b''
         try:
+            # read the bytes from the serial port
             return self.serial.read(num_bytes)
         except serial.SerialException as e:
             # self.node.remove_serial_port(self.port)
@@ -167,7 +241,7 @@ class SerialPort:
     
     def parse_byte(self, byte: bytes):
         # check for delimiter to indicate start of message
-        # print(f"Received byte: {byte}")
+        # print(f"{byte}")
         if (self.previous_byte + byte) != DELIMITER:
             self.previous_byte = byte
             return
@@ -200,11 +274,13 @@ class SerialPort:
             # print(f"Read {len(message_bytes)} bytes from serial port {self.port} with id {pub_id}")
             if len(message_bytes) < message_length:
                 print(f"Warning: not enough bytes read from serial port {self.port} with id {pub_id} for the message")
+                print(message_bytes)
                 return
             try:
                 bytes_read = self.decode_message(pub_id, message_bytes)
             except Exception as e:
                 print(f"Failed to decode message from serial port {self.port} with id {pub_id}: {e}")
+                print(message_bytes)
                 return
             if bytes_read != message_length:
                 print(f"Warning: read {bytes_read} bytes, message claimed to contain {message_length} bytes (id: {pub_id})")
@@ -215,6 +291,7 @@ class SerialPort:
         ros_msg_type = ros_pub.msg_type
         # deserialize
         ros_msg = deserialize(message, ros_msg_type)
+        # if pub_id != 0:
         # print(f"Deserialized message: {ros_msg}")
         # publish to ros
         ros_pub.publish(ros_msg)
@@ -237,6 +314,13 @@ class SerialPort:
         # write the message itself
         self.write_serial_bytes(serialized_msg)
         print(f"Sent message {msg} to serial port {self.port} with id {pub_id} and length {msg_length}")
+    
+    def request_broadcast_ids(self):
+        # write the delimiter
+        self.write_serial_bytes(DELIMITER)
+        # write the id of a request for a broadcast of ids (0xFF)
+        self.write_serial_bytes(b'\xFF')
+        print(f"Requesting broadcast of ids from {self.port}")
 
 
 def read_id_map_file(node: SerialPortManager, file_path: str):

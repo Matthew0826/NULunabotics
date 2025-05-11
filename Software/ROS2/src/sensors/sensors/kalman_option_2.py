@@ -154,9 +154,9 @@ class ExtendedKalmanFilter:
 
 
 # Set up fixed reference points
-a = Point(292, 0)
-b = Point(0, 115)
-c = Point(0, 0)
+a = Point(0, 0)
+b = Point(0, 200)
+c = Point(200, 0)
 fixed_points = [a, b, c]
 
 # EKF initialization with tuned parameters
@@ -181,7 +181,7 @@ G = np.array([
 Q = G @ np.array([[sigma_a ** 2, 0], [0, sigma_a ** 2]]) @ G.T
 
 # Initial state estimate - [x, vx, y, vy]
-x0 = np.array([5.0, 0.1, 5.0, 0.1])
+x0 = np.array([20.0, 0.1, 20.0, 0.1])
 
 # Initial uncertainty
 P0 = np.diag([0.5, 0.05, 0.5, 0.05])
@@ -190,7 +190,7 @@ P0 = np.diag([0.5, 0.05, 0.5, 0.05])
 # First 3 diagonal elements for distance measurement noise
 # Last 2 diagonal elements for accelerometer measurement noise
 R_distances = np.eye(3) * (STANDARD_DEVIATION ** 2)
-R_with_accel = np.zeros((5, 5))  # 3 distances + 2 accelerations
+R_with_accel = np.zeros((3,3))#(5, 5))  # 3 distances + 2 accelerations
 R_with_accel[:3, :3] = R_distances
 R_with_accel[3:, 3:] = np.eye(2) * (ACCEL_STANDARD_DEVIATION ** 2)
 

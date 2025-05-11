@@ -27,8 +27,8 @@ export const publishToROS2 = (messageJson: any) => {
     motorsMsg.back_left_wheel = messageJson.y1;
     motorsMsg.front_right_wheel = messageJson.y2;
     motorsMsg.back_right_wheel = messageJson.y2;
-    motorsMsg.conveyor = messageJson.buttonLeft ? 1 : 0;
-    motorsMsg.outtake = messageJson.buttonRight ? 1 : 0;
+    // motorsMsg.conveyor = messageJson.buttonLeft ? 1 : 0;
+    // motorsMsg.outtake = messageJson.buttonRight ? 1 : 0;
     rosControlsPublisher.publish(motorsMsg);
     // console.log("Published: ", messageJson);
 };

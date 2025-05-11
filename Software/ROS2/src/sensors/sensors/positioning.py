@@ -3,14 +3,11 @@ from rclpy.node import Node
 
 from std_msgs.msg import Float32
 
-from sensors.kalman_option_2 import find_robot_location
-# from sensors.other_kalman import find_robot_location
+#from sensors.kalman_option_2 import find_robot_location
+from sensors.other_kalman import find_robot_location
 from sensors.spin_node_helper import spin_nodes
 
 from lunabotics_interfaces.msg import Point, Acceleration, BeaconDistances
-
-ESP_BOARD_ID = 2
-BAUD_RATE = 9600
 
 class SpacialDataPublisher(Node):
 
@@ -35,16 +32,18 @@ class SpacialDataPublisher(Node):
         self.true_distances_to_beacons = (0, 0, 0)
     
     def publish_position(self):
+        da, db, dc = self.true_distances_to_beacons
+        found_location = find_robot_location(da, db, dc)#, *self.linear_acceleration_vector)
         position = Point()
-        found_location = find_robot_location(*self.true_distances_to_beacons, *self.linear_acceleration_vector)
         position.x = found_location[0]
         position.y = found_location[1]
         self.position_publisher.publish(position)
     
     def accel_callback(self, msg: Acceleration):
-        self.angle_publisher.publish(msg.orientation)
-        self.linear_acceleration_vector = (msg.acceleration_x, msg.acceleration_y)
-        self.publish_position()
+        self.angle_publisher.publish(Float32(data=msg.orientation))
+        if abs(msg.acceleration_x) < 6 and abs(msg.acceleration_y) < 6:
+            self.linear_acceleration_vector = (msg.acceleration_x, msg.acceleration_y)
+        # self.publish_position()
     
     def beacon_callback(self, msg: BeaconDistances):
         # convert the distances to true distances
@@ -53,6 +52,7 @@ class SpacialDataPublisher(Node):
             self.calculate_true_distance(msg.distance_1),
             self.calculate_true_distance(msg.distance_2)
         )
+        print(self.true_distances_to_beacons)
         self.publish_position()
         
     def calculate_true_distance(self, measured):

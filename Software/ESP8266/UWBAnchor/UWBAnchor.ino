@@ -4,8 +4,8 @@
 
 #include <SoftwareSerial.h>
 
-#define ANCHOR_ID 0
-const String ANCHOR_ID_STRING = "0";
+#define ANCHOR_ID 1
+const String ANCHOR_ID_STRING = "1";
 
 // UWB stands for Ultra-Wideband and it's how the beacons ("anchors") find the distance to this "tag" board that's sitting on the robot
 // Here's a link for reference on thier "AT" protocol: https://reyax.com//upload/products_download/download_file/AT_Command_RYUW122.pdf
@@ -23,82 +23,76 @@ const String MODE = "1";   // set module to ANCHOR mode
 void sendCommand(const String &cmd) {
   uwbSerial.print(cmd + "\r\n");
   // Serial.print("Sent command: ");
-  Serial.println(cmd);
+  // Serial.println(cmd);
   String response = "";
   // Wait until we get a response
   while (response.length() == 0) {
     if (uwbSerial.available()) {
       response = uwbSerial.readStringUntil('\n');  // Read a line from uwbSerial
-      Serial.println(response);  // Print it to the standard Serial
+      // Serial.println(response);  // Print it to the standard Serial
     }
     delay(10);
   }
-  Serial.println("Command done!");
+  // Serial.println("Command done!");
   delay(10);
 }
 
 void setup() {
-  Serial.begin(9600);
+  // Serial.begin(9600);
   // uwbSerial MUST run on 115200 baud rate, or else it fails to send anything
   uwbSerial.begin(115200);
-  delay(2000);
 
-  Serial.println("Setting up...");
+  // Serial.println("Setting up...");
   // Configure the UWB module for ANCHOR mode
-  sendCommand("AT+IPR=" + UWB_BAUD);
+  // sendCommand("AT+RESET");
+  sendCommand("AT");
   sendCommand("AT+MODE=" + MODE);
   sendCommand("AT+NETWORKID=" + NETWORK_ID);
   sendCommand("AT+ADDRESS=" + ANCHOR_ADDRESS);
   sendCommand("AT+CPIN=" + PASSWORD);
 
-  Serial.println("Anchor module configured.");
+  // Serial.println("Anchor module configured.");
 }
 
-// Performs a ranging transaction then sends a custom message containing location and distance.
 void performRanging() {
-  // Wait for the response from the module (expected format similar to:
-  // "+ANCHOR_RCV=TAG0010,4,PONG,040 cm")
+  const int maxLength = 50;
+  char resp[maxLength + 1];  // +1 for null terminator
+  int idx = 0;
   unsigned long startTime = millis();
-  String resp = "";
-  while (millis() - startTime < 500) {
-    while (uwbSerial.available()) {
-      resp += (char)uwbSerial.read();
+
+  // Read exactly expectedLength characters or until timeout
+  while ((millis() - startTime < 100) && (idx < maxLength) && !(idx > 0 && resp[idx-1] =='c' && resp[idx] == 'm')) {
+    if (uwbSerial.available()) {
+      resp[idx++] = uwbSerial.read();
     }
   }
-  Serial.println("Ranging response: " + resp);
+  resp[idx] = '\0';  // Null-terminate
 
-  // 2. Parse out the measured distance from the response
-  //    (Assumes response contains ",<distance> cm" at the end)
-  // TODO: Find where distance is in the string some other way
-  int cmIndex = resp.indexOf("cm");
-  int commaIndex = resp.lastIndexOf(",", cmIndex);
-  String distanceStr = "";
-  if (commaIndex != -1 && cmIndex != -1) {
-    distanceStr = resp.substring(commaIndex + 1, cmIndex);
-    distanceStr.trim();
-  }
-  if (distanceStr == "") {
-    distanceStr = "0";
-  }
-  // Serial.println("Measured distance: " + distanceStr + " cm");
+  // Serial.print("Ranging response: ");
+  // Serial.println(resp);
 
-  // 3. Construct a custom payload to send to the tag.
-  // Format (4 characters):
-  // - First 1: Anchor ID (e.g. "1")
-  // - Last 3: distance in cm (3-digit, zero-padded)
-  // Example: "1" + "040" → "1040"
-  char payload[5];  // 4 characters + null terminator
-  int distance = distanceStr.toInt();
-  Serial.println(distance);
+  // Extract distance (assumed at end after last comma)
+  int distance = 0;
+  char* lastComma = strrchr(resp, ',');
+  if (lastComma && isdigit(*(lastComma + 1))) {
+    distance = atoi(lastComma + 1);
+  }
+
+  // Serial.print("Measured distance: ");
+  // Serial.println(distance);
+
+  // Build payload
+  char payload[5];
   sprintf(payload, "%d%03d", ANCHOR_ID, distance);
-  String payloadStr = String(payload);
-  Serial.println("Custom payload: " + payloadStr);
 
-  // 4. Send the custom message.
-  // Using a payload length (here, 4) that is different from the ranging phase to avoid a new measurement.
-  String sendCmd = "AT+ANCHOR_SEND=" + TAG_ADDRESS + ",4," + payloadStr;
-  sendCommand(sendCmd);
+  // Serial.print("Custom payload: ");
+  // Serial.println(payload);
+
+  char cmd[64];
+  snprintf(cmd, sizeof(cmd), "AT+ANCHOR_SEND=%s,4,%s", TAG_ADDRESS, payload);
+  sendCommand(String(cmd));
 }
+
 
 void loop() {
   performRanging();

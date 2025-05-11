@@ -139,9 +139,9 @@ def generate_moving_points(start_point, num_steps=50, step_size=0.1):
 
 
 # Set up fixed reference points (keep the original three)
-a = Point(292, 0)
-b = Point(0, 115)
-c = Point(0, 0)
+a = Point(0, 0)
+b = Point(0, 200)
+c = Point(200, 0)
 fixed_points = [a, b, c]
 
 # Note: this is the number of seconds between each time we get new distance values from find_robot_location
