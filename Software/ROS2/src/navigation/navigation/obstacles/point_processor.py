@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import numpy as np
 from scipy import signal
 from scipy.spatial import cKDTree
@@ -33,8 +32,8 @@ class PointProcessor:
         # Step 2: Remove statistical outliers
         filtered_points = self._remove_statistical_outliers(points)
         
-        # Step 3: Apply Savitzky-Golay filtering to smooth the points
-        filtered_points = self._apply_savgol_filter(filtered_points)
+        # Step 3: Apply improved Savitzky-Golay filtering to smooth the points
+        filtered_points = self._improved_savgol_filter(filtered_points)
         
         return filtered_points
 
@@ -87,9 +86,66 @@ class PointProcessor:
         # Return only the inlier points
         return points[inlier_mask]
 
+    def _improved_savgol_filter(self, points, window_length=7, polyorder=2):
+        """
+        Apply an improved Savitzky-Golay filter to smooth the point data while preserving features.
+        
+        This improved version sorts points by their x-coordinate, which works better for horizontal
+        lines. It also uses 'nearest' mode instead of 'wrap' to avoid edge artifacts.
+        
+        Parameters:
+        -----------
+        points : numpy.ndarray
+            Array of shape (N, 2) containing (x, y) coordinates
+        window_length : int
+            Length of the filter window (must be odd)
+        polyorder : int
+            Order of the polynomial used for fitting
+            
+        Returns:
+        --------
+        smoothed_points : numpy.ndarray
+            Array of shape (N, 2) containing smoothed points
+        """
+        # Need enough points for the filter to work
+        if len(points) < window_length:
+            return points
+        
+        # For a horizontal line, sorting by x-coordinate makes more sense
+        # Sort points by x-coordinate
+        sorted_indices = np.argsort(points[:, 0])
+        sorted_points = points[sorted_indices]
+        
+        # Apply Savitzky-Golay filter primarily to y coordinates
+        # Using 'nearest' mode to avoid edge artifacts
+        y_smoothed = signal.savgol_filter(
+            sorted_points[:, 1],
+            window_length,
+            polyorder,
+            mode='nearest'  # Changed from 'wrap' to 'nearest'
+        ).astype(np.float32)
+        
+        # For x coordinates, we can either:
+        # 1. Keep them as is (since we sorted by x, they should already be smooth)
+        # 2. Apply a very light smoothing to reduce noise
+        x_smoothed = signal.savgol_filter(
+            sorted_points[:, 0],
+            window_length,
+            polyorder,
+            mode='nearest',
+            deriv=0  # No derivative
+        ).astype(np.float32)
+        
+        # Combine smoothed coordinates
+        smoothed_points = np.column_stack((x_smoothed, y_smoothed))
+        
+        # Restore original point order
+        restore_indices = np.argsort(sorted_indices)
+        return smoothed_points[restore_indices]
+
     def _apply_savgol_filter(self, points, window_length=7, polyorder=2):
         """
-        Apply Savitzky-Golay filter to smooth the point data while preserving features.
+        ORIGINAL METHOD - Apply Savitzky-Golay filter to smooth the point data while preserving features.
         
         This filter is particularly effective for lunar terrain as it preserves the
         shape of features like crater edges while removing measurement noise.

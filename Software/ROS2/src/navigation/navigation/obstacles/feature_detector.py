@@ -1,217 +1,210 @@
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
-from itertools import groupby
-from operator import itemgetter
-
-# in cm
-MIN_CRATER_SIZE = 40
-MAX_CRATER_SIZE = 50
-MIN_ROCK_SIZE = 30
-MAX_ROCK_SIZE = 40
+from scipy.signal import find_peaks
+import matplotlib.pyplot as plt
 
 class FeatureDetector:
     def __init__(self, logger):
         self.logger = logger
     
-    def detect_features(self, points, crater_size_range=(MIN_CRATER_SIZE, MAX_CRATER_SIZE), rock_size_range=(MIN_ROCK_SIZE, MAX_ROCK_SIZE)):
+    def detect_features(self, points, height_threshold=10.0, min_distance=30.0, 
+                        min_width=15.0, max_width=60.0):
         """
-        Detect craters (concave) and rocks (convex) in preprocessed LiDAR points
-        using derivative-based and curvature analysis.
+        Detect features (rocks and craters) using a simple height deviation approach.
         
-        This function:
-        1. Calculates first/second derivatives to find edges
-        2. Analyzes curvature sign to differentiate concave and convex features
-        3. Classifies features as craters or rocks based on size and curvature
+        This detector simply looks for points that deviate significantly from the baseline
+        (average y-value) and groups adjacent deviations into features.
         
         Parameters:
         -----------
         points : numpy.ndarray
-            Array of shape (N, 2) containing preprocessed (x, y) coordinates
-        crater_size_range : tuple
-            (min_size, max_size) for crater detection in cm
-        rock_size_range : tuple
-            (min_size, max_size) for rock detection in cm
+            Array of shape (N, 2) containing (x, y) coordinates of LiDAR points in cm
+        height_threshold : float
+            Minimum height/depth (in cm) to consider as a feature
+        min_distance : float
+            Minimum distance (in cm) between features
+        min_width : float
+            Minimum width (in cm) for a valid feature
+        max_width : float
+            Maximum width (in cm) for a valid feature
             
         Returns:
         --------
-        features : dict
-            Dictionary with 'craters' and 'rocks' keys, each containing a list of
-            detected features with position and size information
+        features : list
+            List of (x, y, radius) tuples containing detected features
         """
-        # Check if we have enough points to process
+        # Check if we have enough points
         if len(points) < 10:
             self.logger.warn('Not enough points for feature detection')
             return []
-        
-        # Step 1: Sort points by angle for proper curve representation
-        # This is essential for derivative calculations
-        angles = np.arctan2(points[:, 1], points[:, 0])
-        sorted_indices = np.argsort(angles)
+            
+        # Step 1: Sort points by x-coordinate
+        sorted_indices = np.argsort(points[:, 0])
         sorted_points = points[sorted_indices]
         
-        # Step 2: Calculate signed curvature
-        curvature = self._compute_signed_curvature(sorted_points)
+        # Step 2: Calculate the baseline (median y value)
+        baseline_y = np.median(sorted_points[:, 1])
+        self.logger.info(f"Baseline y-value: {baseline_y:.2f} cm")
         
-        # Step 3: Find regions of significant curvature
-        # These are potential feature locations
-        features = self._find_features_by_curvature(sorted_points, curvature)
+        # Step 3: Calculate deviations from baseline
+        deviations = sorted_points[:, 1] - baseline_y
         
-        # Step 4: Filter features by size and classify
-        # craters, rocks = self._classify_features_by_size(
-        #     features, 
-        #     crater_size_range,
-        #     rock_size_range
-        # )
+        # Step 4: Apply light smoothing to reduce noise
+        smoothed_deviations = gaussian_filter1d(deviations, sigma=1.0)
         
-        return features
-
-    def _compute_signed_curvature(self, points):
-        """
-        Compute signed curvature for a sequence of 2D points.
+        # Store for debugging
+        self.sorted_points = sorted_points
+        self.deviations = deviations
+        self.smoothed_deviations = smoothed_deviations
         
-        Positive curvature indicates convex regions (rocks)
-        Negative curvature indicates concave regions (craters)
+        # Step 5: Detect positive peaks (rocks) and negative peaks (craters)
+        # For rocks (positive peaks)
+        rock_peaks, _ = find_peaks(smoothed_deviations, 
+                                   height=height_threshold,
+                                   distance=min_distance / (sorted_points[1, 0] - sorted_points[0, 0]))
         
-        Parameters:
-        -----------
-        points : numpy.ndarray
-            Array of shape (N, 2) containing sorted (x, y) coordinates in cm
-            
-        Returns:
-        --------
-        curvature : numpy.ndarray
-            Array of shape (N,) containing signed curvature values
-        """
-        # We need at least 3 points to calculate curvature
-        if len(points) < 3:
-            return np.zeros(len(points))
+        # For craters (negative peaks)
+        crater_peaks, _ = find_peaks(-smoothed_deviations, 
+                                     height=height_threshold,
+                                     distance=min_distance / (sorted_points[1, 0] - sorted_points[0, 0]))
         
-        # Compute first derivatives (dx/dt, dy/dt) using central differences
-        # The 't' parameter is just the index of the point in the sequence
-        dx = np.gradient(points[:, 0])
-        dy = np.gradient(points[:, 1])
+        self.logger.info(f"Detected {len(rock_peaks)} potential rocks and {len(crater_peaks)} potential craters")
         
-        # Compute second derivatives
-        ddx = np.gradient(dx)
-        ddy = np.gradient(dy)
-        
-        # Calculate curvature: k = (x'y'' - y'x'') / (x'^2 + y'^2)^(3/2)
-        numerator = dx * ddy - dy * ddx
-        denominator = (dx**2 + dy**2)**(1.5)
-        
-        # Handle division by zero
-        curvature = np.zeros_like(numerator)
-        mask = denominator > 1e-10
-        curvature[mask] = numerator[mask] / denominator[mask]
-        
-        # Apply gaussian smoothing to reduce noise in curvature values
-        curvature = gaussian_filter1d(curvature, sigma=1.0)
-        
-        return curvature
-
-    def _find_features_by_curvature(self, points, curvature, threshold=0.5):
-        """
-        Identify feature regions based on curvature values.
-        
-        Parameters:
-        -----------
-        points : numpy.ndarray
-            Array of shape (N, 2) containing sorted (x, y) coordinates
-        curvature : numpy.ndarray
-            Array of shape (N,) containing signed curvature values
-        threshold : float
-            Curvature threshold for feature detection
-            
-        Returns:
-        --------
-        features : list
-            List of dict objects containing feature information
-        """
+        # Step 6: Extract features from peaks
         features = []
         
-        # Find regions with significant positive or negative curvature
-        # First, identify points with high curvature magnitude
-        high_curvature = np.abs(curvature) > threshold
+        # Process rock features
+        for peak_idx in rock_peaks:
+            feature = self._extract_feature(sorted_points, peak_idx, smoothed_deviations, 
+                                            feature_type="rock", height_threshold=height_threshold,
+                                            min_width=min_width, max_width=max_width)
+            if feature:
+                features.append(feature)
         
-        # Convert boolean array to indices
-        high_curvature_indices = np.where(high_curvature)[0]
+        # Process crater features
+        for peak_idx in crater_peaks:
+            feature = self._extract_feature(sorted_points, peak_idx, smoothed_deviations, 
+                                            feature_type="crater", height_threshold=height_threshold,
+                                            min_width=min_width, max_width=max_width)
+            if feature:
+                features.append(feature)
         
-        # If no high curvature points, return empty list
-        if len(high_curvature_indices) == 0:
-            return features
-        
-        # Group adjacent indices to identify continuous regions
-        for k, g in groupby(enumerate(high_curvature_indices), lambda x: x[0] - x[1]):
-            region_indices = list(map(itemgetter(1), g))
-            
-            # Need at least 3 points to define a feature
-            if len(region_indices) < 3:
-                continue
-            
-            # Extract points in this region
-            region_points = points[region_indices]
-            
-            # Calculate average curvature for the region
-            avg_curvature = np.mean(curvature[region_indices])
-            
-            # Calculate region size (maximum distance across the region)
-            min_coords = np.min(region_points, axis=0)
-            max_coords = np.max(region_points, axis=0)
-            size = np.max(max_coords - min_coords)
-            
-            # Calculate region center
-            center = np.mean(region_points, axis=0)
-            
-            x_cm = center[0]
-            y_cm = center[1]
-            radius_cm = size / 2
-            self.logger.info(f"Feature detected at ({x_cm:.2f}, {y_cm:.2f}) with radius {radius_cm:.2f} cm and curvature {avg_curvature:.2f}")
-            # Add feature to list
-            features.append((
-                x_cm, y_cm, radius_cm
-            ))
-        
+        self.logger.info(f"Found {len(features)} valid features after filtering")
         return features
-
-    def _classify_features_by_size(self, features, crater_size_range, rock_size_range):
+    
+    def _extract_feature(self, sorted_points, peak_idx, deviations, feature_type, 
+                         height_threshold, min_width, max_width):
         """
-        Classify features as craters or rocks based on size and curvature sign.
+        Extract feature information from a detected peak.
         
         Parameters:
         -----------
-        features : list
-            List of dict objects containing feature information
-        crater_size_range : tuple
-            (min_size, max_size) for crater detection in meters
-        rock_size_range : tuple
-            (min_size, max_size) for rock detection in meters
+        sorted_points : numpy.ndarray
+            Array of points sorted by x-coordinate
+        peak_idx : int
+            Index of the peak in the sorted points array
+        deviations : numpy.ndarray
+            Array of deviations from baseline
+        feature_type : str
+            Type of feature ('rock' or 'crater')
+        height_threshold : float
+            Minimum height/depth to consider as a feature
+        min_width : float
+            Minimum width for a valid feature
+        max_width : float
+            Maximum width for a valid feature
             
         Returns:
         --------
-        craters : list
-            List of dict objects containing crater information
-        rocks : list
-            List of dict objects containing rock information
+        feature : tuple or None
+            (x, y, radius) tuple if valid feature, None otherwise
         """
-        craters = []
-        rocks = []
+        # Get peak location
+        peak_x = sorted_points[peak_idx, 0]
+        peak_y = sorted_points[peak_idx, 1]
         
-        for feature in features:
-            size = feature['size']
-            curvature = feature['curvature']
-            
-            # Negative curvature = concave = crater
-            if curvature < 0 and crater_size_range[0] <= size <= crater_size_range[1]:
-                craters.append({
-                    'center': feature['center'],
-                    'size': size
-                })
-            
-            # Positive curvature = convex = rock
-            elif curvature > 0 and rock_size_range[0] <= size <= rock_size_range[1]:
-                rocks.append({
-                    'center': feature['center'],
-                    'size': size
-                })
+        # Value to check depends on feature type
+        values_to_check = deviations if feature_type == "rock" else -deviations
         
-        return craters, rocks
+        # Find left boundary (first point below threshold)
+        left_idx = peak_idx
+        while left_idx > 0 and values_to_check[left_idx] > height_threshold / 2:
+            left_idx -= 1
+        
+        # Find right boundary (first point below threshold)
+        right_idx = peak_idx
+        while right_idx < len(sorted_points) - 1 and values_to_check[right_idx] > height_threshold / 2:
+            right_idx += 1
+        
+        # Calculate feature width
+        left_x = sorted_points[left_idx, 0]
+        right_x = sorted_points[right_idx, 0]
+        width = right_x - left_x
+        
+        # Check if width is valid
+        if width < min_width or width > max_width:
+            self.logger.info(f"Rejecting {feature_type} at x={peak_x:.2f}: width {width:.2f} cm outside range ({min_width:.1f}, {max_width:.1f})")
+            return None
+        
+        # Calculate feature center and radius
+        center_x = (left_x + right_x) / 2
+        center_y = np.mean(sorted_points[left_idx:right_idx+1, 1])
+        radius = width / 2
+        
+        # Log the detection
+        height = abs(peak_y - np.median(sorted_points[:, 1]))
+        self.logger.info(f"Detected {feature_type} at ({center_x:.2f}, {center_y:.2f}) with radius {radius:.2f} cm and height {height:.2f} cm")
+        
+        return (center_x, center_y, radius)
+    
+    def plot_detection_process(self, figsize=(12, 10)):
+        """
+        Create a visualization of the feature detection process.
+        
+        Parameters:
+        -----------
+        figsize : tuple
+            Figure size (width, height) in inches
+            
+        Returns:
+        --------
+        fig : matplotlib.figure.Figure
+            The figure object
+        """
+        if not hasattr(self, 'sorted_points') or not hasattr(self, 'smoothed_deviations'):
+            raise ValueError("Detection process data not available. Run detect_features first.")
+        
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=figsize)
+        
+        # Plot 1: Original points
+        ax1.scatter(self.sorted_points[:, 0], self.sorted_points[:, 1], s=5, color='blue', alpha=0.7)
+        ax1.axhline(y=np.median(self.sorted_points[:, 1]), color='k', linestyle='--', alpha=0.5, label='Baseline')
+        ax1.set_title('LiDAR Points with Baseline')
+        ax1.set_xlabel('X (cm)')
+        ax1.set_ylabel('Y (cm)')
+        ax1.grid(True, linestyle='--', alpha=0.7)
+        ax1.legend()
+        
+        # Plot 2: Deviations with threshold
+        ax2.plot(self.sorted_points[:, 0], self.deviations, 'b-', alpha=0.5, label='Raw Deviations')
+        ax2.plot(self.sorted_points[:, 0], self.smoothed_deviations, 'g-', linewidth=2, label='Smoothed Deviations')
+        
+        # Add threshold lines
+        height_threshold = 5.0  # Should match the value used in detect_features
+        ax2.axhline(y=height_threshold, color='r', linestyle='--', alpha=0.7, label=f'Threshold (+{height_threshold})')
+        ax2.axhline(y=-height_threshold, color='r', linestyle='--', alpha=0.7, label=f'Threshold (-{height_threshold})')
+        
+        # Shade regions
+        ax2.fill_between(self.sorted_points[:, 0], height_threshold, 
+                          np.max(self.smoothed_deviations)+1, color='green', alpha=0.2, label='Rock Region')
+        ax2.fill_between(self.sorted_points[:, 0], np.min(self.smoothed_deviations)-1, 
+                          -height_threshold, color='orange', alpha=0.2, label='Crater Region')
+        
+        ax2.set_title('Deviation Profile with Thresholds')
+        ax2.set_xlabel('X (cm)')
+        ax2.set_ylabel('Deviation from Baseline (cm)')
+        ax2.grid(True, linestyle='--', alpha=0.7)
+        ax2.legend()
+        
+        plt.tight_layout()
+        return fig
