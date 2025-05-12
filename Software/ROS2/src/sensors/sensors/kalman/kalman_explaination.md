@@ -12,41 +12,7 @@ The system tracks a robot's position (x,y coordinates) by:
 
 ## Core Components
 
-### Configuration Constants
-
-```
-# Measurement error parameters
-MARGIN_OF_ERROR = 0.1  # Distance measurement error margin
-STANDARD_DEVIATION = MARGIN_OF_ERROR / 1.96  # Statistical spread
-ACCEL_STANDARD_DEVIATION = 0.05  # Accelerometer error spread
-
-# Validation thresholds
-MIN_VALID_DISTANCE = 1.0  # Minimum believable distance (cm)
-MAX_VALID_DISTANCE = 15000  # Maximum believable distance (cm)
-MAX_VALID_ACCEL = 10.0  # Maximum believable acceleration (m/s²)
-
-# Various filter tuning parameters...
-
-# Known beacon positions
-BEACON_A_X, BEACON_A_Y = 200, 0
-BEACON_B_X, BEACON_B_Y = 0, 0
-BEACON_C_X, BEACON_C_Y = 0, 200
-```
-
 ### Main Classes
-
-#### Point
-A simple 2D point with methods to calculate distances:
-
-```
-Class Point:
-    Initialize with x,y coordinates
-    
-    Method get_distance_with_error(other_point):
-        Calculate true distance to other_point
-        Add some random noise based on our error model
-        Return noisy distance
-```
 
 #### ExtendedKalmanFilter
 This is the statistical heart of the system. It maintains an estimated state (position and velocity) and continuously refines it based on measurements.
@@ -142,9 +108,6 @@ Function find_robot_location(distance_to_A, distance_to_B, distance_to_C, accel_
     
     # Check if filter needs reset due to poor performance
     ekf.check_filter_health()
-    
-    # Return our best estimate of position
-    return ekf.x[0], ekf.x[2]  # x and y coordinates
 ```
 
 ## How It Works (The Math Simplified)
@@ -182,4 +145,4 @@ Function find_robot_location(distance_to_A, distance_to_B, distance_to_C, accel_
    - Check if filter is working properly
    - Return best estimate of current position
 
-The genius of this approach is that it optimally balances the uncertainty in the motion model against the uncertainty in the measurements, giving more weight to whichever is more reliable at any given moment.
+This approach optimally balances the uncertainty in the motion model against the uncertainty in the sensor measurements, giving more weight to whichever is more reliable at any given moment.

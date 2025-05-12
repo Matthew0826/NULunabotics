@@ -2,6 +2,10 @@ import subprocess
 import os
 import argparse
 
+# NOTE: You need to have arduino-cli installed and configured on your system.
+# On Linux, install it with
+# curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+
 def upload_sketch(port: str, sketch_name: str, is_nano: bool):
     """
     Compile and upload an Arduino sketch using arduino-cli.

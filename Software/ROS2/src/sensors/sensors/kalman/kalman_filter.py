@@ -62,6 +62,11 @@ class ExtendedKalmanFilter:
         self.buffer_y = map_height * BOUNDARY_BUFFER
 
     def predict(self):
+        """
+        Predict the next state using the state transition model.
+        This method updates the state estimate and covariance based on the process noise covariance.
+        The predict function also applies boundary constraints to ensure the position remains within the map boundaries.
+        """
         # Standard predict step (no control input)
         self.x = self.F @ self.x
         
@@ -126,6 +131,13 @@ class ExtendedKalmanFilter:
                 self.Q[2, 2] *= scaling_factor  # Increase y position uncertainty
 
     def compute_measurement_jacobian(self, with_accel=False):
+        """
+        Compute the Jacobian matrix (denoted by 'H') for the measurement model.
+        A Jacobian matrix is used to linearize the measurement model around the current state estimate.
+        The Jacobian is used in the Kalman filter update step to relate the state estimate to the measurements.
+        Returns:
+            H: Jacobian matrix of shape (num_measurements, state_dim)
+        """
         # Calculate how many measurements we have (distances + accelerometer)
         num_measurements = self.num_fixed_points
         if with_accel:
@@ -171,6 +183,11 @@ class ExtendedKalmanFilter:
         return H
 
     def compute_expected_measurements(self, with_accel=False):
+        """
+        Compute expected measurements based on the current state estimate.
+        Returns:
+            expected_z: Expected measurements vector
+        """
         # Calculate expected distances based on current state
         x, y = self.x[0], self.x[2]
 
@@ -191,7 +208,11 @@ class ExtendedKalmanFilter:
         return distances
     
     def adaptive_measurement_covariance(self, distance_measurements, accel_measurements=None):
-        """Dynamically adjust measurement covariance based on measurement quality."""
+        """
+        Dynamically adjust measurement covariance based on measurement quality.
+        Returns:
+            R: Adaptive measurement covariance matrix
+        """
         # Initialize with base values
         R_distances = np.eye(len(distance_measurements)) * (STANDARD_DEVIATION ** 2)
         
@@ -220,6 +241,17 @@ class ExtendedKalmanFilter:
         return R_distances
     
     def update(self, distance_measurements, accel_measurements=None):
+        """
+        Update the Kalman filter with new measurements.
+        Uses Mahalanobis distance to check for large innovations.
+        Innovations represent the difference between expected and actual measurements.
+        Uses Joseph form for covariance update to ensure numerical stability.
+        Args:
+            distance_measurements: Distances to beacons A, B, and C in centimeters
+            accel_measurements: Optional accelerometer readings in m/s²
+        Returns:
+            y: Innovation vector (difference between expected and actual measurements)
+        """
         # Validate measurements first
         valid_distances, valid_accel = validate_measurements(distance_measurements, accel_measurements)
         
@@ -297,7 +329,7 @@ class ExtendedKalmanFilter:
         # Apply boundary constraints after update
         self.enforce_boundary_constraints()
         
-        # Joseph form for covariance update (more numerically stable)
+        # Joseph form for covariance update
         I = np.eye(len(self.x))
         self.P = (I - K @ H) @ self.P @ (I - K @ H).T + K @ self.R @ K.T
         
@@ -310,7 +342,13 @@ class ExtendedKalmanFilter:
     
     # Modified process noise that accounts for accelerometer bias
     def update_process_noise(self, dt: float, accel_measurements=None):
-        """Update process noise based on measured accelerations."""
+        """
+        Update process noise based on measured accelerations.
+        Tracks the accelerometer readings and adjusts the process noise covariance matrix accordingly.
+        Args:
+            dt: Time since last update in seconds
+            accel_measurements: Optional accelerometer readings in m/s²
+        """
         sigma_a = ACCEL_UNCERTAINTY_BASE  # Base process noise
         
         if accel_measurements is not None:
@@ -333,8 +371,14 @@ class ExtendedKalmanFilter:
         # Adjust process noise if near boundary
         self.adjust_process_noise_near_boundary()
     
-    def check_filter_health(self, innovation_history):
-        """Check if filter appears to be diverging and reset if necessary."""
+    def check_filter_health(self, innovation_history: list[np.ndarray]):
+        """
+        Check if filter appears to be diverging and reset if necessary.
+        Args:
+            innovation_history: History of innovations for diagnostics (type: list of 1D arrays of type np.float64)
+        Returns:
+            bool: True if filter was reset, False otherwise
+        """
         # Check if position variance is too large
         position_var = self.P[0, 0] + self.P[2, 2]
         

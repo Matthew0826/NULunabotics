@@ -45,15 +45,20 @@ def validate_measurements(distance_measurements, accel_measurements=None,
     return valid_distances, None
 
 class LowPassFilter:
+    """A simple low-pass filter for smoothing data. Uses a single previous value for filtering."""
     def __init__(self, alpha):
         self.alpha = alpha
         self.prev_value = None
 
     def filter(self, value):
+        """
+        Apply the low-pass filter to the input value.
+        Uses a simple formula: y[n] = α*x[n] + (1-α)*y[n-1]
+        where y[n] is the filtered value, x[n] is the current value, and α is the filter coefficient.
+        """
         if self.prev_value is None:
             self.prev_value = value
         else:
-            # Apply low-pass filter: y[n] = α*x[n] + (1-α)*y[n-1]
             value = self.alpha * value + (1 - self.alpha) * self.prev_value
         self.prev_value = value
         return value
