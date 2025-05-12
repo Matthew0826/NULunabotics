@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 
 from lunabotics_interfaces.msg import LidarRotation, LiDAR
 from sensor_msgs.msg import LaserScan
@@ -18,6 +19,13 @@ class LidarForwarder(Node):
     def __init__(self):
         super().__init__('lidar')
         self.lidar_publisher = self.create_publisher(LidarRotation, 'sensors/lidar', 10)
+        
+        # Configure QoS for LiDAR data - use BEST_EFFORT reliability for sensor data
+        sensor_qos = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1  # Only keep most recent message
+        )
         # Some helpful links for the lidar:
         # https://wiki.youyeetoo.com/en/Lidar/LD20
         # https://github.com/ldrobotSensorTeam/ldlidar_stl_ros2
@@ -25,7 +33,7 @@ class LidarForwarder(Node):
             LaserScan,
             'scan',
             self.lidar_callback,
-            10
+            sensor_qos
         )
         self.full_rotation_of_points = deque(maxlen=PACKETS_PER_ROTATION * POINTS_PER_PACKET)
         self.count = 0
