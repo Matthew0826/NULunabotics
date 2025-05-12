@@ -47,6 +47,13 @@ class PositionTracker:
         self.P_history = deque(maxlen=MAX_HISTORY_SIZE)
 
     def _update_ekf(self, delta_time, distance_measurements, accel_measurements=None):
+        """
+        Update the EKF with new distance and accelerometer measurements.
+        Args:
+            delta_time: Time since the last update in seconds
+            distance_measurements: Distances to beacons A, B, and C in centimeters
+            accel_measurements: Optional accelerometer readings in m/s²
+        """
         # Update state transition matrix for the new time step
         self.ekf.F = np.array([
             [1, delta_time, 0, 0],          # x = x + vx*dt
@@ -73,11 +80,9 @@ class PositionTracker:
         The main function to estimate robot location using EKF.
         
         Args:
-            da, db, dc: Distances to beacons A, B, and C in centimeters
-            ax, ay: Optional accelerometer readings in m/s²
-        
-        Returns:
-            Estimated x, y position in centimeters
+            delta_time: Time since the last update in seconds
+            beacon_distances: Distances to beacons A, B, and C in centimeters
+            acceleration: Optional accelerometer readings in m/s²
         """
         
         # Create measurement vectors
@@ -97,7 +102,7 @@ class PositionTracker:
     
     def set_position_with_uncertainty(self):
         """
-        Returns the current position estimate with uncertainty bounds.
+        Sets the current position estimate with uncertainty bounds.
         Ensures all returned positions are within map boundaries.
         """
         # Extract position and standard deviations from EKF state

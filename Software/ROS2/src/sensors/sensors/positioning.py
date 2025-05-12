@@ -41,6 +41,7 @@ class PositionPublisher(Node):
         
         # ignore z axis on acceleration
         self.linear_acceleration_vector = (0, 0)
+
         # distances in cm to each beacon
         self.true_distances_to_beacons = (0, 0, 0)
         
@@ -59,6 +60,7 @@ class PositionPublisher(Node):
         self.previous_time = current_time
         # update the position tracker with the new data
         self.position_tracker.update_tracker(dt, self.true_distances_to_beacons, self.linear_acceleration_vector)
+        # publish the position and confidence
         position = Point()
         position.x = float(self.position_tracker.position[0])
         position.y = float(self.position_tracker.position[1])
