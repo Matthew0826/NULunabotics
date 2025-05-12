@@ -19,6 +19,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Motors.msg"
   "msg/Excavate.msg"
   "msg/Point.msg"
+  "msg/Rect.msg"
   "msg/Obstacle.msg"
   "msg/PathVisual.msg"
   "msg/Acceleration.msg"

@@ -16,13 +16,20 @@ export type ObstacleType = {
     isHole: boolean;
 };
 
+export type Rect = {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+}
+
 // Note: all obstacles and paths are in centimeters
 export default function Map() {
     const { messages, sendToServer } = useWebSocketContext();
     const [pathData, setPathData] = useState<Point[]>([]);
     const [odometryPathData, setOdometryPathData] = useState<Point[]>([]);
     const [obstacles, setObstacles] = useState<ObstacleType[]>([]);
-    const [robot, setRobot] = useState({ x: 448, y: 100, width: 71, height: 98, rotation: 0 });
+    const [robot, setRobot] = useState({ x: 448, y: 100, width: 71, height: 98, rotation: 0, posConfidenceRect: { x1: 0, y1: 0, x2: 0, y2: 0 } });
     useEffect(() => {
         if (messages.length == 0) return;
         const lastMessage = messages[messages.length - 1];
@@ -40,6 +47,17 @@ export default function Map() {
         } else if (lastMessage.type === "orientation") {
             const data = lastMessage?.message || {};
             setRobot(prev => ({ ...prev, rotation: 360.0 - data }));
+        } else if (lastMessage.type === "position_confidence") {
+            const data = lastMessage?.message || {};
+            setRobot(prev => ({
+                ...prev,
+                posConfidenceRect: {
+                    x1: data.x1,
+                    y1: data.y1,
+                    x2: data.x2,
+                    y2: data.y2,
+                }
+            }));
         }
         const obstaclesMessages = [...new Set(messages
             .filter((message: Message) => message.type === "obstacles")
@@ -131,7 +149,7 @@ export default function Map() {
                         parentWidth={MAP_WIDTH}
                     />
                 ))}
-                <Robot x={robot.x} y={robot.y} width={robot.width} height={robot.height} rotation={robot.rotation} />
+                <Robot x={robot.x} y={robot.y} width={robot.width} height={robot.height} rotation={robot.rotation} confidenceRect={robot.posConfidenceRect} />
                 <RobotPath path={pathData} odometryPath={odometryPathData} robot={robot} />
             </div>
         </div>

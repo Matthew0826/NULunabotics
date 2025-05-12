@@ -26,7 +26,7 @@ def validate_measurements(distance_measurements, accel_measurements=None,
     mask = np.logical_and(max_mask, min_mask)
     
     if not np.all(mask):
-        print(f"Warning: Rejected {np.sum(~mask)} invalid distance measurements")
+        print(f"Warning: Rejected {np.sum(~mask)} invalid distance measurements ({distance_measurements})")
         # Handle invalid measurements
         valid_distances = np.clip(valid_distances, min_distance, max_distance)
     

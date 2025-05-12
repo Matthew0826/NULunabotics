@@ -3,11 +3,11 @@ from rclpy.node import Node
 
 from std_msgs.msg import Float32
 
-from sensors.kalman.position_tracker import PositionTracker
+from sensors.kalman import PositionTracker
 # from sensors.other_kalman import find_robot_location
 from sensors.spin_node_helper import spin_nodes
 
-from lunabotics_interfaces.msg import Point, Acceleration, BeaconDistances
+from lunabotics_interfaces.msg import Point, Rect, Acceleration, BeaconDistances
 
 # TODO: put in the actual positions of the beacons
 BEACON_POSITIONS = (
@@ -16,11 +16,17 @@ BEACON_POSITIONS = (
     (548, 200)   # Beacon 2
 )
 
+# TODO: change to actual initial position
+# it would be (448, 100)
+INITIAL_POSITION = (543, 5)
+MAP_DIMENSIONS = (548, 487)
+
 class PositionPublisher(Node):
 
     def __init__(self):
         super().__init__('positioning')
         self.position_publisher = self.create_publisher(Point, '/sensors/position', 10)
+        self.confidence_publisher = self.create_publisher(Rect, '/sensors/position_confidence', 10)
         self.angle_publisher = self.create_publisher(Float32, '/sensors/orientation', 10)
         self.acceleration_subscription = self.create_subscription(
             Acceleration,
@@ -39,8 +45,7 @@ class PositionPublisher(Node):
         self.true_distances_to_beacons = (0, 0, 0)
         
         # uses Kalman filter to track the position of the robot
-        self.position_tracker = PositionTracker()
-        self.position_tracker.beacon_positions = BEACON_POSITIONS
+        self.position_tracker = PositionTracker(BEACON_POSITIONS, INITIAL_POSITION, MAP_DIMENSIONS)
         self.previous_time = None
     
     def publish_position(self):
@@ -55,9 +60,16 @@ class PositionPublisher(Node):
         # update the position tracker with the new data
         self.position_tracker.update_tracker(dt, self.true_distances_to_beacons, self.linear_acceleration_vector)
         position = Point()
-        position.x = self.position_tracker.position[0]
-        position.y = self.position_tracker.position[1]
+        position.x = float(self.position_tracker.position[0])
+        position.y = float(self.position_tracker.position[1])
         self.position_publisher.publish(position)
+        confidence_rect = Rect()
+        bounds = self.position_tracker.position_bounds
+        confidence_rect.x1 = float(bounds[0])
+        confidence_rect.y1 = float(bounds[1])
+        confidence_rect.x2 = float(bounds[2])
+        confidence_rect.y2 = float(bounds[3])
+        self.confidence_publisher.publish(confidence_rect)
     
     def accel_callback(self, msg: Acceleration):
         self.angle_publisher.publish(Float32(data=msg.orientation))

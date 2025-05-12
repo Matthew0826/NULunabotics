@@ -18,6 +18,7 @@ const LUNABOTICS_PATH_TYPE = "lunabotics_interfaces/srv/Path";
 const LUNABOTICS_OBSTACLE_TYPE = "lunabotics_interfaces/msg/Obstacle";
 const LUNABOTICS_PLAN_TYPE = "lunabotics_interfaces/action/Plan";
 const LUNABOTICS_POINT_TYPE = "lunabotics_interfaces/msg/Point";
+const LUNABOTICS_RECT_TYPE = "lunabotics_interfaces/msg/Rect";
 const LUNABOTICS_PATH_VISUAL_TYPE = "lunabotics_interfaces/msg/PathVisual";
 const ROS2_FLOAT_TYPE = "std_msgs/msg/Float32";
 
@@ -212,6 +213,13 @@ rclnodejs.init().then(() => {
             robotPosition.x = msg.x;
             robotPosition.y = msg.y;
             sendToClient("position", msg);
+        }
+    );
+    node.createSubscription(
+        LUNABOTICS_RECT_TYPE,
+        "/sensors/position_confidence",
+        (msg: any) => {
+            sendToClient("position_confidence", msg);
         }
     );
     node.createSubscription(

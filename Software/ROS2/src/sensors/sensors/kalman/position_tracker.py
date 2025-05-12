@@ -1,8 +1,8 @@
 import numpy as np
 from collections import deque
 
-from sensors.kalman.data_filtering import LowPassFilter
-from sensors.kalman.kalman_filter import ExtendedKalmanFilter
+from .data_filtering import LowPassFilter
+from .kalman_filter import ExtendedKalmanFilter
 
 # Data history
 MAX_HISTORY_SIZE = 100  # Maximum size of history deques
@@ -24,7 +24,7 @@ class PositionTracker:
     This class uses distance measurements from beacons and optional accelerometer data to estimate
     the robot's position in a 2D space.
     """
-    def __init__(self, beacon_positions, initial_position):
+    def __init__(self, beacon_positions, initial_position, map_dimensions):
         # Initialize the low-pass filter for accelerometer data
         self.acceleration_filter = LowPassFilter(ACCELERATION_FILTER_ALPHA)
 
@@ -33,12 +33,13 @@ class PositionTracker:
         P0 = np.diag([INIT_POS_VARIANCE, INIT_VEL_VARIANCE, INIT_POS_VARIANCE, INIT_VEL_VARIANCE])
 
         # Create EKF instance
-        self.ekf = ExtendedKalmanFilter(x0, P0)
+        self.ekf = ExtendedKalmanFilter(x0, P0, map_dimensions[0], map_dimensions[1])
         self.position = initial_position
+        self.position_bounds = (0, 0, 0, 0)  # Placeholder for position bounds
         
         # Set the fixed points (beacons)
         self.ekf.fixed_point_arrays = np.array([[p[0], p[1]] for p in beacon_positions])
-        self.ekf.num_fixed_points = len(self.ekf.fixed_points)
+        self.ekf.num_fixed_points = len(beacon_positions)
 
         # Track the EKF estimates over time
         self.ekf_estimates = deque(maxlen=MAX_HISTORY_SIZE)
@@ -92,5 +93,28 @@ class PositionTracker:
         self.ekf_estimates.append(np.array([self.ekf.x[0], self.ekf.x[2]]))
         self.P_history.append(np.array([self.ekf.P[0, 0], self.ekf.P[2, 2]]))
         
-        # Return the estimated position (x, y)
-        self.position = (self.ekf.x[0], self.ekf.x[2])
+        self.set_position_with_uncertainty()
+    
+    def set_position_with_uncertainty(self):
+        """
+        Returns the current position estimate with uncertainty bounds.
+        Ensures all returned positions are within map boundaries.
+        """
+        # Extract position and standard deviations from EKF state
+        x_pos = self.ekf.x[0]
+        y_pos = self.ekf.x[2]
+        x_std = np.sqrt(self.ekf.P[0, 0])
+        y_std = np.sqrt(self.ekf.P[2, 2])
+        
+        # Ensure position is within bounds
+        x_pos = max(0, min(x_pos, self.ekf.map_width))
+        y_pos = max(0, min(y_pos, self.ekf.map_height))
+        
+        # Calculate confidence intervals (e.g., 95% confidence)
+        x_lower = max(0, x_pos - 1.96 * x_std)
+        x_upper = min(self.ekf.map_width, x_pos + 1.96 * x_std)
+        y_lower = max(0, y_pos - 1.96 * y_std)
+        y_upper = min(self.ekf.map_height, y_pos + 1.96 * y_std)
+        
+        self.position = (x_pos, y_pos)
+        self.position_bounds = (x_lower, y_lower, x_upper, y_upper)

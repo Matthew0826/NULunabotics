@@ -1,6 +1,6 @@
 import numpy as np
 
-from sensors.kalman.data_filtering import validate_measurements
+from .data_filtering import validate_measurements
 
 # =============================================================================
 # CONFIGURATION CONSTANTS
@@ -29,9 +29,12 @@ COVARIANCE_STABILIZER = 1e-6  # Small value added to ensure positive definitenes
 DISTANCE_SCALING_THRESHOLD = 1000.0  # Distance threshold for scaling measurement uncertainty
 ACCEL_SCALING_THRESHOLD = 2.0  # Acceleration threshold for scaling measurement uncertainty
 
+# Map boundary parameters
+BOUNDARY_BUFFER = 0.05  # Buffer zone near boundaries (as percentage of map dimension)
+
 # Define the Extended Kalman Filter class with accelerometer and beacons as measurement
 class ExtendedKalmanFilter:
-    def __init__(self, x0, P0):
+    def __init__(self, x0, P0, map_width, map_height):
         # Default values - these are overridden when the robot position is queried
         self.F = np.eye(4)  # State transition matrix (4x4)
         self.Q = np.eye(4) * 0.01  # Process noise covariance (4x4)
@@ -51,11 +54,76 @@ class ExtendedKalmanFilter:
         self.R = R_with_accel
         self.x = x0  # Initial state estimate [x, vx, y, vy]
         self.P = P0  # Initial error covariance
+        
+        # Map boundaries
+        self.map_width = map_width
+        self.map_height = map_height
+        self.buffer_x = map_width * BOUNDARY_BUFFER
+        self.buffer_y = map_height * BOUNDARY_BUFFER
 
     def predict(self):
         # Standard predict step (no control input)
         self.x = self.F @ self.x
+        
+        # Apply boundary constraints after prediction
+        self.enforce_boundary_constraints()
+        
         self.P = self.F @ self.P @ self.F.T + self.Q
+
+    def enforce_boundary_constraints(self):
+        """Ensure the position state remains within map boundaries."""
+        # Position constraints (x coordinate)
+        if self.x[0] < 0:
+            # If outside left boundary
+            self.x[0] = 0
+            # Zero out horizontal velocity if moving leftward
+            if self.x[1] < 0:
+                self.x[1] = 0
+        elif self.x[0] > self.map_width:
+            # If outside right boundary
+            self.x[0] = self.map_width
+            # Zero out horizontal velocity if moving rightward
+            if self.x[1] > 0:
+                self.x[1] = 0
+                
+        # Position constraints (y coordinate)
+        if self.x[2] < 0:
+            # If outside top boundary
+            self.x[2] = 0
+            # Zero out vertical velocity if moving upward
+            if self.x[3] < 0:
+                self.x[3] = 0
+        elif self.x[2] > self.map_height:
+            # If outside bottom boundary
+            self.x[2] = self.map_height
+            # Zero out vertical velocity if moving downward
+            if self.x[3] > 0:
+                self.x[3] = 0
+    
+    def adjust_process_noise_near_boundary(self):
+        """Adjust process noise when near boundaries to reflect increased uncertainty."""
+        x, y = self.x[0], self.x[2]
+        
+        # Calculate distances to boundaries
+        dist_to_left = x
+        dist_to_right = self.map_width - x
+        dist_to_top = y
+        dist_to_bottom = self.map_height - y
+        
+        # Check if near any boundary (within buffer zone)
+        near_x_boundary = (dist_to_left < self.buffer_x) or (dist_to_right < self.buffer_x)
+        near_y_boundary = (dist_to_top < self.buffer_y) or (dist_to_bottom < self.buffer_y)
+        
+        if near_x_boundary or near_y_boundary:
+            # Increase position uncertainty components when near boundaries
+            # This accounts for potential reflections or constrained movement
+            scaling_factor = 2.0  # Increased uncertainty near boundaries
+            
+            if near_x_boundary:
+                self.Q[0, 0] *= scaling_factor  # Increase x position uncertainty
+            
+            if near_y_boundary:
+                self.Q[2, 2] *= scaling_factor  # Increase y position uncertainty
 
     def compute_measurement_jacobian(self, with_accel=False):
         # Calculate how many measurements we have (distances + accelerometer)
@@ -158,6 +226,9 @@ class ExtendedKalmanFilter:
         # Determine if we have accelerometer measurements
         with_accel = valid_accel is not None
         
+        # Adjust process noise if near boundary
+        self.adjust_process_noise_near_boundary()
+        
         # Calculate adaptive measurement covariance
         adaptive_R = self.adaptive_measurement_covariance(valid_distances, valid_accel)
         self.R = adaptive_R  # Update the R matrix dynamically
@@ -181,7 +252,7 @@ class ExtendedKalmanFilter:
         S = H @ self.P @ H.T + self.R
         
         # Mahalanobis distance for innovation check
-        # Mahalnobis distance is used to check if the innovation is too large
+        # Mahalanobis distance is used to check if the innovation is too large
         try:
             mahalanobis_dist = np.sqrt(y.T @ np.linalg.inv(S) @ y)
         except np.linalg.LinAlgError:
@@ -192,19 +263,39 @@ class ExtendedKalmanFilter:
         try:
             K = self.P @ H.T @ np.linalg.inv(S)
             
-            # Scale down Kalman gain if innovation is too large
+            # Implement a more sophisticated adaptive scaling method based on innovation magnitude
             if mahalanobis_dist > INNOVATION_THRESHOLD:
-                # TODO: Implement a more sophisticated scaling method
-                # TODO: Would it be good to scale up the influence as well? Only if the innovation difference is small
-                print(f"Large innovation detected (d={mahalanobis_dist:.2f}), scaling down influence")
-                # Scale down Kalman gain to reduce influence of large innovation
-                K = K * (INNOVATION_THRESHOLD / mahalanobis_dist)
+                print(f"Large innovation detected (d={mahalanobis_dist:.2f}), applying adaptive scaling")
+                
+                # Nonlinear scaling that gradually reduces influence as innovation increases
+                # Uses a sigmoid-like function to create a smooth transition
+                # The scaling factor approaches 0 as mahalanobis_dist gets very large
+                scaling_factor = INNOVATION_THRESHOLD / (mahalanobis_dist + 0.1 * (mahalanobis_dist - INNOVATION_THRESHOLD))
+                
+                # Apply scaling to Kalman gain
+                K = K * scaling_factor
+            elif mahalanobis_dist < INNOVATION_THRESHOLD * 0.5:
+                # If innovation is particularly small (indicating high confidence measurements)
+                # we can slightly increase the Kalman gain to give more weight to these measurements
+                # This helps with quicker convergence when measurements are very reliable
+                
+                # Calculate boost factor (maximum 1.2x boost for very small innovations)
+                boost_factor = 1.0 + 0.2 * (1.0 - mahalanobis_dist / (INNOVATION_THRESHOLD * 0.5))
+                
+                # Apply boosting to Kalman gain
+                K = K * boost_factor
+                
+                if boost_factor > 1.05:  # Only log if boost is significant
+                    print(f"Small innovation detected (d={mahalanobis_dist:.2f}), boosting influence by {boost_factor:.2f}x")
         except np.linalg.LinAlgError:
             # Fallback to pseudoinverse if regular inverse fails
             K = self.P @ H.T @ np.linalg.pinv(S)
         
         # Update state estimate
         self.x = self.x + K @ y
+        
+        # Apply boundary constraints after update
+        self.enforce_boundary_constraints()
         
         # Joseph form for covariance update (more numerically stable)
         I = np.eye(len(self.x))
@@ -238,6 +329,9 @@ class ExtendedKalmanFilter:
             [0, dt]
         ])
         self.Q = G @ np.array([[sigma_a**2, 0], [0, sigma_a**2]]) @ G.T
+        
+        # Adjust process noise if near boundary
+        self.adjust_process_noise_near_boundary()
     
     def check_filter_health(self, innovation_history):
         """Check if filter appears to be diverging and reset if necessary."""
@@ -255,6 +349,9 @@ class ExtendedKalmanFilter:
                 # Increase uncertainty but maintain position estimate
                 self.P = np.diag([COVARIANCE_RESET_POSITION, COVARIANCE_RESET_VELOCITY, 
                                   COVARIANCE_RESET_POSITION, COVARIANCE_RESET_VELOCITY])
+                
+                # Make sure position is within boundaries after reset
+                self.enforce_boundary_constraints()
                 return True
         
         return False
