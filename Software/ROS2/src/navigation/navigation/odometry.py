@@ -6,7 +6,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 
 
 # the self driver agent action
-from lunabotics_interfaces.msg import Point, Motors, Excavate, PathVisual
+from lunabotics_interfaces.msg import Point, Motors, Excavator, PathVisual
 from lunabotics_interfaces.action import SelfDriver
 from navigation.pathfinder_helper import distance
 from sensors.spin_node_helper import spin_nodes
@@ -61,7 +61,7 @@ class Odometry(Node):
 
         # ros publishers and subscribers
         self.motor_pub = self.create_publisher(Motors, 'physical_robot/motors', 10)
-        self.excavate_pub = self.create_publisher(Excavate, 'physical_robot/excavate', 10)
+        self.excavate_pub = self.create_publisher(Excavate, 'physical_robot/excavator', 10)
         self.position_sub = self.create_subscription(Point, 'sensors/position', self.on_position, 10)
         self.orientation_sub = self.create_subscription(Float32, 'sensors/orientation', self.on_orientation, 10)
         self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/odometry_path', 10)
@@ -163,7 +163,8 @@ class Odometry(Node):
         # can save current motor power for future reference
 
     # set the power of the conveyor and outtake motors on the excavator
-    def set_excavate_power(self, elevator_power: float, conveyor_power: float, outtake_power: float):
+    # actuator_power: 0.0 fully retracted; 1.0 fully extended
+    def set_excavate_power(self, actuator_power: float, conveyor_power: float, outtake_power: float):
         """Set the power of the excavator motors."""
         # ensure motor power between -1.0 and 1.0
         if (abs(elevator_power) > 1.0 or abs(outtake_power) > 1.0 or abs(outtake_power) > 1.0):
@@ -171,8 +172,8 @@ class Odometry(Node):
             return
 
         # message class (cannot move and excavate)
-        msg = Excavate()
-        msg.elevator = elevator_power
+        msg = Excavator()
+        msg.actuator = actuator_power
         msg.conveyor = conveyor_power
         msg.outtake = outtake_power
 
@@ -236,13 +237,19 @@ class Odometry(Node):
         self.set_motor_power(0.0, 0.0)
         self.get_logger().info(f"rotated to {int(self.orientation)} degrees. (wanted {int(final_orientation)})")
 
-    async def to_position(self, destination: Point):
+    async def to_position(self, destination: Point, go_reverse: bool = False):
         """Drives to a given destination with PID control."""
         start_time = self.get_clock().now()
         # calculate orientation to face position
         self.get_logger().info(f"want to go to position {destination.x}, {destination.y}")
         self.website_path_visualizer.publish(PathVisual(nodes=[self.position, destination]))
-        await self.face_position(destination)
+
+        # flip robot around if going reverse
+        deg_offset = 0.0
+        if (go_reverse):
+            deg_offset = 180.0
+
+        await self.face_position(destination, deg_offset)
         after_orientation_time = self.get_clock().now()
         
         # reset the PID controllers
@@ -253,6 +260,12 @@ class Odometry(Node):
             # find error
             error = distance(self.position, destination)
             orientation_error = self.get_orientation_error(destination)
+
+            # reverse error calculation if going backward
+            # Essentially, shift the PID notion of “aligned” by 180.0
+            if go_reverse:
+                err_orient = (err_orient + 180.0) % (360.0) - 180.0
+
             # check if completed
             if error < self.dist_tolerance: break
             # update pid
@@ -262,6 +275,11 @@ class Odometry(Node):
             # adjust motor power based on turn power from PID
             left_power = clamp(forward_power - turn_power, -1.0, 1.0)
             right_power = clamp(forward_power + turn_power, -1.0, 1.0)
+
+            if (go_reverse):
+                left_power = -left_power
+                right_power = -right_power
+
             await self.drive(left_power, right_power, seconds=0.2)
             await self.yield_once()
 
@@ -277,7 +295,7 @@ class Odometry(Node):
         self.get_logger().info(f"took {orientation_time} milliseconds to orient")
 
     # orient the rover to face a position
-    async def face_position(self, destination: Point):
+    async def face_position(self, destination: Point, deg_offset: float = 0.0):
         """Rotates to face a given position."""
         self.get_logger().info(f"want to face {destination.x}, {destination.y}")
         angle_rad = math.atan2(self.position.y - destination.y, destination.x - self.position.x)
@@ -285,6 +303,10 @@ class Odometry(Node):
 
         # rotate to new orientation
         old_orientation = self.orientation
+
+        # move to face position plus client specified offset
+        new_orientation = positive_angle(new_orientation + deg_offset)
+
         await self.to_orient(new_orientation)
         self.get_logger().info(f"faced position: old {int(old_orientation)}; new {int(self.orientation)}; desired {int(new_orientation)}")
 

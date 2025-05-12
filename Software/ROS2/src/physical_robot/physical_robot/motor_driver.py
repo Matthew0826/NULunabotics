@@ -9,6 +9,16 @@ import serial
 ESP_BOARD_ID = 1
 BAUD_RATE = 9600
 
+# ——— Channel assignments ———
+# left front
+LF_CH = 0
+# left back
+LB_CH = 1
+# right front
+RF_CH = 2
+# right back
+RB_CH = 3
+
 class MotorDriver(Node):
     def __init__(self, port: str):
         super().__init__('motor_driver')
@@ -44,11 +54,11 @@ class MotorDriver(Node):
         is_delta_left_small = abs(self.prev_left - left) < 0.05
         is_delta_right_small = abs(self.prev_right - right) < 0.05
         if not is_delta_left_small:
-            self.send_serial_packet(0, -left)
-            self.send_serial_packet(1, -left)
+            self.send_serial_packet(LF_CH, -left)
+            self.send_serial_packet(LB_CH, -left)
         if not is_delta_right_small:
-            self.send_serial_packet(2, right)
-            self.send_serial_packet(3, right)
+            self.send_serial_packet(RF_CH, right)
+            self.send_serial_packet(RB_CH, right)
         self.prev_left = left
         self.prev_right = right
 
