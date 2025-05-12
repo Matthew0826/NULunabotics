@@ -1,3 +1,3 @@
-float32 elevator
+float32 actuator
 float32 conveyor
-float32 outtake
+float32 hatch

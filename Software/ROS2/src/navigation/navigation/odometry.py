@@ -166,8 +166,14 @@ class Odometry(Node):
     # actuator_power: 0.0 fully retracted; 1.0 fully extended
     def set_excavator_power(self, actuator_power: float, conveyor_power: float, hatch_open: bool):
         """Set the power of the excavator motors."""
+
+        # ensure pistion power between 0.0 and 1.0
+        if (actuator_power < 0.0 or actuator_power > 1.0):
+            self.get_logger.info(f"piston power must be between 0.0 and 1.0")
+            return
+
         # ensure motor power between -1.0 and 1.0
-        if (abs(actuator_power) > 1.0 or abs(outtake_power) > 1.0 or abs(outtake_power) > 1.0):
+        if (abs(conveyor_power) > 1.0):
             self.get_logger.info(f"motor power must be between -1.0 and 1.0")
             return
 
@@ -175,7 +181,7 @@ class Odometry(Node):
         msg = Excavator()
         msg.actuator = actuator_power
         msg.conveyor = conveyor_power
-        msg.outtake = outtake_power
+        msg.hatch = hatch_open
 
         # then publish it like usual
         self.excavate_pub.publish(msg)
