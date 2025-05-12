@@ -63,10 +63,5 @@ def generate_launch_description():
             package='navigation',
             executable='odometry',
             output='screen'
-        ),
-        Node(
-            package='physical_robot',
-            executable='motor_driver',
-            output='screen'
         )
     ])

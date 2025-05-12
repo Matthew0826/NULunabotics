@@ -10,7 +10,7 @@
 
 // rate at which the accelerometer is sampled
 #define SAMPLE_RATE 15
-#define GYRO_RANGE_DEGREES 250.0
+#define GYRO_RANGE_DEGREES 500.0
 
 // id for acceleration
 #define ACCELERATION_ID 0
@@ -144,7 +144,7 @@ void setup() {
 
     // Set up accelerometer
     mpu.setAccelerometerRange(MPU6050_RANGE_4_G);
-    mpu.setGyroRange(MPU6050_RANGE_250_DEG);
+    mpu.setGyroRange(MPU6050_RANGE_500_DEG);
     mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
 
     // Set up accelerometer algorithm

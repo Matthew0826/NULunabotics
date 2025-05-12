@@ -292,7 +292,7 @@ class SerialPort:
         # deserialize
         ros_msg = deserialize(message, ros_msg_type)
         # if pub_id != 0:
-        print(f"Deserialized message: {ros_msg}")
+        # print(f"Deserialized message: {ros_msg}")
         # publish to ros
         ros_pub.publish(ros_msg)
         # find size of the message

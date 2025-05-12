@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Installs support for:
+# - Fusion library for accelerometer and gyroscope
+# - SimpleVector library for vector math
+# - Adafruit MPU6050 library for MPU6050 sensor
+# - ESP8266 board support
+
 # Where to put the library
 LIB_DIR="$HOME/Arduino/libraries/Fusion"
 
@@ -29,6 +35,8 @@ EOF
 rm -rf "$TMP_DIR"
 
 echo "Fusion library installed at $LIB_DIR"
+
+
 
 # Other libraries to install
 arduino-cli lib install SimpleVector
