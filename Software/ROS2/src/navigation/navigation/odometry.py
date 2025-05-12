@@ -164,10 +164,10 @@ class Odometry(Node):
 
     # set the power of the conveyor and outtake motors on the excavator
     # actuator_power: 0.0 fully retracted; 1.0 fully extended
-    def set_excavate_power(self, actuator_power: float, conveyor_power: float, outtake_power: float):
+    def set_excavator_power(self, actuator_power: float, conveyor_power: float, outtake_power: float):
         """Set the power of the excavator motors."""
         # ensure motor power between -1.0 and 1.0
-        if (abs(elevator_power) > 1.0 or abs(outtake_power) > 1.0 or abs(outtake_power) > 1.0):
+        if (abs(actuator_power) > 1.0 or abs(outtake_power) > 1.0 or abs(outtake_power) > 1.0):
             self.get_logger.info(f"motor power must be between -1.0 and 1.0")
             return
 
@@ -179,6 +179,32 @@ class Odometry(Node):
 
         # then publish it like usual
         self.excavate_pub.publish(msg)
+
+    async def start_excavator():
+        dist_tol = 10 # cm
+        actuator_power = 0.0
+
+        # while we need to get closer to the ground
+        while (self.ex_dist > dist_tol):
+            actuator_power += 0.01
+            set_excavator_power(actuator_power, 0.0, 0.0)
+            await self.yield_once()
+
+        # in position, now turn on excavator
+        set_excavator_power(actuator_power, 0.5, 0.0)
+
+    async def stop_excavator():
+        set_excavator_power(0.0, 0.0, 0.0)
+
+    # TODO:
+    async def start_unload():
+        # would be nice if servos then just set their orientation
+        set_excavator_power(0.0, 0.0, 1.0)
+
+    # TODO:
+    async def stop_unload():
+        # would be nice if servos then just set their orientation
+        set_excavator_power(0.0, 0.0, -1.0)
         
     def get_degrees_error(self, final_degrees: float):
         """Calculates the difference in degrees between the robot's current orientation
