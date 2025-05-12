@@ -10,7 +10,6 @@
 
 // rate at which the accelerometer is sampled
 #define SAMPLE_RATE 15
-#define GYRO_RANGE_DEGREES 500.0
 
 // id for acceleration
 #define ACCELERATION_ID 0
@@ -82,7 +81,7 @@ FusionAhrs ahrs;
 const FusionAhrsSettings settings = {
     .convention = FusionConventionNwu,
     .gain = 0.4,  // or tune between 0.3 and 0.5
-    .gyroscopeRange = GYRO_RANGE_DEGREES,
+    .gyroscopeRange = 1000.0, // 1000 degrees/sec because otherwise it likes to reset
     .accelerationRejection = 10.0,  // keep high to reject motion
     .magneticRejection = 0.0,  // unused since magnetometer is disabled
     .recoveryTriggerPeriod = 5 * SAMPLE_RATE,
