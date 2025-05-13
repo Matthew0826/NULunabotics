@@ -183,17 +183,7 @@ rclnodejs.init().then(() => {
         LUNABOTICS_LIDAR_ROTATION_TYPE,
         "sensors/lidar",
         (msg: any) => {
-            const data = msg.points;
-            lidarPoints.length = 0;
-            for (let i = 0; i < data.length; i++) {
-                const distance = data[i].distance;
-                const angle = data[i].angle;
-                const weight = data[i].weight;
-                if (distance < 15000)
-                    lidarPoints.push({ distance, angle, weight });
-            }
-            console.log(data);
-            sendToClient("lidar", lidarPoints);
+            sendToClient("lidar", msg.points);
         }
     );
     let previousObstacle: any = null;

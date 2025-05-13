@@ -32,7 +32,7 @@ void onMotorData(const MotorData& data) {
   float speeds[MOTOR_COUNT] = {data.leftFrontSpeed, data.leftBackSpeed, data.rightFrontSpeed, data.rightBackSpeed};
   for (int i = 0; i < MOTOR_COUNT; i++) {
     // Map the speed to the pulse width
-    byte speedByte = (byte)(speeds[i] * 255 + 127.5);
+    int speedByte = (int)(((speeds[i] + 1.0) * 127.5));
     int pulseWidth = map(speedByte, 0, 255, REVERSE_PULSE_WIDTH, FORWARD_PULSE_WIDTH);
     motors[i].writeMicroseconds(pulseWidth);
   }

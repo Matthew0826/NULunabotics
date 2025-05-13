@@ -29,19 +29,19 @@ const getRock = (i: number) => {
 }
 
 export const tempStartingData: Message[] = [
-    {
-        type: "lidar",
-        message: [
-            { distance: 200, angle: (7 * Math.PI) / 4, weight: 0 },
-            { distance: 100, angle: (6 * Math.PI) / 4, weight: 0 },
-            { distance: 200, angle: (5 * Math.PI) / 4, weight: 0 },
-            { distance: 120, angle: Math.PI, weight: 0 },
-            { distance: 200, angle: (3 * Math.PI) / 4, weight: 0 },
-            { distance: 200, angle: (2 * Math.PI) / 4, weight: 0 },
-            { distance: 200, angle: Math.PI / 4, weight: 0 },
-            { distance: 200, angle: 0, weight: 0 },
-        ],
-    },
+    // {
+    //     type: "lidar",
+    //     message: [
+    //         { distance: 200, angle: (7 * Math.PI) / 4, weight: 0 },
+    //         { distance: 100, angle: (6 * Math.PI) / 4, weight: 0 },
+    //         { distance: 200, angle: (5 * Math.PI) / 4, weight: 0 },
+    //         { distance: 120, angle: Math.PI, weight: 0 },
+    //         { distance: 200, angle: (3 * Math.PI) / 4, weight: 0 },
+    //         { distance: 200, angle: (2 * Math.PI) / 4, weight: 0 },
+    //         { distance: 200, angle: Math.PI / 4, weight: 0 },
+    //         { distance: 200, angle: 0, weight: 0 },
+    //     ],
+    // },
     // {
     //     type: "obstacles",
     //     message: [

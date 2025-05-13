@@ -34,8 +34,9 @@ void nothingCallback(const LinearActuatorPercent& percent) {
 
 void setup() {
   TheiaSerial::begin();
-  TheiaSerial::addId<ExcavatorState>(EXCAVATOR_ID, onMotorData);
+  TheiaSerial::addId<ExcavatorState>(EXCAVATOR_ID, onExcavatorState);
   TheiaSerial::addId<LinearActuatorPercent>(EXCAVATOR_PERCENT_ID, nothingCallback);
+  TheiaSerial::broadcastIds();
 
   for (int i = 0; i < MOTOR_COUNT; i++) {
     motors[i].attach(motorPins[i]);
@@ -45,12 +46,12 @@ void setup() {
   analogReference(DEFAULT);
 }
 
-void onMotorData(const MotorData& data) {
+void onExcavatorState(const ExcavatorState& data) {
   // process the incoming data
   float speeds[MOTOR_COUNT] = {data.leftActuatorSpeed, data.rightActuatorSpeed, data.conveyor};
   for (int i = 0; i < MOTOR_COUNT; i++) {
     // Map the speed to the pulse width
-    byte speedByte = (byte)(speeds[i] * 255 + 127.5);
+    int speedByte = (int)(((speeds[i] + 1.0) * 127.5));
     int pulseWidth = map(speedByte, 0, 255, REVERSE_PULSE_WIDTH, FORWARD_PULSE_WIDTH);
     motors[i].writeMicroseconds(pulseWidth);
   }
@@ -61,9 +62,11 @@ void loop() {
 
   // Read the potentiometer values
   float leftPot = analogRead(POTENTIOMETER_PIN1);
-  float rightPot = analogRead(POTENTIOMETER_PIN2);
-  float leftPercent = map(leftPot, 0, 1023, 0, 100) / 100.0;
-  float rightPercent = map(rightPot, 0, 1023, 0, 100) / 100.0;
+  float rightPot = 1023.0;//analogRead(POTENTIOMETER_PIN2);
+  float leftPercent = (float)map(leftPot, 0, 1023, 0, 100) / 100.0;
+  float rightPercent = (float)map(rightPot, 0, 1023, 0, 100) / 100.0;
+  if (leftPercent == 0.0) leftPercent = 0.01;
+  if (rightPercent == 0.0) rightPercent = 0.01;
 
   // Create a LinearActuatorPercent struct to hold the percent values
   LinearActuatorPercent excavatorPercent;
