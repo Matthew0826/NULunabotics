@@ -3,8 +3,9 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    """Simulates the navigation system using a mock_odometry which pretends
-    to move the robot as well as a mock_obstacle_detector which pretends to find obstacles."""
+    """Simulates the navigation system using a mock_positioning which pretends
+    to move the robot based on motor controls
+    as well as a mock_obstacle_detector which pretends to find obstacles."""
     return LaunchDescription([
         Node(
             package='navigation',

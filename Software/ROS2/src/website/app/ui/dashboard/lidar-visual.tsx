@@ -16,6 +16,8 @@ function interpolateColor(color1: number[], color2: number[], factor: number) {
 
 const previousLidarData: Point[][] = [];
 const previousLidarDataMaxSize = 20;
+const THRESHOLD_DEGS = 0.25;
+const THRESHOLD_RADS = THRESHOLD_DEGS * 2.0 * (Math.PI / 180.0);
 
 export default function LidarVisual() {
     const { messages, sendToServer } = useWebSocketContext();
@@ -26,6 +28,8 @@ export default function LidarVisual() {
         const lidarMessage = messages[messages.length - 1];
         if (lidarMessage.type === "lidar") {
             setLidarData(lidarMessage?.message || []);
+            // GETS POINT IN RADIANS!!
+            // HAZEM SAYS ITS NOT DEGREES!!
             previousLidarData.push(lidarMessage?.message || []);
             if (previousLidarData.length > previousLidarDataMaxSize) {
                 previousLidarData.shift();
@@ -46,12 +50,15 @@ export default function LidarVisual() {
         return 500; //Math.max(...lidarData.map((point) => point.distance));
     };
 
+    // Angle is in radians
     const getAveragePreviousPoint = (angle: number) => {
+        // Find the points in the previousLidarData that are closest to the given angle
         const points = previousLidarData
             .map((data) =>
-                data.find((point) => Math.floor(point.angle) == angle)
-            ) // Does floating point rounding weirdness mess this up?
+                data.find((point) => Math.abs(point.angle - angle) < THRESHOLD_RADS)
+            )
             .filter((point) => point !== undefined);
+        // Find average distance and angle
         const averageDistance =
             points.reduce((sum, point) => sum + point.distance, 0) /
             points.length;
@@ -90,7 +97,7 @@ export default function LidarVisual() {
                         )
                         : "blue",
                     left: `${50 + 50 * (point.distance / getMaxDistance()) * Math.cos(point.angle)}%`,
-                    bottom: `${50 + 50 * (point.distance / getMaxDistance()) * -Math.sin(point.angle)}%`,
+                    bottom: `${50 + 50 * (point.distance / getMaxDistance()) * Math.sin(point.angle)}%`,
                 }}
                 key={index}
             />
@@ -98,13 +105,13 @@ export default function LidarVisual() {
     }
     return (
         <div className="relative w-[35vh] h-[35vh] m-2">
-            {lidarData.map((point, index) =>
+            {/*lidarData.map((point, index) =>
                 getDivFromLidar(point, index, true)
-            )}
+            )*/}
             {previousLidarData.length > 0 && (
-                Array.from({ length: 360 }).map((_, index) =>
+                Array.from({ length: 360 / THRESHOLD_DEGS }).map((_, index) =>
                     getDivFromLidar(
-                        getAveragePreviousPoint(index),
+                        getAveragePreviousPoint((index * THRESHOLD_DEGS) / 180.0 * Math.PI),
                         index,
                         false
                     )

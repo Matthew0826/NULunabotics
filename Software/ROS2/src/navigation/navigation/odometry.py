@@ -95,7 +95,7 @@ class Odometry(Node):
         self.angular_drive_pid = PIDController(Kp=0.008, Ki=0.0, Kd=0.0, output_limits=(-0.35, 0.35))
         
         self.excavator_left_actuator_pid = PIDController(Kp=0.01, Ki=0.0, Kd=0.0, output_limits=(-1.0, 1.0))
-        self.excavator_right_actuator_pid = PIDController(Kp=0.01, Ki=0.0, Kd=0.0, output_limits=(-1.0, 1.0))
+        self.excavator_right_actuator_pid = PIDController(Kp=50.0, Ki=0.0, Kd=0.0, output_limits=(-1.0, 1.0))
 
     # when someone calls this action
     # SelfDriver.action:
@@ -254,6 +254,7 @@ class Odometry(Node):
             # find error for PID
             left_error = target_percent - self.excavator_left_percent
             right_error = target_percent - self.excavator_right_percent
+            print(f"error: {left_error}, {right_error}")
             # check if completed
             left_completed = abs(left_error) <= tolerance_percent
             right_completed = abs(right_error) <= tolerance_percent
@@ -262,9 +263,10 @@ class Odometry(Node):
             current_time = self.get_clock().now()
             left_power = self.excavator_left_actuator_pid.update(left_error, current_time)
             right_power = self.excavator_right_actuator_pid.update(right_error, current_time)
+            print(f"power: {left_power}, {right_power}")
             # make sure theres at least a little power
             if abs(left_power) < 0.1:
-                left_power = 0.1 if left_power > 0 else -0.1
+                left_power = 0.8 if left_power > 0 else -0.8
             if abs(right_power) < 0.1:
                 right_power = 0.1 if right_power > 0 else -0.1
             # but if we are done, stop the motors
@@ -272,9 +274,11 @@ class Odometry(Node):
                 left_power = 0.0
             if right_completed:
                 right_power = 0.0
+            print(f"power after: {left_power}, {right_power}")
             # drive the motors for a bit
             self.set_excavator_power(left_power, right_power, 0.0, False)
             await self.yield_once(0.2)
+        print("done")
         # stop the excavator
         self.stop_excavator()
 
