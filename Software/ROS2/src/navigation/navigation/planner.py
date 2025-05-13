@@ -119,6 +119,14 @@ class Planner(Node):
                 result.time_elapsed_millis = (self.get_clock().now() - start_time).nanoseconds // 1_000_000
                 return result
         
+        
+        # we are at the end, we need to dig/dump (no path to travel to)
+        excavation_start_time = self.get_clock().now()
+        await self.send_drive_goal([], should_excavate=should_excavate, should_dump=should_dump)
+        excavation_end_time = self.get_clock().now()
+        self.drive_time += (excavation_end_time - excavation_start_time).nanoseconds // 1_000_000
+        self.get_logger().info(f"Excavation took {self.drive_time} ms")
+        
         # "Je gagne!"
         goal_handle.succeed()
         result = Plan.Result()
@@ -127,7 +135,7 @@ class Planner(Node):
         self.get_logger().info("Done. Planner took " + str(result.time_elapsed_millis - self.drive_time) + " ms to plan.")
         return result
 
-    async def send_drive_goal(self, targets):
+    async def send_drive_goal(self, targets, should_excavate=False, should_dump=False):
         """Sends a drive goal to the odometry action server, and waits for the response."""
         # make sure the action server is available
         self.odometry_action_client.wait_for_server()
@@ -135,6 +143,8 @@ class Planner(Node):
         # send in this driving goal
         goal_msg = SelfDriver.Goal()
         goal_msg.targets = targets
+        goal_msg.should_excavate = should_excavate
+        goal_msg.should_dump = should_dump
         goal_handle = await self.odometry_action_client.send_goal_async(
             goal_msg,
             feedback_callback=self.driving_feedback_callback
@@ -169,6 +179,7 @@ class Planner(Node):
         # TODO: What if the time limit ends? we need to cancel the goal
         # TODO: If the robot isn't making very much progress, maybe cancel this goal and try a different route?
         progress = feedback.progress
+        finished_driving = feedback.finished_driving
         # self.get_logger().info(f"Progress to ({self.current_target.x}, {self.current_target.y}): {progress}")
     
     def make_path(self, target):

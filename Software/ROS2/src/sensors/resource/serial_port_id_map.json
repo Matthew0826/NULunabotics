@@ -32,7 +32,13 @@
     {
         "id": 5,
         "message_type": "lunabotics_interfaces/msg/Excavate",
-        "topic": "sensors/excavator",
+        "topic": "physical_robot/excavator",
         "ros_pub_or_sub": "sub"
+    },
+    {
+        "id": 6,
+        "message_type": "std_msgs/msg/Float32",
+        "topic": "sensors/excavator_percent",
+        "ros_pub_or_sub": "pub"
     }
 ]

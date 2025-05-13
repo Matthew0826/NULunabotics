@@ -17,6 +17,8 @@ from navigation.pid import PIDController
 from std_msgs.msg import Float32
 import math
 
+MAX_EXCAVATOR_PERCENT = 0.9
+MIN_EXCAVATOR_PERCENT = 0.1
 
 class Odometry(Node):
     """
@@ -37,7 +39,6 @@ class Odometry(Node):
             execute_callback=self.on_goal_request,
             callback_group=self.callback_group
         )
-
         
         # action values to store for when its done
         self.goal_handle = None
@@ -56,14 +57,19 @@ class Odometry(Node):
         self.orientation = 0.0
         self.last_orientation_time = self.get_clock().now()
         
+        # initalize linear actuator percentage for the excavator
+        # 0% is contracted and 100% is extended
+        self.excavator_percent = 0.0
+        
         # dummy timer to keep event loop alive :)
         # self.create_timer(0.05, lambda: None)
 
         # ros publishers and subscribers
         self.motor_pub = self.create_publisher(Motors, 'physical_robot/motors', 10)
-        self.excavate_pub = self.create_publisher(Excavate, 'physical_robot/excavator', 10)
+        self.excavate_pub = self.create_publisher(Excavator, 'physical_robot/excavator', 10)
         self.position_sub = self.create_subscription(Point, 'sensors/position', self.on_position, 10)
         self.orientation_sub = self.create_subscription(Float32, 'sensors/orientation', self.on_orientation, 10)
+        self.excavator_percent_sub = self.create_subscription(Float32, 'sensors/excavator_percent', self.on_excavator_percent, 10)
         self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/odometry_path', 10)
         
         # PID controllers (some notes from ChatGPT:)
@@ -84,6 +90,7 @@ class Odometry(Node):
         # for some reason this one starts doing big loops around the target when you give it some Ki and Kd on the simulation
         # especially when the speed of the simulation is increased
         self.angular_drive_pid = PIDController(Kp=0.008, Ki=0.0, Kd=0.0, output_limits=(-0.35, 0.35))
+        self.exavator_actuator_pid = PIDController(Kp=0.01, Ki=0.0, Kd=0.0, output_limits=(-1.0, 1.0))
 
     # when someone calls this action
     # SelfDriver.action:
@@ -102,6 +109,7 @@ class Odometry(Node):
         self.goal_handle = goal_handle
         feedback_msg = SelfDriver.Feedback()
         feedback_msg.progress = 0.0
+        feedback_msg.finished_driving = False
         start_time = self.get_clock().now()
 
         # get points
@@ -109,7 +117,25 @@ class Odometry(Node):
         self.get_logger().info('received goal with {0} points'.format(len(points)))
 
         await self.to_path(points, goal_handle, feedback_msg)
-
+        
+        # get if we should unload
+        unload = goal_handle.request.should_unload
+        if unload:
+            self.get_logger().info('unloading')
+            await self.run_unload_bin()
+            self.get_logger().info('unloaded')
+        
+        # get if we should excavate
+        excavate = goal_handle.request.should_excavate
+        if excavate:
+            self.get_logger().info('excavating')
+            # start the excavator
+            await self.move_excavator(MAX_EXCAVATOR_PERCENT)
+            # start the conveyor
+            await self.run_conveyor()
+            await self.move_excavator(MIN_EXCAVATOR_PERCENT)
+            self.get_logger().info('excavated')
+        
         # send the result
         goal_handle.succeed()
         result = SelfDriver.Result()
@@ -126,10 +152,21 @@ class Odometry(Node):
     # when orientation updates
     def on_orientation(self, orientation):
         self.set_orientation(orientation.data)
+        
+    # when excavator percent updates
+    def on_excavator_percent(self, percent):
+        self.set_excavator_percent(percent.data)
 
     def set_position(self, position: Point):
         """Called by the ROS subscriber."""
         self.position = position
+    
+    def set_excavator_percent(self, percent: Float32):
+        """Called by the ROS subscriber. Enforces percent between 0 and 1."""
+        if (percent < 0.0 or percent > 1.0):
+            self.get_logger().info(f"invalid excavator percent: {percent}")
+            return
+        self.excavator_percent = percent
 
     def set_orientation(self, orientation: float):
         """Called by the ROS subscriber. Enforces orientation between 0 and 360 degrees."""
@@ -163,7 +200,7 @@ class Odometry(Node):
         # can save current motor power for future reference
 
     # set the power of the conveyor and outtake motors on the excavator
-    # actuator_power: 0.0 fully retracted; 1.0 fully extended
+    # actuator_power: -1.0 is retract; 1.0 is extend
     def set_excavator_power(self, actuator_power: float, conveyor_power: float, hatch_open: bool):
         """Set the power of the excavator motors."""
 
@@ -186,27 +223,45 @@ class Odometry(Node):
         # then publish it like usual
         self.excavate_pub.publish(msg)
 
-    async def start_excavator():
-        dist_tol = 10 # cm
-        actuator_power = 0.0
+    async def move_excavator(self, target_percent: float):
+        # reset the PID controller
+        self.exavator_actuator_pid.reset()
+        tolerance_percent = 0.05
+        
+        # use pid loop to get to the target percent
+        while True:
+            # find error for PID
+            error = target_percent - self.excavator_percent
+            # check if completed
+            if abs(error) <= tolerance_percent: break
+            # update PID
+            power = self.exavator_actuator_pid.update(error, self.get_clock().now())
+            # make sure theres at least a little power
+            if abs(power) < 0.1:
+                power = 0.1 if power > 0 else -0.1
+            # drive the motors for a bit
+            self.set_excavator_power(power, 0.0, False)
+            await self.yield_once(0.2)
+        # stop the excavator
+        self.stop_excavator()
 
-        # while we need to get closer to the ground
-        while (self.ex_dist > dist_tol):
-            actuator_power += 0.01
-            set_excavator_power(actuator_power, 0.0, False)
-            await self.yield_once()
+    async def run_conveyor(self):
+        # in position, now turn on conveyor
+        self.set_excavator_power(0.0, 0.7, False)
+        # wait to excavate
+        await self.yield_once(10.0)
+        # stop the conveyor
+        self.stop_excavator()
 
-        # in position, now turn on excavator
-        set_excavator_power(actuator_power, 0.5, False)
+    def stop_excavator(self):
+        self.set_excavator_power(0.0, 0.0, False)
 
-    async def stop_excavator():
-        set_excavator_power(0.0, 0.0, False)
-
-    async def start_unload():
-        set_excavator_power(0.0, 0.0, True)
-
-    async def stop_unload():
-        set_excavator_power(0.0, 0.0, False)
+    async def run_unload_bin(self):
+        # open
+        self.set_excavator_power(0.0, 0.0, True)
+        await self.yield_once(3.0)
+        # close
+        self.set_excavator_power(0.0, 0.0, False)
         
     def get_degrees_error(self, final_degrees: float):
         """Calculates the difference in degrees between the robot's current orientation
@@ -351,6 +406,7 @@ class Odometry(Node):
             # publish progress traveling the path
             # e.g. 1 / 2 meaning 1 point reached out of 2 so far
             feedback_msg.progress = (i + 1) / points_len
+            feedback_msg.finished_driving = i + 1 >= points_len
             goal_handle.publish_feedback(feedback_msg)
             await self.yield_once()
         
@@ -373,7 +429,6 @@ def main(args=None):
     odometry = Odometry()
     spin_nodes(odometry, is_async=True)
     
-
 
 if __name__ == '__main__':
     main()
