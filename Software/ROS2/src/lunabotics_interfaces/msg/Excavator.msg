@@ -1,3 +1,4 @@
-float32 actuator
+float32 left_actuator_speed
+float32 right_actuator_speed
 float32 conveyor
 bool hatch

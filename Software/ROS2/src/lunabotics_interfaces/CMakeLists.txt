@@ -18,6 +18,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/LidarRotation.msg"
   "msg/Motors.msg"
   "msg/Excavator.msg"
+  "msg/ExcavatorPotentiometer.msg"
   "msg/Point.msg"
   "msg/Rect.msg"
   "msg/Obstacle.msg"

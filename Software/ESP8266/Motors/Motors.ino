@@ -30,15 +30,12 @@ void setup() {
 void onMotorData(const MotorData& data) {
   // process the incoming data
   float speeds[MOTOR_COUNT] = {data.leftFrontSpeed, data.leftBackSpeed, data.rightFrontSpeed, data.rightBackSpeed};
-  Serial.print("SPEED:");
-  Serial.println(speeds[0]);
   for (int i = 0; i < MOTOR_COUNT; i++) {
     // Map the speed to the pulse width
     byte speedByte = (byte)(speeds[i] * 255 + 127.5);
     int pulseWidth = map(speedByte, 0, 255, REVERSE_PULSE_WIDTH, FORWARD_PULSE_WIDTH);
     motors[i].writeMicroseconds(pulseWidth);
   }
-  TheiaSerial::sendFramedMessage(ID, data);
 }
 
 void loop() {
