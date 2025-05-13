@@ -157,6 +157,8 @@ class Planner(Node):
         goal_msg.targets = targets
         goal_msg.should_excavate = should_excavate
         goal_msg.should_unload = should_dump
+        # for now we want to back up when we finished
+        goal_msg.should_reverse = should_dump
         goal_handle = await self.odometry_action_client.send_goal_async(
             goal_msg,
             feedback_callback=self.driving_feedback_callback
@@ -166,7 +168,7 @@ class Planner(Node):
         if not goal_handle.accepted:
             self.get_logger().warn("Drive goal rejected.")
             return False
-    
+
         # drive goal was accepted, so we can wait for the result
         self.get_logger().info("Drive goal accepted.")
         res = await goal_handle.get_result_async()
