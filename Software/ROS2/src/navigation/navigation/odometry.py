@@ -37,11 +37,13 @@ class Odometry(Node):
             SelfDriver,
             'self_driver',
             execute_callback=self.on_goal_request,
+            cancel_callback=self.on_cancel,
             callback_group=self.callback_group
         )
         
         # action values to store for when its done
         self.goal_handle = None
+        self.was_cancelled = False
 
         # margin of error for rotation (degrees)
         self.deg_tolerance = 3.0 
@@ -91,6 +93,7 @@ class Odometry(Node):
         # for some reason this one starts doing big loops around the target when you give it some Ki and Kd on the simulation
         # especially when the speed of the simulation is increased
         self.angular_drive_pid = PIDController(Kp=0.008, Ki=0.0, Kd=0.0, output_limits=(-0.35, 0.35))
+        
         self.excavator_left_actuator_pid = PIDController(Kp=0.01, Ki=0.0, Kd=0.0, output_limits=(-1.0, 1.0))
         self.excavator_right_actuator_pid = PIDController(Kp=0.01, Ki=0.0, Kd=0.0, output_limits=(-1.0, 1.0))
 
@@ -113,6 +116,7 @@ class Odometry(Node):
         feedback_msg.progress = 0.0
         feedback_msg.finished_driving = False
         start_time = self.get_clock().now()
+        self.was_cancelled = False
 
         # get points
         points = goal_handle.request.targets
@@ -145,6 +149,18 @@ class Odometry(Node):
         # find total time used to drive
         end_time = self.get_clock().now()
         result.time_elapsed_millis = (end_time - start_time).nanoseconds // 1_000_000
+        return result
+
+    def on_cancel(self, goal_handle):
+        """Called when the action is cancelled. Stops the robot and sends a result."""
+        self.get_logger().info('cancelled goal')
+        # stop the motors
+        self.set_motor_power(0.0, 0.0)
+        # stop the excavator
+        self.stop_excavator()
+        result = SelfDriver.Result()
+        result.time_elapsed_millis = 0
+        self.was_cancelled = True
         return result
 
     # when position updates
@@ -218,8 +234,8 @@ class Odometry(Node):
 
         # message class (cannot move and excavate)
         msg = Excavator()
-        msg.left_actuator_power = left_actuator_power
-        msg.right_actuator_power = right_actuator_power
+        msg.left_actuator_speed = left_actuator_power
+        msg.right_actuator_speed = right_actuator_power
         msg.conveyor = conveyor_power
         msg.hatch = hatch_open
 
@@ -331,6 +347,8 @@ class Odometry(Node):
             # drive the motors for a bit
             await self.drive(-power, power, seconds=0.2)
             await self.yield_once()
+            
+            if self.was_cancelled: return
 
         # stop the motors
         self.set_motor_power(0.0, 0.0)
@@ -361,7 +379,7 @@ class Odometry(Node):
             orientation_error = self.get_orientation_error(destination)
 
             # reverse error calculation if going backward
-            # Essentially, shift the PID notion of “aligned” by 180.0
+            # shift the PID notion of "aligned" by 180.0
             if go_reverse:
                 err_orient = (err_orient + 180.0) % (360.0) - 180.0
 
@@ -381,6 +399,8 @@ class Odometry(Node):
 
             await self.drive(left_power, right_power, seconds=0.2)
             await self.yield_once()
+            
+            if self.was_cancelled: return
 
 
         self.set_motor_power(0.0, 0.0)
@@ -425,6 +445,9 @@ class Odometry(Node):
             feedback_msg.finished_driving = i + 1 >= points_len
             goal_handle.publish_feedback(feedback_msg)
             await self.yield_once()
+            
+            if self.was_cancelled:
+                return
         
         # empty list to show its done
         self.website_path_visualizer.publish(PathVisual(nodes=[]))

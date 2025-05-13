@@ -49,19 +49,31 @@ class Planner(Node):
     def __init__(self, pathfinder_client):
         super().__init__('planner')
         self.odometry_action_client = ActionClient(self, SelfDriver, 'self_driver')
-        self.planner_action_server = ActionServer(self, Plan, 'plan', self.plan_callback)
+        self.planner_action_server = ActionServer(self, Plan, 'plan', self.plan_callback, cancel_callback=self.cancel_callback)
         self.goal_handle = None
         self.feedback_msg = None
+        self.odometry_goal_handle = None
         
         self.start = start_zone.get_center()
         self.previous_position = self.start
         self.current_target = None
         self.was_travel_successful = False 
+        self.was_cancelled = False
         self.drive_time = 0
         self.callback_group = ReentrantCallbackGroup()
-        self._travel_done_event = Event()
         
         self.pathfinder_client = pathfinder_client
+    
+    def cancel_callback(self, goal_handle):
+        """
+        Gets run whenever a goal is cancelled.
+        This is used to stop the robot from moving if the plan is cancelled.
+        """
+        self.get_logger().info("Cancelling goal.")
+        if self.odometry_goal_handle is not None:
+            self.odometry_goal_handle.cancel_goal_async()
+        self.was_cancelled = True
+        return Plan.Result()
     
     async def plan_callback(self, goal_handle):
         """
@@ -102,12 +114,12 @@ class Planner(Node):
             
         self.start = start
         self.was_travel_successful = False
+        self.was_cancelled = False
         self.drive_time = 0
 
         while not self.was_travel_successful:
-            if goal_handle.is_cancel_requested:
+            if self.was_cancelled:
                 self.get_logger().info("Goal was cancelled.")
-                goal_handle.canceled()
                 result = Plan.Result()
                 result.time_elapsed_millis = (self.get_clock().now() - start_time).nanoseconds // 1000000
                 return result
@@ -144,11 +156,12 @@ class Planner(Node):
         goal_msg = SelfDriver.Goal()
         goal_msg.targets = targets
         goal_msg.should_excavate = should_excavate
-        goal_msg.should_dump = should_dump
+        goal_msg.should_unload = should_dump
         goal_handle = await self.odometry_action_client.send_goal_async(
             goal_msg,
             feedback_callback=self.driving_feedback_callback
         )
+        self.odometry_goal_handle = goal_handle
         
         if not goal_handle.accepted:
             self.get_logger().warn("Drive goal rejected.")
