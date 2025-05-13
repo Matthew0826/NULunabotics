@@ -122,7 +122,8 @@ class Odometry(Node):
         points = goal_handle.request.targets
         self.get_logger().info('received goal with {0} points'.format(len(points)))
 
-        await self.to_path(points, goal_handle, feedback_msg)
+        # drive in reverse if told by the goal
+        await self.to_path(points, goal_handle, feedback_msg, goal_handle.request.should_reverse)
         
         # get if we should unload
         unload = goal_handle.request.should_unload
@@ -430,14 +431,14 @@ class Odometry(Node):
         self.get_logger().info(f"faced position: old {int(old_orientation)}; new {int(self.orientation)}; desired {int(new_orientation)}")
 
     # navigate along an entire path worth of coordinates (points)
-    async def to_path(self, points, goal_handle, feedback_msg):
+    async def to_path(self, points, goal_handle, feedback_msg, go_reverse: bool):
         """Drives to a series of points in order, while reporting its progress over the goal handle."""
         points_len = len(points)
         
         # loop through each point and go there on the path
         # we enumerate to keep track of iterations
         for i, point in enumerate(points):
-            await self.to_position(point)
+            await self.to_position(point, go_reverse)
 
             # publish progress traveling the path
             # e.g. 1 / 2 meaning 1 point reached out of 2 so far

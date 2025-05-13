@@ -2,6 +2,7 @@
 Point[] targets
 bool should_excavate
 bool should_unload
+bool should_reverse
 ---
 # Result
 int64 time_elapsed_millis
