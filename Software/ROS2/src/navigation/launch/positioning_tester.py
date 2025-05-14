@@ -27,7 +27,7 @@ def generate_launch_description():
             executable='positioning',
             output='screen'
         ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(website_launch_path),
-        )
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(website_launch_path),
+        # )
     ])
