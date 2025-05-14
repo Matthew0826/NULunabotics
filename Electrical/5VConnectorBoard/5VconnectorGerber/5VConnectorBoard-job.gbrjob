@@ -5,12 +5,12 @@
       "Application": "Pcbnew",
       "Version": "8.0.6"
     },
-    "CreationDate": "2025-03-28T18:59:19-04:00"
+    "CreationDate": "2025-05-08T15:46:13-04:00"
   },
   "GeneralSpecs": {
     "ProjectId": {
-      "Name": "Electrical schematic",
-      "GUID": "456c6563-7472-4696-9361-6c2073636865",
+      "Name": "5VConnectorBoard",
+      "GUID": "3556436f-6e6e-4656-9374-6f72426f6172",
       "Revision": "rev?"
     },
     "Size": {
@@ -27,54 +27,53 @@
       "PadToPad": 0.2,
       "PadToTrack": 0.2,
       "TrackToTrack": 0.2,
-      "MinLineWidth": 0.2,
-      "TrackToRegion": 0.2,
-      "RegionToRegion": 0.2
+      "TrackToRegion": 0.5,
+      "RegionToRegion": 0.5
     }
   ],
   "FilesAttributes": [
     {
-      "Path": "Electrical schematic-F_Cu.gbr",
+      "Path": "5VConnectorBoard-F_Cu.gbr",
       "FileFunction": "Copper,L1,Top",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "Electrical schematic-B_Cu.gbr",
+      "Path": "5VConnectorBoard-B_Cu.gbr",
       "FileFunction": "Copper,L2,Bot",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "Electrical schematic-F_Paste.gbr",
+      "Path": "5VConnectorBoard-F_Paste.gbr",
       "FileFunction": "SolderPaste,Top",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "Electrical schematic-B_Paste.gbr",
+      "Path": "5VConnectorBoard-B_Paste.gbr",
       "FileFunction": "SolderPaste,Bot",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "Electrical schematic-F_Silkscreen.gbr",
+      "Path": "5VConnectorBoard-F_Silkscreen.gbr",
       "FileFunction": "Legend,Top",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "Electrical schematic-B_Silkscreen.gbr",
+      "Path": "5VConnectorBoard-B_Silkscreen.gbr",
       "FileFunction": "Legend,Bot",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "Electrical schematic-F_Mask.gbr",
+      "Path": "5VConnectorBoard-F_Mask.gbr",
       "FileFunction": "SolderMask,Top",
       "FilePolarity": "Negative"
     },
     {
-      "Path": "Electrical schematic-B_Mask.gbr",
+      "Path": "5VConnectorBoard-B_Mask.gbr",
       "FileFunction": "SolderMask,Bot",
       "FilePolarity": "Negative"
     },
     {
-      "Path": "Electrical schematic-Edge_Cuts.gbr",
+      "Path": "5VConnectorBoard-Edge_Cuts.gbr",
       "FileFunction": "Profile",
       "FilePolarity": "Positive"
     }
