@@ -34,6 +34,7 @@ function Timer({ startTime }: TimerProps) {
     const resetTimer = () => {
         stopTimer();
         setElapsedTime(0);
+        sendToServer("resetAutonomous", {});
     };
 
     const min = Math.floor(elapsedTime / 60);

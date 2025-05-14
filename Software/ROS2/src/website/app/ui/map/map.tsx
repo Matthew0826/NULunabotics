@@ -31,7 +31,12 @@ export default function Map() {
     const [obstacles, setObstacles] = useState<ObstacleType[]>([]);
     const [robot, setRobot] = useState({ x: 448, y: 100, width: 71, height: 98, rotation: 0, posConfidenceRect: { x1: 0, y1: 0, x2: 0, y2: 0 } });
     useEffect(() => {
-        if (messages.length == 0) return;
+        if (messages.length == 0) {
+            // in the case of a reset, clear the path data
+            setPathData([]);
+            setOdometryPathData([]);
+            return;
+        }
         const lastMessage = messages[messages.length - 1];
         if (lastMessage.type === "path") {
             const data = (lastMessage?.message || []).map((point: any) => ([point.x, point.y]));

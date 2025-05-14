@@ -3,7 +3,7 @@ from navigation.astar import AStar
 # these are rounded up to the nearest 5 cm
 MAP_WIDTH = 550  # units: cm
 MAP_HEIGHT = 490
-GRID_RESOLUTION = 5  # units: cm
+GRID_RESOLUTION = 2  # units: cm
 GRID_WIDTH = MAP_WIDTH // GRID_RESOLUTION
 GRID_HEIGHT = MAP_HEIGHT // GRID_RESOLUTION
 
@@ -30,7 +30,7 @@ def grid_to_world(x, y):
 
 
 def get_zone(x, y):
-    """Returns the zone of the map that the given coordinates are in.
+    """Returns the zone of the map that the given coordinates are in (world coordinates).
     Options are START_ZONE, TRAVERSAL_ZONE, EXCAVATION_ZONE, DUMP_ZONE, BERM_ZONE, OUT_OF_BOUNDS."""
     if x < 0 or x >= MAP_WIDTH or y < 0 or y >= MAP_HEIGHT:
         return OUT_OF_BOUNDS

@@ -2,7 +2,7 @@ import rclpy
 import math
 from rclpy.node import Node
 
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Bool
 
 from sensors.spin_node_helper import spin_nodes
 
@@ -26,6 +26,13 @@ class SpacialDataPublisher(Node):
         
         # create excavator potentiometer publisher
         self.excavator_potentiometer_pub = self.create_publisher(ExcavatorPotentiometer, '/sensors/excavator_percent', 10)
+        
+        # listen for resets coming from the website
+        self.reset_sub = self.create_subscription(
+            Bool,
+            "website/reset",
+            self.on_reset,
+            10)
  
         self.motor_sub = self.create_subscription(
                 Motors,
@@ -55,6 +62,19 @@ class SpacialDataPublisher(Node):
         self.motor_power_left = motors.front_left_wheel
         self.motor_power_right = motors.front_right_wheel
         # self.get_logger().info(f"got motors: {motors.front_left_wheel}, {motors.front_right_wheel}")
+    
+    def on_reset(self, msg: Bool):
+        self.get_logger().info("Resetting position")
+        self.x = 448.0
+        self.y = 100.0
+        self.orientation = float(random.randint(0, 360))
+        
+        self.motor_power_left = 0.0
+        self.motor_power_right = 0.0
+        
+        # keep track of excavator state
+        self.actuator_powers = (0.0, 0.0)
+        self.actuator_percents = (0.0, 0.0)
     
     def on_excavator(self, excavator: Excavator):
         self.actuator_powers = (excavator.left_actuator_speed, excavator.right_actuator_speed)

@@ -64,6 +64,8 @@ export default function WebSocketProvider({
             // messageBuffer.current.push(message);
             if (message.type === "obstacles") {
                 setMessages((prev) => [...prev, message]);
+            } else if (message.type === "reset") {
+                setMessages([]);
             } else {
                 setMessages((prev) => [...(prev.filter(a => a.type != message.type)), message]);
             }
@@ -90,6 +92,13 @@ export default function WebSocketProvider({
 
     function sendToServer(messageType: string, message: any) {
         try {
+            if (socketRef.current?.readyState !== WebSocket.OPEN) {
+                console.log("WebSocket is not open. Unable to send message.");
+                return;
+            }
+            if (messageType === "resetAutonomous") {
+                setMessages([]);
+            }
             socketRef.current?.send(JSON.stringify({ type: messageType, message: message }));
         } catch (error) {
             console.error("Error sending message to server:", error);

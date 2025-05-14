@@ -2,7 +2,7 @@
 
 import { IncomingMessage } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
-import { lidarPoints, publishMockObstacle, publishToROS2, sendPathfindingRequest, sendPlanAction, startLoopingAction, stopLoopingAction } from "../lib/ros2";
+import { lidarPoints, publishMockObstacle, publishSimReset, publishToROS2, sendPathfindingRequest, sendPlanAction, startLoopingAction, stopLoopingAction } from "../lib/ros2";
 import { sendToClient, sockets } from "../lib/sockets";
 
 export function GET() {
@@ -40,6 +40,8 @@ export function SOCKET(
                 startLoopingAction(true);
             } else if (messageJson.type === "stopAutonomous") {
                 stopLoopingAction();
+            } else if (messageJson.type === "resetAutonomous") {
+                publishSimReset(messageJson.message);
             } else if (messageJson.type === "controls") {
                 publishToROS2(messageJson.message);
             }

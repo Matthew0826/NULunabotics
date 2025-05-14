@@ -5,7 +5,7 @@ from rclpy.node import Node
 from sensors.spin_node_helper import spin_nodes
 
 from lunabotics_interfaces.msg import Obstacle, Point
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Bool
 
 import numpy as np
 import random
@@ -55,6 +55,11 @@ class MockObstacleDetector(Node):
             Float32,
             'sensors/orientation',
             self.orientation_callback,
+            10)
+        self.reset_subscription = self.create_subscription(
+            Bool,
+            'website/reset',
+            self.reset_callback,
             10)
         self.obstacle_publisher = self.create_publisher(Obstacle, 'navigation/obstacles', 10)
         self.robot_position = None
@@ -174,6 +179,13 @@ class MockObstacleDetector(Node):
         """Called whenever the robot's orientation is updated. Updates the robot's orientation and check for obstacles."""
         self.robot_orientation = 360.0 - msg.data
         self.check_obstacles()
+    
+    def reset_callback(self, msg):
+        """Called whenever the robot is reset. Resets the robot's position and orientation."""
+        self.robot_position = None
+        self.robot_orientation = None
+        self.mock_obstacles = []
+        self.generate_test_obstacles()
 
 
 def main(args=None):

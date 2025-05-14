@@ -432,7 +432,11 @@ class Odometry(Node):
 
         # move to face position plus client specified offset
         new_orientation = positive_angle(new_orientation + deg_offset)
-
+        initial_error = self.get_degrees_error(new_orientation)
+        # if we are already facing the position, no need to rotate
+        if abs(initial_error) <= 15.0:
+            self.get_logger().info(f"already facing position {int(new_orientation)} degrees")
+            return
         await self.to_orient(new_orientation)
         self.get_logger().info(f"faced position: old {int(old_orientation)}; new {int(self.orientation)}; desired {int(new_orientation)}")
 

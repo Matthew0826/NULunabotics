@@ -21,6 +21,7 @@ const LUNABOTICS_POINT_TYPE = "lunabotics_interfaces/msg/Point";
 const LUNABOTICS_RECT_TYPE = "lunabotics_interfaces/msg/Rect";
 const LUNABOTICS_PATH_VISUAL_TYPE = "lunabotics_interfaces/msg/PathVisual";
 const ROS2_FLOAT_TYPE = "std_msgs/msg/Float32";
+const ROS2_BOOL_TYPE = "std_msgs/msg/Bool";
 
 export const publishToROS2 = (messageJson: any) => {
     const motorsMsg = rclnodejs.createMessageObject(LUNABOTICS_MOTORS_TYPE);
@@ -44,6 +45,12 @@ export const publishMockObstacle = (messageJson: any) => {
         rosMockObstaclePublisher.publish(obstacleMsg);
     }
 };
+
+export const publishSimReset = (messageJson: any) => {
+    const resetMsg = rclnodejs.createMessageObject(ROS2_BOOL_TYPE);
+    resetMsg.data = true;
+    rosSimResetPublisher.publish(resetMsg);
+}
 
 export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, callback: (point: any[]) => void) => {
     // To view service events use the following command:
@@ -135,6 +142,7 @@ export function startLoopingAction(excavate: boolean) {
 }
 
 export async function stopLoopingAction() {
+    if (!doLoopAction || !goalHandle) return;
     doLoopAction = false;
     const response = await goalHandle.cancelGoal();
 
@@ -163,6 +171,7 @@ async function timerCallback(goalHandle: rclnodejs.ClientGoalHandle<typeof LUNAB
 let rosNode: rclnodejs.Node;
 let rosControlsPublisher: rclnodejs.Publisher<typeof LUNABOTICS_MOTORS_TYPE>;
 let rosMockObstaclePublisher: rclnodejs.Publisher<typeof LUNABOTICS_OBSTACLE_TYPE>;
+let rosSimResetPublisher: rclnodejs.Publisher<typeof ROS2_BOOL_TYPE>;
 let rosClient: rclnodejs.Client<typeof LUNABOTICS_PATH_TYPE>;
 let planActionClient: rclnodejs.ActionClient<typeof LUNABOTICS_PLAN_TYPE>;
 
@@ -178,6 +187,10 @@ rclnodejs.init().then(() => {
     rosMockObstaclePublisher = node.createPublisher(
         LUNABOTICS_OBSTACLE_TYPE,
         "navigation/obstacles"
+    );
+    rosSimResetPublisher = node.createPublisher(
+        ROS2_BOOL_TYPE,
+        "website/reset"
     );
     node.createSubscription(
         LUNABOTICS_LIDAR_ROTATION_TYPE,
@@ -233,6 +246,13 @@ rclnodejs.init().then(() => {
             sendToClient("odometry_path", msg.nodes);
         }
     );
+    node.createSubscription(
+        ROS2_BOOL_TYPE,
+        "website/reset",
+        (msg: any) => {
+            sendToClient("reset", msg.data);
+        }
+    )
 
     rosClient = node.createClient(
         LUNABOTICS_PATH_TYPE,
