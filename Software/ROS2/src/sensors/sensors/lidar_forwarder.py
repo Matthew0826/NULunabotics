@@ -44,15 +44,16 @@ class LidarForwarder(Node):
         Waits until a full rotation of points is received, then publishes them.
         """
         # self.get_logger().info(str(msg))
-        self.get_logger().info(f"got {len(msg.ranges)} points")
+        # self.get_logger().info(f"got {len(msg.ranges)} points")
         # scan in new points
         points = self.process_laser_scan(msg)
         # self.full_rotation_of_points.extend(points)
-        if self.count % 10 == 0:
-            self.get_logger().info(f"sending points")# in {time() - msg.header.stamp.nanoseconds/1000} seconds")
+        if self.count % 2 == 0:
+            now = self.get_clock().now()
+            # self.get_logger().info(f"sending points in {(now.nanoseconds - msg.header.stamp.nanosec)/1_000_000} ms")
             data_to_send = LidarRotation()
             data_to_send.points = points
-            data_to_send.timestamp = 0#msg.header.stamp
+            data_to_send.timestamp = msg.header.stamp.nanosec//1_000
             self.lidar_publisher.publish(data_to_send)
         self.count += 1
         
