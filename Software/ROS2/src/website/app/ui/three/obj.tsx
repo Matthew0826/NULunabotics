@@ -237,11 +237,14 @@ const ObjModelAnimator = ({
 
                             const box = new THREE.Box3().setFromObject(object);
                             const center = box.getCenter(new THREE.Vector3());
+                            center.x = 0;
+                            center.z = 0;
+                            center.y /= 2;
                             object.position.sub(center);
 
                             const size = box.getSize(new THREE.Vector3());
                             const maxDim = Math.max(size.x, size.y, size.z);
-                            object.scale.multiplyScalar(2 / maxDim);
+                            object.scale.multiplyScalar(2.5 / maxDim);
 
                             scene.add(object);
 

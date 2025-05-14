@@ -144,8 +144,8 @@ class Pathfinder(Node):
             path = self.calculate_path(start, end, confidence_threshold)
             if len(path) == 0:
                 confidence_threshold += OBSTACLE_CONFIDENCE_STRENGTH
-        # filter out points that are 7 cm away from each other
-        filtered_path = self.filter_nearby_points(path, 15)
+        # filter out points that are 11 cm away from each other
+        filtered_path = self.filter_nearby_points(path, 11)
         # get path in world points
         filtered_path = [grid_to_world(node.x, node.y) for node in filtered_path]
         response.nodes = [Point(x=point[0],y=point[1]) for point in filtered_path]

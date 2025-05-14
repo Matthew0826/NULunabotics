@@ -11,7 +11,7 @@ from threading import Event
 
 from navigation.pathfinder_client import PathfinderClient, use_pathfinder
 from navigation.zone import Zone
-from navigation.pathfinder_helper import distance
+from navigation.pathfinder_helper import distance, get_zone, START_ZONE, DUMP_ZONE, EXCAVATION_ZONE, BERM_ZONE
 
 from sensors.spin_node_helper import spin_nodes
 
@@ -140,12 +140,20 @@ class Planner(Node):
                 return result
         
         
-        # we are at the end, we need to dig/dump (no path to travel to)
-        excavation_start_time = self.get_clock().now()
-        # await self.send_drive_goal([], should_excavate=should_excavate, should_dump=should_dump)
-        excavation_end_time = self.get_clock().now()
-        self.drive_time += (excavation_end_time - excavation_start_time).nanoseconds // 1_000_000
-        self.get_logger().info(f"Excavation took {self.drive_time} ms")
+        # check if start was in the construction (aka dump) zone and if "self.previous_position" is in the excavation zone
+        allowed_to_excavate = ((get_zone(self.start.x, self.start.y) == DUMP_ZONE and \
+           get_zone(self.previous_position.x, self.previous_position.y) == EXCAVATION_ZONE)) or \
+               (get_zone(self.start.x, self.start.y) == START_ZONE and \
+              get_zone(self.previous_position.x, self.previous_position.y) == EXCAVATION_ZONE)
+        allowed_to_dump = (get_zone(self.start.x, self.start.y) == DUMP_ZONE and \
+              get_zone(self.previous_position.x, self.previous_position.y) == BERM_ZONE)
+        if allowed_to_excavate or allowed_to_dump:
+            # we are at the end, we need to dig/dump (no path to travel to)
+            excavation_start_time = self.get_clock().now()
+            await self.send_drive_goal([], should_excavate=allowed_to_excavate, should_dump=allowed_to_dump)
+            excavation_end_time = self.get_clock().now()
+            self.drive_time += (excavation_end_time - excavation_start_time).nanoseconds // 1_000_000
+            self.get_logger().info(f"Excavation took {self.drive_time} ms")
         
         # "Je gagne!"
         goal_handle.succeed()
@@ -165,7 +173,7 @@ class Planner(Node):
         goal_msg.targets = targets
         goal_msg.should_excavate = should_excavate
         goal_msg.should_unload = should_dump
-        # for now we want to back up when we finished
+        # for now we want to back up to the berm, so we should reverse
         goal_msg.should_reverse = self.should_drive_reverse
         goal_handle = await self.odometry_action_client.send_goal_async(
             goal_msg,
@@ -219,7 +227,7 @@ class Planner(Node):
         for i in range(len(new_path) - 1):
             sum_of_distances += distance(new_path[i], new_path[i+1])
             if sum_of_distances > LIDAR_VIEW_DISTANCE:
-                new_path = new_path[:i + 1]
+                new_path = new_path[:i]
                 break
         return new_path
     

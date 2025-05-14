@@ -9,6 +9,7 @@ from sensors.spin_node_helper import spin_nodes
 from lunabotics_interfaces.msg import Point, Excavator, Motors, ExcavatorPotentiometer
 
 import random
+import numpy as np
 
 TOP_SPEED = 100.0 # cm/s
 REFRESH_RATE = 10 # Hz
@@ -97,8 +98,8 @@ class SpacialDataPublisher(Node):
             self.x += math.cos(math.radians(360 - self.orientation)) * average_power * tick_speed
             self.y += math.sin(math.radians(360 - self.orientation)) * average_power * tick_speed
         if abs(self.actuator_powers[0]) > 0.1 or abs(self.actuator_powers[1]) > 0.1:
-            new_percent_left = clamp(self.actuator_percents[0] + self.motor_power_left * 0.05)
-            new_percent_right = clamp(self.actuator_percents[1] + self.motor_power_right * 0.05)
+            new_percent_left = clamp(self.actuator_percents[0] + self.actuator_powers[0] * np.random.uniform(0.04, 0.06))
+            new_percent_right = clamp(self.actuator_percents[1] + self.actuator_powers[1] * np.random.uniform(0.04, 0.06))
             self.actuator_percents = (new_percent_left, new_percent_right)
             
     def timer_callback(self):

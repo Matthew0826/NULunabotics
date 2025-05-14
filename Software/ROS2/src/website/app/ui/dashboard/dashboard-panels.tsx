@@ -25,8 +25,8 @@ export default function DashboardPanels() {
                 <BatteryIndicator />
                 <Panel title="">
                     <ObjModelAnimator
-                        objUrl="/models/lunabot.obj"
-                        // mtlUrl="/models/lunabot.mtl"
+                        objUrl="/models/lunabot4.obj"
+                        mtlUrl="/models/lunabot4.mtl"
                         height={'50vh'}
                         controlsConfig={{
                             enablePan: false,
