@@ -7,6 +7,8 @@ import WebSocketGraph from "./web-socket-graph";
 import BatteryIndicator from "./battery-indicator";
 import Timer from "./timer";
 import LidarVisual from "./lidar-visual";
+import RobotRender from "../three/robot-render";
+import ObjModelAnimator from "../three/obj";
 
 export default function DashboardPanels() {
     const mapPanel = (
@@ -21,12 +23,25 @@ export default function DashboardPanels() {
                 {/* <div className="xl:hidden">{mapPanel}</div> */}
                 <div className="xl:hidden">{mapPanel}</div>
                 <BatteryIndicator />
-
-                <Panel title="LiDAR">
-                    <LidarVisual />
+                <Panel title="">
+                    <ObjModelAnimator
+                        objUrl="/models/lunabot.obj"
+                        // mtlUrl="/models/lunabot.mtl"
+                        height={'50vh'}
+                        controlsConfig={{
+                            enablePan: false,
+                            enableZoom: false,
+                            autoRotate: false,
+                            // Limit vertical rotation (in radians)
+                            maxPolarAngle: Math.PI * 0.75,  // Can't go below model
+                            minPolarAngle: Math.PI * 0.25   // Can't go fully above model
+                        }} />
                 </Panel>
                 <Panel title="Timer">
                     <Timer startTime={0} />
+                </Panel>
+                <Panel title="LiDAR">
+                    <LidarVisual />
                 </Panel>
                 <Panel title="Power">
                     {/* <BatteryIndicator /> */}

@@ -7,7 +7,7 @@ BIG_ENDIAN = b'\x00\x00'
 
 def deserialize(message: bytes, ros_type: any):
     # add 2 bytes to the beginning of the message to represent little-endianess
-    # and 2 more 0 bytes to fill the 4 byte header of a CDR message
+    # and 2 more '0' bytes to fill the 4 byte header of a CDR message
     message = LITTLE_ENDIAN + b'\x00\x00' + message
     # deserialize the message
     deserialized_msg = deserialize_message(message, ros_type)
