@@ -378,6 +378,7 @@ class Odometry(Node):
         self.linear_drive_pid.reset()
         self.angular_drive_pid.reset()
         
+        
         while True:
             # find error
             error = distance(self.position, destination)
@@ -386,7 +387,8 @@ class Odometry(Node):
             # reverse error calculation if going backward
             # shift the PID notion of "aligned" by 180.0
             if go_reverse:
-                err_orient = (err_orient + 180.0) % (360.0) - 180.0
+                self.get_logger().info("CHANGE ORIENTATION ERROR (REVERSE)")
+                orientation_error = (orientation_error + 180.0) % (360.0) - 180.0
 
             # check if completed
             if error < self.dist_tolerance: break
@@ -438,6 +440,7 @@ class Odometry(Node):
     async def to_path(self, points, goal_handle, feedback_msg, go_reverse: bool):
         """Drives to a series of points in order, while reporting its progress over the goal handle."""
         points_len = len(points)
+        # go_reverse = True
         
         # loop through each point and go there on the path
         # we enumerate to keep track of iterations

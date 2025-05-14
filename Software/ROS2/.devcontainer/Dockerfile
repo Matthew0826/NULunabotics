@@ -42,7 +42,7 @@ RUN echo "export NVM_DIR=$NVM_DIR" >> /home/$USERNAME/.bashrc && \
     echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /home/$USERNAME/.bashrc && \
     echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"' >> /home/$USERNAME/.bashrc && \
     echo 'source /opt/ros/jazzy/setup.bash' >> /home/$USERNAME/.bashrc && \
-    echo 'source /home/$USERNAME/Documents/programming/university/NULunabotics/Software/ROS2/install/setup.bash' >> /home/$USERNAME/.bashrc
+    echo 'source /home/$USERNAME/ROS2/install/setup.bash' >> /home/$USERNAME/.bashrc
 
 
 # ********************************************************

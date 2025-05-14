@@ -54,6 +54,7 @@ class Planner(Node):
         self.goal_handle = None
         self.feedback_msg = None
         self.odometry_goal_handle = None
+        self.should_drive_reverse = False
         
         self.start = start_zone.get_center()
         self.previous_position = self.start
@@ -95,6 +96,7 @@ class Planner(Node):
         start_time = self.get_clock().now()
         should_excavate = goal_handle.request.should_excavate
         should_dump = goal_handle.request.should_dump
+        self.should_drive_reverse = should_dump  # reverse if going to dump
         destination = goal_handle.request.destination
         start = goal_handle.request.start
         self.get_logger().info(f"Should excavate: {should_excavate}, should dump: {should_dump}")
@@ -140,7 +142,7 @@ class Planner(Node):
         
         # we are at the end, we need to dig/dump (no path to travel to)
         excavation_start_time = self.get_clock().now()
-        await self.send_drive_goal([], should_excavate=should_excavate, should_dump=should_dump)
+        # await self.send_drive_goal([], should_excavate=should_excavate, should_dump=should_dump)
         excavation_end_time = self.get_clock().now()
         self.drive_time += (excavation_end_time - excavation_start_time).nanoseconds // 1_000_000
         self.get_logger().info(f"Excavation took {self.drive_time} ms")
@@ -164,7 +166,7 @@ class Planner(Node):
         goal_msg.should_excavate = should_excavate
         goal_msg.should_unload = should_dump
         # for now we want to back up when we finished
-        goal_msg.should_reverse = should_dump
+        goal_msg.should_reverse = self.should_drive_reverse
         goal_handle = await self.odometry_action_client.send_goal_async(
             goal_msg,
             feedback_callback=self.driving_feedback_callback
