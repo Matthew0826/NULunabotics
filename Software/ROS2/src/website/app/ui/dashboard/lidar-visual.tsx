@@ -15,7 +15,7 @@ function interpolateColor(color1: number[], color2: number[], factor: number) {
 }
 
 const previousLidarData: Point[][] = [];
-const previousLidarDataMaxSize = 20;
+const previousLidarDataMaxSize = 5;
 const THRESHOLD_DEGS = 0.25;
 const THRESHOLD_RADS = THRESHOLD_DEGS * 2.0 * (Math.PI / 180.0);
 

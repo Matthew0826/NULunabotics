@@ -1,6 +1,7 @@
 from lunabotics_interfaces.msg import Point
+from pathfinder_helper import distance
 # is each dump in the berm is about 10x10 cm?
-BERM_DUMP_SIZE = 10
+BERM_DUMP_SIZE = 15
 
 class Zone:
     """Represents a zone on the competition map. The zone is a rectangle with a width and height. Options are:
@@ -15,21 +16,33 @@ class Zone:
         self.y = y
         self.width = width
         self.height = height
+        self.generate_points()
+    
+    def generate_points(self):
         # represents how far into the zone we are
         # as the robot digs into the excavation zone, it should pick a different place to dig from
         # start at end
-        self.n = int(self.width * self.height / (BERM_DUMP_SIZE**2)) - 1
         self.points = []
-        for i in range(int(width / BERM_DUMP_SIZE) + 1):
-            for j in range(int(height / BERM_DUMP_SIZE) + 1):
-                self.points.append(Point())
-                self.points[-1].x = float(x + i * BERM_DUMP_SIZE)
-                self.points[-1].y = float(y + j * BERM_DUMP_SIZE)
+        for i in range(int(self.width / BERM_DUMP_SIZE) + 1):
+            for j in range(int(self.height / BERM_DUMP_SIZE) + 1):
+                p = Point()
+                p.x = float(self.x + i * BERM_DUMP_SIZE)
+                p.y = float(self.y + j * BERM_DUMP_SIZE)
+                self.points.append(p)
 
     def pop_next_point(self):
-        point = self.points[self.n]
-        self.n -= 1
-        return point
+        # find point closest to the center of the zone
+        closest_point = None
+        closest_distance = float('inf')
+        center = self.get_center()
+        for point in self.points:
+            dist = distance(center, point)
+            if dist < closest_distance:
+                closest_distance = dist
+                closest_point = point
+        # remove the point from the list
+        self.points.remove(closest_point)
+        return closest_point
     
     def shrink(self, amount, only_top=False):
         """Shrinks the zone by the given amount. If only_top is true, only the top of the zone is shrunk."""
@@ -40,9 +53,10 @@ class Zone:
         self.height -= amount * 2
         if only_top:
             self.height += amount
+        self.generate_points()
     
     def is_done(self):
-        return self.n < 0
+        return len(self.points) == 0
     
     def get_center(self):
         center_x = self.x + self.width / 2

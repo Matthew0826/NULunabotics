@@ -35,11 +35,15 @@ def get_zone(x, y):
     if x < 0 or x >= MAP_WIDTH or y < 0 or y >= MAP_HEIGHT:
         return OUT_OF_BOUNDS
     if y < 200:
-        if x > MAP_WIDTH - 200:
+        if x > (MAP_WIDTH - 200):
             return START_ZONE
-        return BERM_ZONE
+        return TRAVERSAL_ZONE
+    if y < (MAP_HEIGHT - 243):
+        return TRAVERSAL_ZONE
     if x < 274:
         return EXCAVATION_ZONE
+    if (x > (MAP_WIDTH - (70 + 50))) and (x < MAP_WIDTH - 50) and (y > (MAP_HEIGHT - 200 - 43/2)) and (y < MAP_HEIGHT - 43/2):
+        return BERM_ZONE
     return DUMP_ZONE
 
 

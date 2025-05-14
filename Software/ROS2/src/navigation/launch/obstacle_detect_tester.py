@@ -21,16 +21,16 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(ld19_launch_path)
         ),
-        # Node(
-        #     package='navigation',
-        #     executable='obstacle_detector',
-        #     output='screen'
-        # ),
-        # Node(
-        #     package='sensors',
-        #     executable='mock_positioning',
-        #     output='screen'
-        # ),
+        Node(
+            package='navigation',
+            executable='obstacle_detector',
+            output='screen'
+        ),
+        Node(
+            package='sensors',
+            executable='mock_positioning',
+            output='screen'
+        ),
         Node(
             package='sensors',
             executable='lidar_forwarder',

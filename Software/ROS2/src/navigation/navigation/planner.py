@@ -7,11 +7,10 @@ from lunabotics_interfaces.action import SelfDriver, Plan
 from lunabotics_interfaces.msg import Point
 
 from rclpy.callback_groups import ReentrantCallbackGroup
-from threading import Event
 
 from navigation.pathfinder_client import PathfinderClient, use_pathfinder
 from navigation.zone import Zone
-from navigation.pathfinder_helper import distance, get_zone, START_ZONE, DUMP_ZONE, EXCAVATION_ZONE, BERM_ZONE
+from navigation.pathfinding import distance, get_zone, START_ZONE, DUMP_ZONE, EXCAVATION_ZONE, BERM_ZONE
 
 from sensors.spin_node_helper import spin_nodes
 
@@ -30,7 +29,7 @@ from sensors.spin_node_helper import spin_nodes
 
 
 # TODO: use actual values
-LIDAR_VIEW_DISTANCE = 100 # cm
+LIDAR_VIEW_DISTANCE = 80 # cm
 ROBOT_WIDTH = 71
 ROBOT_LENGTH = 98
 HAS_REACHED_TARGET_THRESHOLD = 20

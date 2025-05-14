@@ -5,7 +5,7 @@ from lunabotics_interfaces.msg import Point, Obstacle, PathVisual
 from lunabotics_interfaces.srv import Path
 from std_msgs.msg import Bool
 
-from navigation.pathfinder_helper import *
+from navigation.pathfinding import *
 from sensors.spin_node_helper import spin_nodes
 import math
 
