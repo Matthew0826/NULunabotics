@@ -63,7 +63,6 @@ class Pathfinder(Node):
         # begin with all obstacles, then clear the center of the map. this is because the robot should not drive near the edges
         self.grid = [[1 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
         # remove everything that is ROBOT_RADIUS cm away from the edges
-        print(ROBOT_RADIUS)
         for i in range(int(ROBOT_RADIUS), int(MAP_WIDTH - ROBOT_RADIUS)):
             for j in range(int(ROBOT_RADIUS), int(MAP_HEIGHT - ROBOT_RADIUS)):
                 grid_x, grid_y = world_to_grid(i, j)
@@ -149,8 +148,7 @@ class Pathfinder(Node):
         # get path in world points
         filtered_path = [grid_to_world(node.x, node.y) for node in filtered_path]
         response.nodes = [Point(x=point[0],y=point[1]) for point in filtered_path]
-        print("Path found with confidence threshold:", confidence_threshold)
-        print("Start:", start.x, ",", start.y, "  End:", end.x, ",", end.y)
+        self.get_logger().info(f"Path found with confidence threshold: {confidence_threshold} (({start.x}, {start.y}) till ({end.x}, {end.y}))")
         # self.debug_map()
         self.website_path_visualizer.publish(PathVisual(nodes=response.nodes))
         return response
@@ -168,7 +166,7 @@ class Pathfinder(Node):
     def reset_callback(self, msg):
         """Resets the grid to all obstacles and clears the center of the map."""
         if msg.data:
-            print("Resetting pathfinder grid")
+            self.get_logger().info("Resetting pathfinder grid")
         self.init_grid()
 
 

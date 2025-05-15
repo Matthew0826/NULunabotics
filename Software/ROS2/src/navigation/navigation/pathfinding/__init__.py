@@ -1,11 +1,14 @@
-from .pathfinder_client import PathfinderClient
+from .pathfinder_client import PathfinderClient, use_pathfinder
+from .zone import *
 from .pathfinder_helper import *
 
 
 __version__ = '1.0.0'
 __all__ = [
     'PathfinderClient',
+    'use_pathfinder',
     'get_zone',
+    'Zone',
     'world_to_grid',
     'grid_to_world',
     'BERM_ZONE',

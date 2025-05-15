@@ -8,8 +8,8 @@ from lunabotics_interfaces.msg import Point
 
 from rclpy.callback_groups import ReentrantCallbackGroup
 
-from navigation.pathfinder_client import PathfinderClient, use_pathfinder
-from navigation.zone import Zone
+from navigation.pathfinding import PathfinderClient, use_pathfinder
+from navigation.pathfinding import Zone
 from navigation.pathfinding import distance, get_zone, START_ZONE, DUMP_ZONE, EXCAVATION_ZONE, BERM_ZONE
 
 from sensors.spin_node_helper import spin_nodes
@@ -38,10 +38,8 @@ ROBOT_RADIUS = (((ROBOT_WIDTH/2)**2 + (ROBOT_LENGTH/2)**2) ** 0.5) / 2
 
 # define zones in cm and shrink them so the robot doesn't hit the walls
 berm_zone = Zone(428.0, 265.5, 70.0, 200.0)
-print(f"height before: {berm_zone.height}")
 berm_zone.shrink(ROBOT_RADIUS/2)
 berm_zone.shrink(ROBOT_RADIUS, only_top=True)  # there might be no need to shrink berm since it already avoids parts near rocks
-print(f"height after: {berm_zone.height}")
 excavation_zone = Zone(0, 244.0, 274.0, 243.0)
 excavation_zone.shrink(ROBOT_RADIUS)
 start_zone = Zone(348.0, 0.0, 200.0, 200.0)
@@ -242,7 +240,7 @@ class Planner(Node):
         """
         # make new path
         path = self.make_path(self.current_target)
-        self.get_logger().info(f"Path: {path}")
+        # self.get_logger().info(f"Path: {path}")
         # we don't know about obstacles that are too far away, so we need to prune those points from the path
         pruned_path = self.prune_path(path)
         
@@ -260,10 +258,10 @@ class Planner(Node):
         elif len(pruned_path) > 1:
             # remove first point so the robot doesn't drive to itself
             pruned_path = pruned_path[1:]
-            self.get_logger().info(f"Pruned path: {pruned_path}")
+            # self.get_logger().info(f"Pruned path: {pruned_path}")
         
         # then wait for the robot to drive to the next point
-        self.get_logger().info(f"Driving to ({self.current_target.x}, {self.current_target.y})")
+        # self.get_logger().info(f"Driving to ({self.current_target.x}, {self.current_target.y})")
         drive_success = await self.send_drive_goal(pruned_path)
         if not drive_success:
             self.get_logger().info("Drive failed, so we need to try a different point.")

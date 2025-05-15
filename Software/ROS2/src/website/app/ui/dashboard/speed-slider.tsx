@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { Dispatch, SetStateAction, useState } from 'react';
 
-export default function SpeedSlider({ value, setValue }: { value: number; setValue: (value: number) => void }) {
+export default function SpeedSlider({ value, setValue }: { value: number; setValue: Dispatch<SetStateAction<number>> | undefined }) {
     const [isDragging, setIsDragging] = useState(false);
 
     const handleChange = (e: any) => {
-        setValue(parseFloat(e.target.value));
+        if (setValue) {
+            setValue(parseFloat(e.target.value));
+        }
     };
 
     const percentage = value * 100;

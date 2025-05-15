@@ -46,13 +46,13 @@ class SpacialDataPublisher(Node):
                 self.on_excavator,
                 10)
         
-        self.orientation_correction_sub = self.create_subscription(AccelerometerCorrection, 'sensors/accelerometer_correction', self.on_orientation_correction, 10)
+        self.orientation_correction_sub = self.create_subscription(AccelerometerCorrection, '/sensors/accelerometer_correction', self.on_orientation_correction, 10)
         
         # keep track of positions
         self.x = 448.0
         self.y = 100.0
         self.orientation = float(random.randint(0, 360))
-        self.initial_orientation = self.orientation
+        self.initial_orientation = -self.orientation
         
         self.motor_power_left = 0.0
         self.motor_power_right = 0.0
@@ -73,6 +73,7 @@ class SpacialDataPublisher(Node):
         self.x = 448.0
         self.y = 100.0
         self.orientation = float(random.randint(0, 360))
+        self.initial_orientation = -self.orientation
         
         self.motor_power_left = 0.0
         self.motor_power_right = 0.0
@@ -108,14 +109,16 @@ class SpacialDataPublisher(Node):
     
     def on_orientation_correction(self, msg: AccelerometerCorrection):
         # Apply the correction to the orientation
-        self.initial_orientation = msg.initial_angle
+        self.get_logger().info(f"Got orientation correction: {msg.initial_angle} (correct was {self.initial_orientation})")
+        self.initial_orientation -= msg.initial_angle
+        self.get_logger().info(f"New initial orientation: {self.initial_orientation}")
         if msg.should_reset:
             self.orientation = 0.0
             
     def timer_callback(self):
         self.update_simulation()
         msg = Float32()
-        msg.data = float(self.orientation + self.initial_orientation)
+        msg.data = float((self.orientation + self.initial_orientation + 360.0) % 360.0)
         # publish mock orientation based on motor power
         self.orientation_pub.publish(msg)
         

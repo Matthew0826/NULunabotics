@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { defaults, useGamepadManagerContext } from "../ui/dashboard/gamepad-state-provider";
 import { useWebSocketContext } from "./web-socket-context";
 
@@ -12,7 +12,7 @@ const defaultsNormalized = {
     timestamp: 0,
 };
 
-export function useKeyboardController() {
+export function useKeyboardController(): [number, Dispatch<SetStateAction<number>>] {
     const { messages, sendToServer } = useWebSocketContext();
     const { state, setState } = useGamepadManagerContext();
     const [speed, setSpeed] = useState(0.5);
@@ -65,6 +65,6 @@ export function useKeyboardController() {
             window.removeEventListener("keydown", handleKeyDown);
             window.removeEventListener("keyup", handleKeyUp);
         };
-    }, []);
+    }, [sendToServer, setState, speed]);
     return [speed, setSpeed];
 }

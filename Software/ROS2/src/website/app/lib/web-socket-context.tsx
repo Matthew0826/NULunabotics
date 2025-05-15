@@ -64,7 +64,7 @@ export default function WebSocketProvider({
             // messageBuffer.current.push(message);
             if (message.type === "obstacles") {
                 setMessages((prev) => [...prev, message]);
-            } else if (message.type === "reset") {
+            } else if (message.type === "resetAutonomous") {
                 setMessages([]);
             } else {
                 setMessages((prev) => [...(prev.filter(a => a.type != message.type)), message]);

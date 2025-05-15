@@ -1,5 +1,5 @@
 from lunabotics_interfaces.msg import Point
-from pathfinder_helper import distance
+from .pathfinder_helper import distance
 # is each dump in the berm is about 10x10 cm?
 BERM_DUMP_SIZE = 15
 

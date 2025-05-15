@@ -41,6 +41,7 @@ export function SOCKET(
             } else if (messageJson.type === "stopAutonomous") {
                 stopLoopingAction();
             } else if (messageJson.type === "resetAutonomous") {
+                stopLoopingAction();
                 publishSimReset(messageJson.message);
             } else if (messageJson.type === "controls") {
                 publishToROS2(messageJson.message);

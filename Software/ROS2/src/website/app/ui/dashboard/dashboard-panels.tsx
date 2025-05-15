@@ -19,7 +19,8 @@ export default function DashboardPanels() {
         </Panel>
     );
 
-    const [speed, setSpeed] = useKeyboardController();
+    // const [speed, setSpeed] = useKeyboardController();
+    // console.log("Speed: ", speed);
 
     return (
         <div className="flex flex-row gap-4 p-6 h-full w-full">
@@ -52,7 +53,7 @@ export default function DashboardPanels() {
                     <WebSocketGraph graphInfo={tempGraphPower} />
                 </Panel>
                 <Panel title="Speed">
-                    <SpeedSlider value={speed} setValue={setSpeed} />
+                    <SpeedSlider value={0.5} setValue={undefined} />
                 </Panel>
             </div>
             <div className="w-[66vw] hidden xl:block flex-2">{mapPanel}</div>

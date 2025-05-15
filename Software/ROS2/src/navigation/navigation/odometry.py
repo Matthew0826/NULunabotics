@@ -8,7 +8,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 # the self driver agent action
 from lunabotics_interfaces.msg import Point, Motors, Excavator, PathVisual, ExcavatorPotentiometer, AccelerometerCorrection
 from lunabotics_interfaces.action import SelfDriver
-from navigation.pathfinder_helper import distance
+from navigation.pathfinding import distance
 from sensors.spin_node_helper import spin_nodes
 
 from navigation.pid import PIDController
@@ -372,13 +372,13 @@ class Odometry(Node):
 
         # stop the motors
         self.set_motor_power(0.0, 0.0)
-        self.get_logger().info(f"rotated to {int(self.orientation)} degrees. (wanted {int(final_orientation)})")
+        # self.get_logger().info(f"rotated to {int(self.orientation)} degrees. (wanted {int(final_orientation)})")
 
     async def to_position(self, destination: Point, go_reverse: bool = False):
         """Drives to a given destination with PID control."""
         start_time = self.get_clock().now()
         # calculate orientation to face position
-        self.get_logger().info(f"want to go to position {destination.x}, {destination.y}")
+        # self.get_logger().info(f"want to go to position {destination.x}, {destination.y}")
         self.website_path_visualizer.publish(PathVisual(nodes=[self.position, destination]))
 
         # flip robot around if going reverse
@@ -406,7 +406,7 @@ class Odometry(Node):
             # reverse error calculation if going backward
             # shift the PID notion of "aligned" by 180.0
             if go_reverse:
-                self.get_logger().info("CHANGE ORIENTATION ERROR (REVERSE)")
+                # self.get_logger().info("CHANGE ORIENTATION ERROR (REVERSE)")
                 orientation_error = (orientation_error + 180.0) % (360.0) - 180.0
 
             # check if completed
@@ -430,19 +430,19 @@ class Odometry(Node):
 
 
         self.set_motor_power(0.0, 0.0)
-        self.get_logger().info(f"drove to {int(self.position.x)}, {int(self.position.y)} (wanted {int(destination.x)}, {int(destination.y)})")
+        # self.get_logger().info(f"drove to {int(self.position.x)}, {int(self.position.y)} (wanted {int(destination.x)}, {int(destination.y)})")
         after_moving_time = self.get_clock().now()
         # calculate time taken to move
         time_taken = (after_moving_time - start_time).nanoseconds // 1_000_000
-        self.get_logger().info(f"took {time_taken} milliseconds to move")
+        # self.get_logger().info(f"took {time_taken} milliseconds to move")
         # calculate time taken to orient
         orientation_time = (after_orientation_time - start_time).nanoseconds // 1_000_000
-        self.get_logger().info(f"took {orientation_time} milliseconds to orient")
+        # self.get_logger().info(f"took {orientation_time} milliseconds to orient")
 
     # orient the rover to face a position
     async def face_position(self, destination: Point, deg_offset: float = 0.0):
         """Rotates to face a given position."""
-        self.get_logger().info(f"want to face {destination.x}, {destination.y}")
+        # self.get_logger().info(f"want to face {destination.x}, {destination.y}")
         angle_rad = math.atan2(self.position.y - destination.y, destination.x - self.position.x)
         new_orientation = positive_angle(math.degrees(angle_rad))
 
@@ -454,10 +454,10 @@ class Odometry(Node):
         initial_error = self.get_degrees_error(new_orientation)
         # if we are already facing the position, no need to rotate
         if abs(initial_error) <= 15.0:
-            self.get_logger().info(f"already facing position {int(new_orientation)} degrees")
+            # self.get_logger().info(f"already facing position {int(new_orientation)} degrees")
             return
         await self.to_orient(new_orientation)
-        self.get_logger().info(f"faced position: old {int(old_orientation)}; new {int(self.orientation)}; desired {int(new_orientation)}")
+        # self.get_logger().info(f"faced position: old {int(old_orientation)}; new {int(self.orientation)}; desired {int(new_orientation)}")
 
     # navigate along an entire path worth of coordinates (points)
     async def to_path(self, points, goal_handle, feedback_msg, go_reverse: bool):
@@ -487,12 +487,14 @@ class Odometry(Node):
         start_position = self.position
         start_orientation = self.orientation
         # drive forwards a bit
-        drive_target = 80  # cm
+        drive_target = 35  # cm
         while True:
             # check if we have driven far enough
             error = distance(start_position, self.position)
             if error >= drive_target: break
-            await self.drive(0.5, 0.5, seconds=0.2)
+            await self.drive(0.35, 0.35, seconds=0.2)
+        self.get_logger().info(f"driven {int(error)} cm to correct orientation")
+        self.set_motor_power(0.0, 0.0)
         end_position = self.position
         end_orientation = self.orientation
         # calculate the angle from start to the target
@@ -508,9 +510,9 @@ class Odometry(Node):
         self.get_logger().info(f"corrected orientation: {int(corrected_orientation)} degrees (is it close to {int(closest_multiple)}?)")
         # publish correction
         correction = AccelerometerCorrection()
-        correction.initial_angle = orientation_error
+        correction.initial_angle = -orientation_error
         correction.should_reset = False
-        self.orientation_corrector.publish        
+        self.orientation_corrector.publish(correction)    
 
 
 # should this be replaced with sigmoid function later?
