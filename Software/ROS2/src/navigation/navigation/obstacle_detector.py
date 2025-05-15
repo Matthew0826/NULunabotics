@@ -101,9 +101,9 @@ class ObstacleDetector(Node):
         # take out outliers
         points = self.point_processor.preprocess(np.array(average_points))
         # use curvature to find features (rocks or craters)
-        # features = self.feature_detector.detect_features(points)
-        # for feature in features:
-        #     self.publish_obstacle(*feature)
+        features = self.feature_detector.detect_features(points)
+        for feature in features:
+            self.publish_obstacle(*feature)
         self.average.clear()
     
     def position_callback(self, msg):

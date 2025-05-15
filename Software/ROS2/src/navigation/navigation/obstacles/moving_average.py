@@ -1,5 +1,8 @@
 import math
 
+BUCKET_SIZE = 0.5  # cm
+VIEW_CONE_SIZE = 300  # cm
+
 class MovingAverage:
     """A simple moving average class to keep track of the last N LiDAR rotations."""
 
@@ -15,7 +18,12 @@ class MovingAverage:
         """
         for point in points:
             x = point.distance * math.cos(point.angle)
+            # find nearest bucket
+            x = int(x / BUCKET_SIZE) * BUCKET_SIZE
             y = int(point.distance * math.sin(point.angle))
+            if abs(x) > VIEW_CONE_SIZE:
+                # ignore points outside the view cone
+                continue
             if x not in self.data:
                 self.data[x] = []
             if len(self.data[x]) >= self.size:

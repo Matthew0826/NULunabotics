@@ -207,7 +207,8 @@ def main():
     with open("/home/isaac/NULunabotics/Software/ROS2/src/navigation/navigation/obstacles/data.txt", "r") as f:
         for line in f:
             x, y = map(float, line.strip().split(","))
-            points.append((x, y))
+            if abs(x) < 300:
+                points.append((x, y))
     points = np.array(points)
     
     

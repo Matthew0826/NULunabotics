@@ -8,7 +8,7 @@ class FeatureDetector:
         self.logger = logger
     
     def detect_features(self, points, height_threshold=10.0, min_distance=30.0, 
-                        min_width=15.0, max_width=60.0):
+                        min_width=25.0, max_width=100.0):
         """
         Detect features (rocks and craters) using a simple height deviation approach.
         
