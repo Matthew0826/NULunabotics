@@ -7,8 +7,10 @@ import WebSocketGraph from "./web-socket-graph";
 import BatteryIndicator from "./battery-indicator";
 import Timer from "./timer";
 import LidarVisual from "./lidar-visual";
-import RobotRender from "../three/robot-render";
 import ObjModelAnimator from "../three/obj";
+import SpeedSlider from "./speed-slider";
+import { useState } from "react";
+import { useKeyboardController } from "@/app/lib/keyboard-controller";
 
 export default function DashboardPanels() {
     const mapPanel = (
@@ -16,6 +18,8 @@ export default function DashboardPanels() {
             <Map />
         </Panel>
     );
+
+    const [speed, setSpeed] = useKeyboardController();
 
     return (
         <div className="flex flex-row gap-4 p-6 h-full w-full">
@@ -46,6 +50,9 @@ export default function DashboardPanels() {
                 <Panel title="Power">
                     {/* <BatteryIndicator /> */}
                     <WebSocketGraph graphInfo={tempGraphPower} />
+                </Panel>
+                <Panel title="Speed">
+                    <SpeedSlider value={speed} setValue={setSpeed} />
                 </Panel>
             </div>
             <div className="w-[66vw] hidden xl:block flex-2">{mapPanel}</div>

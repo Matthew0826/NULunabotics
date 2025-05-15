@@ -22,7 +22,7 @@ type GamepadManagerContextType = {
     setState: React.Dispatch<React.SetStateAction<GamepadState>>;
 };
 
-const defaults = {
+export const defaults = {
     x1: 100,
     y1: 100,
     x2: 100,
@@ -31,15 +31,7 @@ const defaults = {
     buttonR: false,
     timestamp: 0,
 };
-const defaultsNormalized = {
-    x1: 0,
-    y1: 0,
-    x2: 0,
-    y2: 0,
-    buttonL: false,
-    buttonR: false,
-    timestamp: 0,
-};
+
 
 const GamepadManagerContext = createContext<GamepadManagerContextType>({
     state: defaults,
@@ -65,58 +57,6 @@ export default function GamepadStateProvider({
     });
     useEffect(() => {
         gamepadLoop(sendToServer, setState);
-    }, []);
-    const speed = 0.5;
-
-    useEffect(() => {
-        function handleKeyDown(event: KeyboardEvent) {
-            const newState = { ...defaultsNormalized };
-            if (event.key === "ArrowUp" || event.key === "w") {
-                newState.y1 = speed;
-                newState.y2 = speed;
-            }
-            if (event.key === "ArrowDown" || event.key === "s") {
-                newState.y1 = -speed;
-                newState.y2 = -speed;
-            }
-            if (event.key === "d") {
-                newState.y1 = speed;
-                newState.y2 = -speed;
-            }
-            if (event.key === "a") {
-                newState.y1 = -speed;
-                newState.y2 = speed;
-            }
-            if (event.key === "z" || event.key === "q") {
-                newState.buttonL = !newState.buttonL;
-            }
-            if (event.key === "x" || event.key === "e") {
-                newState.buttonR = !newState.buttonR;
-            }
-            newState.timestamp = Date.now();
-            sendToServer("controls", newState);
-            setState(newState);
-        }
-
-        function handleKeyUp(event: KeyboardEvent) {
-            if (defaults !== state) {
-                sendToServer(
-                    "controls",
-                    {
-                        ...defaultsNormalized,
-                        timestamp: Date.now(),
-                    }
-                );
-            }
-            setState(defaults);
-        }
-        window.addEventListener("keydown", handleKeyDown);
-        window.addEventListener("keyup", handleKeyUp);
-
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-            window.removeEventListener("keyup", handleKeyUp);
-        };
     }, []);
     return (
         <GamepadManagerContext.Provider value={{ state, setState }}>
