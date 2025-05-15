@@ -64,7 +64,7 @@ class FeatureDetector:
                                    distance=min_distance / (sorted_points[1, 0] - sorted_points[0, 0]))
         
         # For craters (negative peaks)
-        crater_peaks, _ = find_peaks(-smoothed_deviations, 
+        crater_peaks, _ = find_peaks(-smoothed_deviations,
                                      height=height_threshold,
                                      distance=min_distance / (sorted_points[1, 0] - sorted_points[0, 0]))
         

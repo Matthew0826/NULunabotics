@@ -95,14 +95,16 @@ class ObstacleDetector(Node):
         if not self.average.is_full():
             return
         # calculate average
-        average_points = self.average.get_average()
+        average_points = self.average.get_average_points()
+        for i in average_points:
+            print(f"{i[0]},{i[1]}")
         # take out outliers
         points = self.point_processor.preprocess(np.array(average_points))
         # use curvature to find features (rocks or craters)
-        features = self.feature_detector.detect_features(points)
-        for feature in features:
-            self.publish_obstacle(*feature)
-        self.recent_average.clear()
+        # features = self.feature_detector.detect_features(points)
+        # for feature in features:
+        #     self.publish_obstacle(*feature)
+        self.average.clear()
     
     def position_callback(self, msg):
         self.robot_position = (msg.x, msg.y)

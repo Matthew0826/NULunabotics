@@ -18,19 +18,19 @@ def generate_launch_description():
     
     return LaunchDescription([
         # obstacle detection nodes
-        Node(
-            package='navigation',
-            executable='obstacle_detector',
-            output='screen'
-        ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(ld19_launch_path)
-        ),
-        Node(
-            package='sensors',
-            executable='lidar_forwarder',
-            output='screen'
-        ),
+        #Node(
+        #    package='navigation',
+        #    executable='obstacle_detector',
+        #    output='screen'
+        #),
+        #IncludeLaunchDescription(
+        #    PythonLaunchDescriptionSource(ld19_launch_path)
+        #),
+        #Node(
+        #    package='sensors',
+        #    executable='lidar_forwarder',
+        #    output='screen'
+        #),
         
         # serial port manager
         Node(
@@ -41,27 +41,27 @@ def generate_launch_description():
         
         # navigation nodes
         Node(
-            package='navigation',
-            executable='pathfinder',
-            output='screen'
-        ),
-        Node(
-            package='navigation',
-            executable='planner',
-            output='screen'
-        ),
+             package='navigation',
+             executable='pathfinder',
+             output='screen'
+         ),
+         Node(
+             package='navigation',
+             executable='planner',
+             output='screen'
+         ),
         
-        # sensor board nodes
-        Node(
-            package='sensors',
-            executable='positioning',
-            output='screen'
-        ),
+        # # sensor board nodes
+         Node(
+             package='sensors',
+             executable='positioning',
+             output='screen'
+         ),
         
-        # driving nodes
-        Node(
-            package='navigation',
-            executable='odometry',
-            output='screen'
-        )
+        # # driving nodes
+         Node(
+             package='navigation',
+             executable='odometry',
+             output='screen'
+         )
     ])

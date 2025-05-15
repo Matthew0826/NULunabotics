@@ -149,7 +149,7 @@ class Planner(Node):
         if allowed_to_excavate or allowed_to_dump:
             # we are at the end, we need to dig/dump (no path to travel to)
             excavation_start_time = self.get_clock().now()
-            await self.send_drive_goal([], should_excavate=allowed_to_excavate, should_dump=allowed_to_dump)
+            # await self.send_drive_goal([], should_excavate=allowed_to_excavate, should_dump=allowed_to_dump)
             excavation_end_time = self.get_clock().now()
             self.drive_time += (excavation_end_time - excavation_start_time).nanoseconds // 1_000_000
             self.get_logger().info(f"Excavation took {self.drive_time} ms")

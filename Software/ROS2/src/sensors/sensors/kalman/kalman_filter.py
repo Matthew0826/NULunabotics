@@ -297,7 +297,7 @@ class ExtendedKalmanFilter:
             
             # Implement a more sophisticated adaptive scaling method based on innovation magnitude
             if mahalanobis_dist > INNOVATION_THRESHOLD:
-                print(f"Large innovation detected (d={mahalanobis_dist:.2f}), applying adaptive scaling")
+               # print(f"Large innovation detected (d={mahalanobis_dist:.2f}), applying adaptive scaling")
                 
                 # Nonlinear scaling that gradually reduces influence as innovation increases
                 # Uses a sigmoid-like function to create a smooth transition

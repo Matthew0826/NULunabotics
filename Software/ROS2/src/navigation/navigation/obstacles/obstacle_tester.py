@@ -194,20 +194,28 @@ def main():
     
     # Generate synthetic LiDAR data with features
     print("Generating synthetic LiDAR data...")
-    points, ground_truth = generate_synthetic_points(
-        num_points=200,
-        line_y=-50,  # Base line at y=50cm
-        noise_level=2.0,
-        num_features=3,
-        feature_height=10,
-        feature_width=35
-    )
+    # points, ground_truth = generate_synthetic_points(
+    #     num_points=200,
+    #     line_y=-50,  # Base line at y=50cm
+    #     noise_level=2.0,
+    #     num_features=3,
+    #     feature_height=10,
+    #     feature_width=35
+    # )
+    points = []
+    # read points from file
+    with open("/home/isaac/NULunabotics/Software/ROS2/src/navigation/navigation/obstacles/data.txt", "r") as f:
+        for line in f:
+            x, y = map(float, line.strip().split(","))
+            points.append((x, y))
+    points = np.array(points)
+    
     
     # Print ground truth features
-    print("\nGround truth features (x, y, radius, is_rock):")
-    for i, (x, y, radius, is_rock) in enumerate(ground_truth):
-        feature_type = "Rock" if is_rock else "Crater"
-        print(f"{i+1}. {feature_type} at ({x:.1f}, {y:.1f}) with radius {radius:.1f}cm")
+    # print("\nGround truth features (x, y, radius, is_rock):")
+    # for i, (x, y, radius, is_rock) in enumerate(ground_truth):
+    #     feature_type = "Rock" if is_rock else "Crater"
+    #     print(f"{i+1}. {feature_type} at ({x:.1f}, {y:.1f}) with radius {radius:.1f}cm")
     
     # Create a figure with multiple subplots
     plt.figure(figsize=(12, 10))
@@ -250,15 +258,15 @@ def main():
         plt.gca().add_patch(circle)
         plt.gca().text(x, y, f'{i+1}', color='red', fontsize=10, ha='center', va='center')
     
-    # Plot ground truth features
-    for i, (x, y, radius, is_rock) in enumerate(ground_truth):
-        color = 'orange' if is_rock else 'purple'
-        label = 'R' if is_rock else 'C'
-        circle = plt.Circle((x, y), radius, fill=False, edgecolor=color, 
-                           linewidth=2, linestyle='--')
-        plt.gca().add_patch(circle)
-        plt.gca().text(x-radius/2, y-radius/2, f'{i+1}{label}', color=color, 
-                       fontsize=10, ha='center', va='center')
+    # # Plot ground truth features
+    # for i, (x, y, radius, is_rock) in enumerate(ground_truth):
+    #     color = 'orange' if is_rock else 'purple'
+    #     label = 'R' if is_rock else 'C'
+    #     circle = plt.Circle((x, y), radius, fill=False, edgecolor=color, 
+    #                        linewidth=2, linestyle='--')
+    #     plt.gca().add_patch(circle)
+    #     plt.gca().text(x-radius/2, y-radius/2, f'{i+1}{label}', color=color, 
+    #                    fontsize=10, ha='center', va='center')
     
     plt.title('Detected Features vs Ground Truth')
     plt.xlabel('X (cm)')

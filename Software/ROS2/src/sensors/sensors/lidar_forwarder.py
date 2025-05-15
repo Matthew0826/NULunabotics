@@ -100,8 +100,8 @@ class LidarForwarder(Node):
         """
         lidar_point = LiDAR()
         lidar_point.weight = int(self.sanatize_number(weight, 255, 255))
-        lidar_point.distance = int(distance * 100)#self.sanatize_number(distance, 65535, 0))
-        lidar_point.angle = float(angle)#self.sanatize_number(angle, 2 * math.pi, 0.0))
+        lidar_point.distance = int(distance * 250)#self.sanatize_number(distance, 65535, 0))
+        lidar_point.angle = float(angle) + math.pi/35 #self.sanatize_number(angle, 2 * math.pi, 0.0))
         return lidar_point
 
 

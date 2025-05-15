@@ -17,9 +17,17 @@ def generate_launch_description():
         'launch',
         'ld19.launch.py'
     )
+    website_launch_path = os.path.join(
+        get_package_share_directory('website'),
+        'launch',
+        'nodejs.launch.py'
+    )
     return LaunchDescription([
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(ld19_launch_path)
+        ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(website_launch_path),
         ),
         Node(
             package='navigation',

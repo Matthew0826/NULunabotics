@@ -66,25 +66,26 @@ export default function GamepadStateProvider({
     useEffect(() => {
         gamepadLoop(sendToServer, setState);
     }, []);
+    const speed = 0.5;
 
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent) {
             const newState = { ...defaultsNormalized };
             if (event.key === "ArrowUp" || event.key === "w") {
-                newState.y1 = 1;
-                newState.y2 = 1;
+                newState.y1 = speed;
+                newState.y2 = speed;
             }
             if (event.key === "ArrowDown" || event.key === "s") {
-                newState.y1 = -1;
-                newState.y2 = -1;
+                newState.y1 = -speed;
+                newState.y2 = -speed;
             }
             if (event.key === "d") {
-                newState.y1 = 1;
-                newState.y2 = -1;
+                newState.y1 = speed;
+                newState.y2 = -speed;
             }
             if (event.key === "a") {
-                newState.y1 = -1;
-                newState.y2 = 1;
+                newState.y1 = -speed;
+                newState.y2 = speed;
             }
             if (event.key === "z" || event.key === "q") {
                 newState.buttonL = !newState.buttonL;

@@ -76,6 +76,8 @@ class SerialPortManager(Node):
                 break
         else:
             print(f"Id {pub_id} not found in any serial ports")
+            for port in list(self.serial_ports.values()):
+                port.request_broadcast_ids()
 
     # add a ros publisher to the list
     def add_ros_pub(self, pub_id: int, ros_msg_type: any, topic: str):
