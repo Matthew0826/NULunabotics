@@ -33,13 +33,17 @@ LIDAR_VIEW_DISTANCE = 80 # cm
 ROBOT_WIDTH = 71
 ROBOT_LENGTH = 98
 HAS_REACHED_TARGET_THRESHOLD = 20
+ROBOT_RADIUS = (((ROBOT_WIDTH/2)**2 + (ROBOT_LENGTH/2)**2) ** 0.5) / 2
 
 
 # define zones in cm and shrink them so the robot doesn't hit the walls
 berm_zone = Zone(428.0, 265.5, 70.0, 200.0)
-berm_zone.shrink(ROBOT_WIDTH/2, only_top=True)  # there might be no need to shrink berm since it already avoids parts near rocks
+print(f"height before: {berm_zone.height}")
+berm_zone.shrink(ROBOT_RADIUS/2)
+berm_zone.shrink(ROBOT_RADIUS, only_top=True)  # there might be no need to shrink berm since it already avoids parts near rocks
+print(f"height after: {berm_zone.height}")
 excavation_zone = Zone(0, 244.0, 274.0, 243.0)
-excavation_zone.shrink(ROBOT_WIDTH/2)
+excavation_zone.shrink(ROBOT_RADIUS)
 start_zone = Zone(348.0, 0.0, 200.0, 200.0)
 
 
@@ -98,7 +102,7 @@ class Planner(Node):
         self.should_drive_reverse = should_dump  # reverse if going to dump
         destination = goal_handle.request.destination
         start = goal_handle.request.start
-        self.get_logger().info(f"Should excavate: {should_excavate}, should dump: {should_dump}")
+        # self.get_logger().info(f"Should excavate: {should_excavate}, should dump: {should_dump}")
         zone = None
         if destination.x >= 0 and destination.y >= 0:
             # make a fake zone because the destination was overridden
@@ -114,8 +118,8 @@ class Planner(Node):
             result.time_elapsed_millis = 0
             return
         self.current_target = zone.pop_next_point()
-        self.get_logger().info(f"zone: {zone.x}, {zone.y}, {zone.x + zone.width}, {zone.y + zone.height} n = {zone.n}")
-        self.get_logger().info(f"Current target: {self.current_target.x}, {self.current_target.y}")
+        # self.get_logger().info(f"zone: {zone.x}, {zone.y}, {zone.x + zone.width}, {zone.y + zone.height} n = {zone.n}")
+        # self.get_logger().info(f"Current target: {self.current_target.x}, {self.current_target.y}")
         
             
         self.start = start
@@ -159,7 +163,7 @@ class Planner(Node):
         result = Plan.Result()
         current_time = self.get_clock().now()
         result.time_elapsed_millis = (current_time - start_time).nanoseconds // 1000000
-        self.get_logger().info("Done. Planner took " + str(result.time_elapsed_millis - self.drive_time) + " ms to plan.")
+        # self.get_logger().info("Done. Planner took " + str(result.time_elapsed_millis - self.drive_time) + " ms to plan.")
         return result
 
     async def send_drive_goal(self, targets, should_excavate=False, should_dump=False):
@@ -185,7 +189,7 @@ class Planner(Node):
             return False
 
         # drive goal was accepted, so we can wait for the result
-        self.get_logger().info("Drive goal accepted.")
+        # self.get_logger().info("Drive goal accepted.")
         res = await goal_handle.get_result_async()
         
         # proccess the result
@@ -196,7 +200,7 @@ class Planner(Node):
             # so, count the time it took to drive
             time_elapsed = result.time_elapsed_millis
             self.drive_time += time_elapsed
-            self.get_logger().info(f"Travel to ({self.current_target.x}, {self.current_target.y}) took {time_elapsed} ms")
+            # self.get_logger().info(f"Travel to ({self.current_target.x}, {self.current_target.y}) took {time_elapsed} ms")
             return True
         else:
             self.get_logger().warn("Drive failed.")

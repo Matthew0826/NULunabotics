@@ -6,7 +6,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 
 
 # the self driver agent action
-from lunabotics_interfaces.msg import Point, Motors, Excavator, PathVisual, ExcavatorPotentiometer
+from lunabotics_interfaces.msg import Point, Motors, Excavator, PathVisual, ExcavatorPotentiometer, AccelerometerCorrection
 from lunabotics_interfaces.action import SelfDriver
 from navigation.pathfinder_helper import distance
 from sensors.spin_node_helper import spin_nodes
@@ -60,6 +60,7 @@ class Odometry(Node):
         # initalize orientation
         self.orientation = 0.0
         self.last_orientation_time = self.get_clock().now()
+        self.has_corrected_orientation = False
         
         # initalize linear actuator percentage for the excavator
         # 0% is contracted and 100% is extended
@@ -76,6 +77,7 @@ class Odometry(Node):
         self.orientation_sub = self.create_subscription(Float32, 'sensors/orientation', self.on_orientation, 10)
         self.excavator_percent_sub = self.create_subscription(ExcavatorPotentiometer, 'sensors/excavator_percent', self.on_excavator_percent, 10)
         self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/odometry_path', 10)
+        self.orientation_corrector = self.create_publisher(AccelerometerCorrection, 'sensors/accelerometer_correction', 10)
         
         # PID controllers (some notes from ChatGPT:)
         # Kp: Proportional Gain
@@ -122,7 +124,16 @@ class Odometry(Node):
 
         # get points
         points = goal_handle.request.targets
-        self.get_logger().info('received goal with {0} points'.format(len(points)))
+        # self.get_logger().info('received goal with {0} points'.format(len(points)))
+        
+        # correct the orientation (the robot is rotated randomly at the start of the competition)
+        if not self.has_corrected_orientation:
+            self.get_logger().info('correcting orientation')
+            # perform the correction
+            await self.perform_orientation_correction()
+            self.get_logger().info('corrected orientation')
+            # set the flag to true so we dont do it again
+            self.has_corrected_orientation = True
 
         # drive in reverse if told by the goal
         await self.to_path(points, goal_handle, feedback_msg, goal_handle.request.should_reverse)
@@ -471,6 +482,35 @@ class Odometry(Node):
         
         # empty list to show its done
         self.website_path_visualizer.publish(PathVisual(nodes=[]))
+    
+    async def perform_orientation_correction(self):
+        start_position = self.position
+        start_orientation = self.orientation
+        # drive forwards a bit
+        drive_target = 80  # cm
+        while True:
+            # check if we have driven far enough
+            error = distance(start_position, self.position)
+            if error >= drive_target: break
+            await self.drive(0.5, 0.5, seconds=0.2)
+        end_position = self.position
+        end_orientation = self.orientation
+        # calculate the angle from start to the target
+        angle_rad = math.atan2(start_position.y - end_position.y, end_position.x - start_position.x)
+        # calculate the difference in orientations (due to drift from driving)
+        drift = positive_angle(end_orientation - start_orientation)
+        # find corrected orientation
+        corrected_orientation = positive_angle(math.degrees(angle_rad) - drift)
+        orientation_error = positive_angle(corrected_orientation - start_orientation)
+        # corrected_orientation should be close a multiple of 90 degrees
+        # find the closest multiple of 90 degrees
+        closest_multiple = round(corrected_orientation / 90.0) * 90.0
+        self.get_logger().info(f"corrected orientation: {int(corrected_orientation)} degrees (is it close to {int(closest_multiple)}?)")
+        # publish correction
+        correction = AccelerometerCorrection()
+        correction.initial_angle = orientation_error
+        correction.should_reset = False
+        self.orientation_corrector.publish        
 
 
 # should this be replaced with sigmoid function later?

@@ -6,7 +6,7 @@ from std_msgs.msg import Float32, Bool
 
 from sensors.spin_node_helper import spin_nodes
 
-from lunabotics_interfaces.msg import Point, Excavator, Motors, ExcavatorPotentiometer
+from lunabotics_interfaces.msg import Point, Excavator, Motors, ExcavatorPotentiometer, AccelerometerCorrection
 
 import random
 import numpy as np
@@ -45,10 +45,14 @@ class SpacialDataPublisher(Node):
                 "physical_robot/excavator",
                 self.on_excavator,
                 10)
+        
+        self.orientation_correction_sub = self.create_subscription(AccelerometerCorrection, 'sensors/accelerometer_correction', self.on_orientation_correction, 10)
+        
         # keep track of positions
         self.x = 448.0
         self.y = 100.0
         self.orientation = float(random.randint(0, 360))
+        self.initial_orientation = self.orientation
         
         self.motor_power_left = 0.0
         self.motor_power_right = 0.0
@@ -101,11 +105,17 @@ class SpacialDataPublisher(Node):
             new_percent_left = clamp(self.actuator_percents[0] + self.actuator_powers[0] * np.random.uniform(0.04, 0.06))
             new_percent_right = clamp(self.actuator_percents[1] + self.actuator_powers[1] * np.random.uniform(0.04, 0.06))
             self.actuator_percents = (new_percent_left, new_percent_right)
+    
+    def on_orientation_correction(self, msg: AccelerometerCorrection):
+        # Apply the correction to the orientation
+        self.initial_orientation = msg.initial_angle
+        if msg.should_reset:
+            self.orientation = 0.0
             
     def timer_callback(self):
         self.update_simulation()
         msg = Float32()
-        msg.data = float(self.orientation)
+        msg.data = float(self.orientation + self.initial_orientation)
         # publish mock orientation based on motor power
         self.orientation_pub.publish(msg)
         
