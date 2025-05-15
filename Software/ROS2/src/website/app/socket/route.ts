@@ -34,8 +34,9 @@ export function SOCKET(
                 const point2 = messageJson.message.point2;
                 const robot = messageJson.message.robot;
                 sendPlanAction({ x: robot.x, y: robot.y }, false, false, { x: point2[0], y: point2[1] });
-                // console.log("Making mock obstacle");
-                // publishMockObstacle({ x: point2[0], y: point2[1], radius: 20 });
+            } else if (messageJson.type == "mockObstacle") {
+                const point = messageJson.message.point;
+                publishMockObstacle({ x: point[0], y: point[1], radius: 20 });
             } else if (messageJson.type === "beginAutonomous") {
                 startLoopingAction(true);
             } else if (messageJson.type === "stopAutonomous") {

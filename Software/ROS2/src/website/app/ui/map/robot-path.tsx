@@ -108,8 +108,14 @@ export default function RobotPath({ path, odometryPath, robot }: { path?: Point[
         const x = ((e.clientX - rect.left) / rect.width) * MAP_WIDTH * 100;
         const y = ((e.clientY - rect.top) / rect.height) * MAP_HEIGHT * 100;
         const newClickPosition: Point = [Math.floor(x), Math.floor(y)];
-        sendToServer("sendPathfindingRequest", { point1: previousClickPosition ?? newClickPosition, point2: newClickPosition, robot: robot });
-        setPreviousClickPosition(newClickPosition);
+        // check if click is left or right
+        if (e.button === 2) { // right click
+            // send to server mock obstacle
+            sendToServer("mockObstacle", { point: newClickPosition });
+        } else if (e.button === 0) { // left click
+            sendToServer("sendPathfindingRequest", { point1: previousClickPosition ?? newClickPosition, point2: newClickPosition, robot: robot });
+            setPreviousClickPosition(newClickPosition);
+        }
     }
     return (
         <div className="absolute top-0 left-0 w-full h-full" ref={pathRef} onClick={(e) => handlePathClick(e)}>
