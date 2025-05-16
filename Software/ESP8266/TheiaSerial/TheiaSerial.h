@@ -128,16 +128,18 @@ public:
         static uint16_t payloadIndex = 0;
         static uint8_t payloadBuffer[256];
 
-        if (Serial.available()) {
+        while (Serial.available()) {
             uint8_t byteIn = Serial.read();
 
             switch (state) {
                 case WAIT_HEADER_1:
                     if (byteIn == 0xAB) state = WAIT_HEADER_2;
+                    else return;
                     break;
 
                 case WAIT_HEADER_2:
                     state = (byteIn == 0xCD) ? READ_PUB_ID : WAIT_HEADER_1;
+                    if (byteIn != 0xCD) return;
                     break;
 
                 case READ_PUB_ID:
@@ -146,12 +148,14 @@ public:
                     if (byteIn == 0xFF) {
                         broadcastIds();
                         state = WAIT_HEADER_1;
+                        return;
                     // Check if the id was registered for this board
                     } else if (registry().exists((int)pubId)) {
                         state = READ_LEN_1;
                     // So it must be an unknown id
                     } else {
                         state = WAIT_HEADER_1;
+                        return;
                     }
                     break;
 
@@ -163,7 +167,8 @@ public:
                 case READ_LEN_2:
                     payloadLength |= byteIn;
                     if (payloadLength > sizeof(payloadBuffer)) {
-                        state = WAIT_HEADER_1;  // too big
+                        state = WAIT_HEADER_1;  // payload too big
+                        return;
                     } else {
                         payloadIndex = 0;
                         state = READ_PAYLOAD;
@@ -176,6 +181,7 @@ public:
                         auto entry = registry().get((int)pubId);
                         entry->parser(payloadBuffer, payloadLength);
                         state = WAIT_HEADER_1;
+                        return;
                     }
                     break;
             }
