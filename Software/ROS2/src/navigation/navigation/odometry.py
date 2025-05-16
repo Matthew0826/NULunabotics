@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionServer
 
-from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallbackGroup
 
 
 # the self driver agent action
@@ -17,8 +17,18 @@ from navigation.pid import PIDController
 from std_msgs.msg import Float32
 import math
 
-MAX_EXCAVATOR_PERCENT = 0.9
-MIN_EXCAVATOR_PERCENT = 0.1
+MAX_ACTUATOR_PERCENT = 0.9
+MIN_ACTUATOR_PERCENT = 0.1
+
+# when the excavator lifter motor is at this %, the distance sensor can be used to detect the ground
+DISTANCE_SENSOR_ENABLE_THRESHOLD = 0.7
+# when the distance sensor is this far away, the excavator should stop and start digging
+DISTANCE_SENSOR_TOLERANCE = 8  # cm
+
+MAX_EXCAVATOR_LIFTER_PERCENT = 0.9
+MIN_EXCAVATOR_LIFTER_PERCENT = 0.1
+
+CONVEYOR_SPEED = 0.6
 
 class Odometry(Node):
     """
@@ -29,16 +39,21 @@ class Odometry(Node):
     def __init__(self):
         super().__init__('odometry')
 
-        # idk you need it for some reason
-        self.callback_group = ReentrantCallbackGroup()
+        # these make sure each subcriber/action/publisher gets time to run
+        self.action_group = ReentrantCallbackGroup()      # For action server
+        self.sensor_group = ReentrantCallbackGroup()      # For sensor callbacks
+        self.control_group = MutuallyExclusiveCallbackGroup()  # For control outputs
+        self.config_group = ReentrantCallbackGroup()      # For configuration
 
+        # action server is used to drive the robot
+        # it's in its own callback group so it can run async functions
         self._action_server = ActionServer(
             self,
             SelfDriver,
             'self_driver',
             execute_callback=self.on_goal_request,
             cancel_callback=self.on_cancel,
-            callback_group=self.callback_group
+            callback_group=self.action_group
         )
         
         # action values to store for when its done
@@ -62,25 +77,29 @@ class Odometry(Node):
         self.last_orientation_time = self.get_clock().now()
         self.has_corrected_orientation = False
         
-        # initalize linear actuator percentage for the excavator
+        # initalize linear actuator percentage for opening the bin
         # 0% is contracted and 100% is extended
-        self.excavator_left_percent = 0.0
-        self.excavator_right_percent = 0.0
+        self.actuator_percent = 0.0
+        self.excavator_lifter_percent = 0.0
+        self.excavator_ground_distance = -1.0  # cm
         
-        # dummy timer to keep event loop alive :)
-        # self.create_timer(0.05, lambda: None)
-
         # ros publishers and subscribers
-        self.motor_pub = self.create_publisher(Motors, 'physical_robot/motors', 10)
-        self.excavate_pub = self.create_publisher(Excavator, 'physical_robot/excavator', 10)
-        self.position_sub = self.create_subscription(Point, 'sensors/position', self.on_position, 10)
-        self.orientation_sub = self.create_subscription(Float32, 'sensors/orientation', self.on_orientation, 10)
-        self.excavator_percent_sub = self.create_subscription(ExcavatorPotentiometer, 'sensors/excavator_percent', self.on_excavator_percent, 10)
-        self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/odometry_path', 10)
-        self.orientation_corrector = self.create_publisher(AccelerometerCorrection, 'sensors/accelerometer_correction', 10)
-        self.config_sub = self.create_subscription(Config, 'website/config', self.on_config, 10)
+        # control
+        self.motor_pub = self.create_publisher(Motors, 'physical_robot/motors', 10, callback_group=self.control_group)
+        self.excavate_pub = self.create_publisher(Excavator, 'physical_robot/excavator', 10, callback_group=self.control_group)
+        self.orientation_corrector = self.create_publisher(AccelerometerCorrection, 'sensors/accelerometer_correction', 10, callback_group=self.control_group)
         
-        # PID controllers (some notes from ChatGPT:)
+        # config
+        self.config_sub = self.create_subscription(Config, 'website/config', self.on_config, 10, callback_group=self.config_group)
+        self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/odometry_path', 10, callback_group=self.config_group)
+        
+        # sensors
+        self.position_sub = self.create_subscription(Point, 'sensors/position', self.on_position, 10, callback_group=self.sensor_group)
+        self.orientation_sub = self.create_subscription(Float32, 'sensors/orientation', self.on_orientation, 10, callback_group=self.sensor_group)
+        self.excavator_distance_sub = self.create_subscription(Float32, 'sensors/excavator_distance', self.on_excavator_distance, 10, callback_group=self.sensor_group)
+        self.excavator_percent_sub = self.create_subscription(ExcavatorPotentiometer, 'sensors/excavator_percent', self.on_excavator_percent, 10, callback_group=self.sensor_group)
+        
+        # PID controllers (some notes from ChatGPT: )
         # Kp: Proportional Gain
             #  Corrects based on the current error.
             #  High Kp = fast response, but may overshoot or oscillate.
@@ -99,8 +118,8 @@ class Odometry(Node):
         # especially when the speed of the simulation is increased
         self.angular_drive_pid = PIDController(Kp=0.008, Ki=0.0, Kd=0.0, output_limits=(-0.35, 0.35))
         
-        self.excavator_left_actuator_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-1.0, 1.0))
-        self.excavator_right_actuator_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-1.0, 1.0))
+        self.bin_actuator_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-1.0, 1.0))
+        self.excavator_lifter_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-1.0, 1.0))
 
     # when the config is received for tuning pid loop
     def on_config(self, config: Config):
@@ -118,13 +137,13 @@ class Odometry(Node):
             match config.setting:
                 case "Kp":
                     chosen_pid.Kp = float(config.value)
-                    print(f"set Kp to {chosen_pid.Kp} on {config.category}")
+                    self.get_logger().info(f"set Kp to {chosen_pid.Kp} on {config.category}")
                 case "Ki":
                     chosen_pid.Ki = float(config.value)
-                    print(f"set Ki to {chosen_pid.Ki} on {config.category}")
+                    self.get_logger().info(f"set Ki to {chosen_pid.Ki} on {config.category}")
                 case "Kd":
                     chosen_pid.Kd = float(config.value)
-                    print(f"set Kd to {chosen_pid.Kd} on {config.category}")
+                    self.get_logger().info(f"set Kd to {chosen_pid.Kd} on {config.category}")
         
     # when someone calls this action
     # SelfDriver.action:
@@ -175,12 +194,12 @@ class Odometry(Node):
         if excavate:
             self.get_logger().info('excavating')
             # start the excavator
-            await self.move_excavator(MAX_EXCAVATOR_PERCENT)
+            await self.move_excavator(MAX_ACTUATOR_PERCENT)
             self.get_logger().info('excavator in position')
             # start the conveyor
             await self.run_conveyor()
             self.get_logger().info('conveyor done running')
-            await self.move_excavator(MIN_EXCAVATOR_PERCENT)
+            await self.move_excavator(MIN_ACTUATOR_PERCENT)
             self.get_logger().info('excavated')
         
         # send the result
@@ -214,19 +233,29 @@ class Odometry(Node):
         
     # when excavator percent updates
     def on_excavator_percent(self, percent):
-        self.set_excavator_percent(percent.left_actuator_percent, percent.right_actuator_percent)
+        self.set_excavator_percent(percent.excavator_lifter_percent, percent.actuator_percent)
+        
+    # when excavator distance updates
+    def on_excavator_distance(self, distance):
+        self.set_excavator_distance(distance.data)
 
     def set_position(self, position: Point):
         """Called by the ROS subscriber."""
         self.position = position
     
-    def set_excavator_percent(self, left_percent: float, right_percent: float):
+    def set_excavator_distance(self, distance: float):
+        # distances far away are not very accurate and not needed
+        if distance < 0.0 or distance > 200.0:
+            return
+        self.excavator_ground_distance = distance
+    
+    def set_excavator_percent(self, excavator_lifter_percent: float, actuator_percent: float):
         """Called by the ROS subscriber. Enforces percent between 0 and 1."""
-        if (left_percent < 0.0 or left_percent > 1.0 and right_percent < 0.0 or right_percent > 1.0):
+        if (excavator_lifter_percent < 0.0 or excavator_lifter_percent > 1.0 and actuator_percent < 0.0 or actuator_percent > 1.0):
             self.get_logger().info(f"invalid excavator percent")
             return
-        self.excavator_left_percent = left_percent
-        self.excavator_right_percent = right_percent
+        self.excavator_lifter_percent = excavator_lifter_percent
+        self.actuator_percent = actuator_percent
 
     def set_orientation(self, orientation: float):
         """Called by the ROS subscriber. Enforces orientation between 0 and 360 degrees."""
@@ -262,11 +291,11 @@ class Odometry(Node):
 
     # set the power of the conveyor and outtake motors on the excavator
     # actuator_power: -1.0 is retract; 1.0 is extend
-    def set_excavator_power(self, left_actuator_power: float, right_actuator_power: float, conveyor_power: float, hatch_open: bool):
+    def set_excavator_power(self, excavator_lift_power: float, actuator_power: float, conveyor_power: float):
         """Set the power of the excavator motors."""
 
-        if (abs(left_actuator_power) > 1.0 or abs(right_actuator_power) > 1.0):
-            self.get_logger.info(f"actuator motor power must be between -1.0 and 1.0: L({left_actuator_power}), R({right_actuator_power})")
+        if (abs(excavator_lift_power) > 1.0 or abs(actuator_power) > 1.0):
+            self.get_logger.info(f"motor power must be between -1.0 and 1.0: L({excavator_lift_power}), R({actuator_power})")
             return
 
         # ensure motor power between -1.0 and 1.0
@@ -276,10 +305,9 @@ class Odometry(Node):
 
         # message class (cannot move and excavate)
         msg = Excavator()
-        msg.left_actuator_speed = left_actuator_power
-        msg.right_actuator_speed = right_actuator_power
-        msg.conveyor = conveyor_power
-        msg.hatch = hatch_open
+        msg.excavator_lifter_speed = float(excavator_lift_power)
+        msg.actuator_speed = float(actuator_power)
+        msg.conveyor_speed = float(conveyor_power)
 
         # then publish it like usual
         self.excavate_pub.publish(msg)
@@ -553,7 +581,7 @@ def positive_angle(angle: float):
 def main(args=None):
     rclpy.init(args=args)
     odometry = Odometry()
-    spin_nodes(odometry, is_async=True)
+    spin_nodes(odometry, is_async=True, threads=4)
     
 
 if __name__ == '__main__':

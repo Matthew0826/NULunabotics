@@ -83,7 +83,7 @@ class SpacialDataPublisher(Node):
         self.actuator_percents = (0.0, 0.0)
     
     def on_excavator(self, excavator: Excavator):
-        self.actuator_powers = (excavator.left_actuator_speed, excavator.right_actuator_speed)
+        self.actuator_powers = (excavator.excavator_lifter_speed, excavator.actuator_speed)
     
     def update_simulation(self):
         if abs(self.motor_power_left) > 0.1 or abs(self.motor_power_right) > 0.1:
@@ -129,8 +129,8 @@ class SpacialDataPublisher(Node):
         self.position_pub.publish(msg)
         
         msg = ExcavatorPotentiometer()
-        msg.left_actuator_percent = float(self.actuator_percents[0])
-        msg.right_actuator_percent = float(self.actuator_percents[1])
+        msg.excavator_lifter_percent = float(self.actuator_percents[0])
+        msg.actuator_percent = float(self.actuator_percents[1])
         # publish mock excavator potentiometer based on motor power
         self.excavator_potentiometer_pub.publish(msg)
 
