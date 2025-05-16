@@ -7,6 +7,8 @@ from rclpy.subscription import Subscription
 
 from sensors.spin_node_helper import spin_nodes
 from ament_index_python.packages import get_package_share_directory
+from std_msgs.msg import String
+from lunabotics_interfaces.msg import SerialPortState, SerialPortStates
 
 from sensors.serial import SerialPort, SerialPortObserver, read_id_map_file
 
@@ -17,6 +19,15 @@ from sensors.serial import SerialPort, SerialPortObserver, read_id_map_file
 class SerialPortManager(Node):
     def __init__(self):
         super().__init__('serial_port_manager')
+        self.arduino_upload_sub = self.create_subscription(
+            String,
+            'website/arduino_upload',
+            self.on_arduino_upload,
+            10)
+        self.serial_port_pub = self.create_publisher(
+            SerialPortStates,
+            'sensors/serial_port_state',
+            10)
         # publisher id to publisher
         self.ros_pubs: dict[int, Publisher] = {}
         # subscriber id to subscriber
@@ -25,6 +36,48 @@ class SerialPortManager(Node):
         self.serial_ports: dict[str, SerialPort] = {}
         # the observer observers the serial ports and calls the callback functions when a port is added or removed
         self.observer = SerialPortObserver(self.add_serial_port, self.remove_serial_port)
+        # keep track of arduino folders
+        self.arduino_folders: dict[int, str] = {}
+        self.is_board_nano: dict[int, bool] = {}
+        self.publish_serial_port_state()
+    
+    def on_arduino_upload(self, msg: String):
+        # this is called when a new arduino upload is requested
+        # find the serial port
+        for port in list(self.serial_ports.keys()):
+            if port == msg.data:
+                # request the arduino to upload
+                ids = self.serial_ports[port].publisher_ids
+                if len(ids) == 0:
+                    print(f"Serial port {port} has no publisher ids")
+                    return
+                folder = self.arduino_folders[ids[0]]
+                is_nano = self.is_board_nano[ids[0]]
+                print("uploading arduino folder", folder)
+                self.serial_ports[port].request_arduino_upload(folder, is_nano)
+                break
+        else:
+            print(f"Serial port {msg.data} not found")
+    
+    def publish_serial_port_state(self):
+        # publish the state of the serial ports
+        msg = SerialPortStates()
+        states = []
+        for port in list(self.serial_ports.keys()):
+            state = SerialPortState()
+            state.port = port
+            ids = self.serial_ports[port].publisher_ids
+            if len(ids) == 0:
+                state.name = "N/A"
+            else:
+                first_id = ids[0]
+                state.name = self.arduino_folders[first_id]
+            topics = [self.ros_pubs[i].topic_name for i in ids if i in self.ros_pubs]
+            state.topics = topics
+            states.append(state)
+        msg.states = states
+        print(f"Publishing serial port state: {msg}")
+        self.serial_port_pub.publish(msg)
     
     def serial_timer_callback(self):
         # check if any serial ports are open
@@ -49,6 +102,7 @@ class SerialPortManager(Node):
             new_port.open()
             # add the serial port to the map
             self.serial_ports[port] = new_port
+            self.publish_serial_port_state()
             print(f"Added serial port {port}")
         else:
             print(f"Serial port {port} already exists")
@@ -62,6 +116,7 @@ class SerialPortManager(Node):
             self.serial_ports[port].serial.close()
             # remove the serial port from the list
             del self.serial_ports[port]
+            self.publish_serial_port_state()
             print(f"Removed serial port {port}")
         else:
             print(f"Serial port {port} does not exist")

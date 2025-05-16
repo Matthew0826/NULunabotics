@@ -3,6 +3,7 @@ from rclpy.publisher import Publisher
 import threading
 import serial
 from .serializer import deserialize, serialize
+from .arduino_uploader import upload_sketch
 
 # the universal BAUDRATE we are forcing for every board
 # note: bit rate is AT LEAST baud rate
@@ -49,6 +50,8 @@ class SerialPort:
                     self.process_buffer()
             except serial.SerialException:
                 break
+            except TypeError:
+                break
 
     def process_buffer(self):
         """Process the read buffer to extract messages."""
@@ -86,6 +89,7 @@ class SerialPort:
                     print(f"Publisher ID {pub_id} not found in ROS publishers or subscribers")
                     return
                 self.publisher_ids.append(pub_id)
+                self.node.publish_serial_port_state()
                 print(f"Added message type id {pub_id}")
 
             # decode the message with error handling
@@ -196,3 +200,8 @@ class SerialPort:
         # write the id of a request for a broadcast of ids (0xFF)
         self.write_serial_bytes(b'\xFF')
         print(f"Requesting broadcast of ids from {self.port}")
+    
+    def request_arduino_upload(self, folder: str, is_nano: bool):
+        self.close()
+        upload_sketch(self.port, f"~/NULunabotics/Software/ESP8266/{folder}/{folder}.ino", is_nano)
+        self.open()

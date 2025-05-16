@@ -23,6 +23,9 @@ const LUNABOTICS_PATH_VISUAL_TYPE = "lunabotics_interfaces/msg/PathVisual";
 const LUNABOTICS_EXCAVATOR_TYPE = "lunabotics_interfaces/msg/Excavator";
 const ROS2_FLOAT_TYPE = "std_msgs/msg/Float32";
 const ROS2_BOOL_TYPE = "std_msgs/msg/Bool";
+const ROS2_STRING_TYPE = "std_msgs/msg/String";
+const LUNABOTICS_SERIAL_PORT_TYPE = "lunabotics_interfaces/msg/SerialPortStates";
+const LUNABOTICS_CONFIG_TYPE = "lunabotics_interfaces/msg/Config";
 
 export const publishToROS2 = (messageJson: any) => {
     const motorsMsg = rclnodejs.createMessageObject(LUNABOTICS_MOTORS_TYPE);
@@ -56,6 +59,21 @@ export const publishSimReset = (messageJson: any) => {
     const resetMsg = rclnodejs.createMessageObject(ROS2_BOOL_TYPE);
     resetMsg.data = true;
     rosSimResetPublisher.publish(resetMsg);
+}
+
+export const publishConfig = (messageJson: any) => {
+    const configMsg = rclnodejs.createMessageObject(LUNABOTICS_CONFIG_TYPE);
+    configMsg.node = messageJson.node;
+    configMsg.category = messageJson.category;
+    configMsg.setting = messageJson.setting;
+    configMsg.value = messageJson.value;
+    rosConfigPublisher.publish(configMsg);
+};
+
+export const publishCodeUpload = (messageJson: any) => {
+    const codeUploadMsg = rclnodejs.createMessageObject(ROS2_STRING_TYPE);
+    codeUploadMsg.data = messageJson.port;
+    rosCodeUploadPublisher.publish(codeUploadMsg);
 }
 
 export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, callback: (point: any[]) => void) => {
@@ -179,6 +197,8 @@ let rosControlsPublisher: rclnodejs.Publisher<typeof LUNABOTICS_MOTORS_TYPE>;
 let rosExcavatorPublisher: rclnodejs.Publisher<typeof LUNABOTICS_EXCAVATOR_TYPE>;
 let rosMockObstaclePublisher: rclnodejs.Publisher<typeof LUNABOTICS_OBSTACLE_TYPE>;
 let rosSimResetPublisher: rclnodejs.Publisher<typeof ROS2_BOOL_TYPE>;
+let rosConfigPublisher: rclnodejs.Publisher<typeof LUNABOTICS_CONFIG_TYPE>;
+let rosCodeUploadPublisher: rclnodejs.Publisher<typeof ROS2_STRING_TYPE>;
 let rosClient: rclnodejs.Client<typeof LUNABOTICS_PATH_TYPE>;
 let planActionClient: rclnodejs.ActionClient<typeof LUNABOTICS_PLAN_TYPE>;
 
@@ -202,6 +222,14 @@ rclnodejs.init().then(() => {
     rosExcavatorPublisher = node.createPublisher(
         LUNABOTICS_EXCAVATOR_TYPE,
         "/physical_robot/excavator"
+    );
+    rosConfigPublisher = node.createPublisher(
+        LUNABOTICS_CONFIG_TYPE,
+        "website/config"
+    );
+    rosCodeUploadPublisher = node.createPublisher(
+        ROS2_STRING_TYPE,
+        "website/arduino_upload"
     );
     node.createSubscription(
         LUNABOTICS_LIDAR_ROTATION_TYPE,
@@ -263,7 +291,14 @@ rclnodejs.init().then(() => {
         (msg: any) => {
             sendToClient("reset", msg.data);
         }
-    )
+    );
+    node.createSubscription(
+        LUNABOTICS_SERIAL_PORT_TYPE,
+        "sensors/serial_port_state",
+        (msg: any) => {
+            sendToClient("serial_port_state", msg);
+        }
+    );
 
     rosClient = node.createClient(
         LUNABOTICS_PATH_TYPE,

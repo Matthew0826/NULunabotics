@@ -20,7 +20,7 @@ def upload_sketch(port: str, sketch_name: str, is_nano: bool):
     sketch_dir = os.path.dirname(sketch_path)
 
     if is_nano:
-        fqbn = "arduino:avr:nano"#:cpu=atmega328old"
+        fqbn = "arduino:avr:nano:cpu=atmega328old"
         additional_flags = []#["--build-property", "upload.speed=57600"]
         board_name = "Arduino Nano"
     else:
@@ -52,7 +52,7 @@ def main(args=None):
     parser.add_argument("--nano", action="store_true", help="Specify if the board is Arduino Nano")
     args = parser.parse_args(args)
 
-    upload_sketch(args.port, f"./{args.sketch_name}/{args.sketch_name}.ino", args.nano)
+    upload_sketch(args.port, args.sketch_name, args.nano)
 
 # example command to run the script:
 # python3 arduino_uploader.py /dev/ttyUSB0 Motors --nano

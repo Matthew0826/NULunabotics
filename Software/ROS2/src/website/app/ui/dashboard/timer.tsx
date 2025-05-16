@@ -32,9 +32,11 @@ function Timer({ startTime }: TimerProps) {
     };
 
     const resetTimer = () => {
-        stopTimer();
-        setElapsedTime(0);
-        sendToServer("resetAutonomous", {});
+        if (window.confirm("RESET AUTONOMOUS NAVIGATION? THIS IS VERY BAD. YOU PROBABLY DON'T WANT TO DO THIS.")) {
+            stopTimer();
+            setElapsedTime(0);
+            sendToServer("resetAutonomous", {});
+        }
     };
 
     const min = Math.floor(elapsedTime / 60);

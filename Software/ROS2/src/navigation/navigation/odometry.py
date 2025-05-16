@@ -6,7 +6,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 
 
 # the self driver agent action
-from lunabotics_interfaces.msg import Point, Motors, Excavator, PathVisual, ExcavatorPotentiometer, AccelerometerCorrection
+from lunabotics_interfaces.msg import Point, Motors, Excavator, PathVisual, ExcavatorPotentiometer, AccelerometerCorrection, Config
 from lunabotics_interfaces.action import SelfDriver
 from navigation.pathfinding import distance
 from sensors.spin_node_helper import spin_nodes
@@ -78,6 +78,7 @@ class Odometry(Node):
         self.excavator_percent_sub = self.create_subscription(ExcavatorPotentiometer, 'sensors/excavator_percent', self.on_excavator_percent, 10)
         self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/odometry_path', 10)
         self.orientation_corrector = self.create_publisher(AccelerometerCorrection, 'sensors/accelerometer_correction', 10)
+        self.config_sub = self.create_subscription(Config, 'website/config', self.on_config, 10)
         
         # PID controllers (some notes from ChatGPT:)
         # Kp: Proportional Gain
@@ -101,6 +102,30 @@ class Odometry(Node):
         self.excavator_left_actuator_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-1.0, 1.0))
         self.excavator_right_actuator_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-1.0, 1.0))
 
+    # when the config is received for tuning pid loop
+    def on_config(self, config: Config):
+        if config.node != "odometry":
+            return
+        chosen_pid = None
+        match config.category:
+            case "orientation_pid":
+                chosen_pid = self.orientation_pid
+            case "linear_drive_pid":
+                chosen_pid = self.linear_drive_pid
+            case "angular_drive_pid":
+                chosen_pid = self.angular_drive_pid
+        if chosen_pid is not None:
+            match config.setting:
+                case "Kp":
+                    chosen_pid.Kp = float(config.value)
+                    print(f"set Kp to {chosen_pid.Kp} on {config.category}")
+                case "Ki":
+                    chosen_pid.Ki = float(config.value)
+                    print(f"set Ki to {chosen_pid.Ki} on {config.category}")
+                case "Kd":
+                    chosen_pid.Kd = float(config.value)
+                    print(f"set Kd to {chosen_pid.Kd} on {config.category}")
+        
     # when someone calls this action
     # SelfDriver.action:
     # # Request

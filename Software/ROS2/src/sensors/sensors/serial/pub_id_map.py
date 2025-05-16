@@ -13,7 +13,11 @@ def read_id_map_file(node, file_path: str):
         ros_type = i['message_type']
         topic = i['topic']
         is_ros_pub = i['ros_pub_or_sub'] == 'pub'
+        arduino_folder = i['arduino_folder']
+        is_nano = i['is_nano']
         ros_msg_type = get_message(ros_type)
+        node.arduino_folders[pub_id] = arduino_folder
+        node.is_board_nano[pub_id] = is_nano
         if is_ros_pub:
             node.add_ros_pub(pub_id, ros_msg_type, topic)
         else:
