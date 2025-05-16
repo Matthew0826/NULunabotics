@@ -3,12 +3,20 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
 
+MIN_OBSTACLE_HEIGHT = 10.0
+OBSTACLE_SEPARATION = 50.0
+MIN_OBSTACLE_WIDTH = 15.0
+MAX_OBSTACLE_WIDTH = 60.0
+
 class FeatureDetector:
     def __init__(self, logger):
         self.logger = logger
     
-    def detect_features(self, points, height_threshold=10.0, min_distance=30.0, 
-                        min_width=25.0, max_width=100.0):
+    def detect_features(self, points, 
+                        height_threshold=MIN_OBSTACLE_HEIGHT,
+                        min_distance=OBSTACLE_SEPARATION,
+                        min_width=MIN_OBSTACLE_WIDTH,
+                        max_width=MAX_OBSTACLE_WIDTH):
         """
         Detect features (rocks and craters) using a simple height deviation approach.
         
@@ -44,7 +52,7 @@ class FeatureDetector:
         
         # Step 2: Calculate the baseline (median y value)
         baseline_y = np.median(sorted_points[:, 1])
-        self.logger.info(f"Baseline y-value: {baseline_y:.2f} cm")
+        # self.logger.info(f"Baseline y-value: {baseline_y:.2f} cm")
         
         # Step 3: Calculate deviations from baseline
         deviations = sorted_points[:, 1] - baseline_y
@@ -68,7 +76,7 @@ class FeatureDetector:
                                      height=height_threshold,
                                      distance=min_distance / (sorted_points[1, 0] - sorted_points[0, 0]))
         
-        self.logger.info(f"Detected {len(rock_peaks)} potential rocks and {len(crater_peaks)} potential craters")
+        # self.logger.info(f"Detected {len(rock_peaks)} potential rocks and {len(crater_peaks)} potential craters")
         
         # Step 6: Extract features from peaks
         features = []
@@ -89,7 +97,12 @@ class FeatureDetector:
             if feature:
                 features.append(feature)
         
-        self.logger.info(f"Found {len(features)} valid features after filtering")
+        # the real y of the feature is a radius below
+        for i in range(len(features)):
+            x, y, radius, is_rock = features[i]
+            features[i] = (x, y - radius, radius, is_rock)
+        
+        # self.logger.info(f"Found {len(features)} valid features after filtering")
         return features
     
     def _extract_feature(self, sorted_points, peak_idx, deviations, feature_type, 
@@ -117,7 +130,7 @@ class FeatureDetector:
         Returns:
         --------
         feature : tuple or None
-            (x, y, radius) tuple if valid feature, None otherwise
+            (x, y, radius, is_rock) tuple if valid feature, None otherwise
         """
         # Get peak location
         peak_x = sorted_points[peak_idx, 0]
@@ -155,7 +168,7 @@ class FeatureDetector:
         height = abs(peak_y - np.median(sorted_points[:, 1]))
         self.logger.info(f"Detected {feature_type} at ({center_x:.2f}, {center_y:.2f}) with radius {radius:.2f} cm and height {height:.2f} cm")
         
-        return (center_x, center_y, radius)
+        return (center_x, center_y, radius, feature_type == "rock")
     
     def plot_detection_process(self, figsize=(12, 10)):
         """

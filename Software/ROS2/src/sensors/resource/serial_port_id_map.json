@@ -40,5 +40,11 @@
         "message_type": "lunabotics_interfaces/msg/ExcavatorPotentiometer",
         "topic": "sensors/excavator_percent",
         "ros_pub_or_sub": "pub"
+    },
+    {
+        "id": 7,
+        "message_type": "std_msgs/msg/Float32",
+        "topic": "sensors/excavator_distance",
+        "ros_pub_or_sub": "pub"
     }
 ]

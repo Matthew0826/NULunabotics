@@ -1,4 +1,3 @@
-float32 left_actuator_speed
-float32 right_actuator_speed
-float32 conveyor
-bool hatch
+float32 excavator_lifter_speed
+float32 conveyor_speed
+float32 actuator_speed

@@ -1,7 +1,7 @@
 import math
 
 BUCKET_SIZE = 0.5  # cm
-VIEW_CONE_SIZE = 300  # cm
+VIEW_CONE_SIZE = 120  # cm
 
 class MovingAverage:
     """A simple moving average class to keep track of the last N LiDAR rotations."""

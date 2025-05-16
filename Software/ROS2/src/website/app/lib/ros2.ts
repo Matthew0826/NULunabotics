@@ -20,6 +20,7 @@ const LUNABOTICS_PLAN_TYPE = "lunabotics_interfaces/action/Plan";
 const LUNABOTICS_POINT_TYPE = "lunabotics_interfaces/msg/Point";
 const LUNABOTICS_RECT_TYPE = "lunabotics_interfaces/msg/Rect";
 const LUNABOTICS_PATH_VISUAL_TYPE = "lunabotics_interfaces/msg/PathVisual";
+const LUNABOTICS_EXCAVATOR_TYPE = "lunabotics_interfaces/msg/Excavator";
 const ROS2_FLOAT_TYPE = "std_msgs/msg/Float32";
 const ROS2_BOOL_TYPE = "std_msgs/msg/Bool";
 
@@ -33,6 +34,11 @@ export const publishToROS2 = (messageJson: any) => {
     // motorsMsg.outtake = messageJson.buttonRight ? 1 : 0;
     rosControlsPublisher.publish(motorsMsg);
     // console.log("Published: ", messageJson);
+    const excavatorMsg = rclnodejs.createMessageObject(LUNABOTICS_EXCAVATOR_TYPE);
+    excavatorMsg.actuator_speed = messageJson.buttonL ? 1 : (messageJson.buttonR ? -1 : 0);
+    excavatorMsg.conveyor_speed = 0.0;
+    excavatorMsg.excavator_lifter_speed = 0.0;
+    rosExcavatorPublisher.publish(excavatorMsg);
 };
 
 export const publishMockObstacle = (messageJson: any) => {
@@ -170,6 +176,7 @@ async function timerCallback(goalHandle: rclnodejs.ClientGoalHandle<typeof LUNAB
 
 let rosNode: rclnodejs.Node;
 let rosControlsPublisher: rclnodejs.Publisher<typeof LUNABOTICS_MOTORS_TYPE>;
+let rosExcavatorPublisher: rclnodejs.Publisher<typeof LUNABOTICS_EXCAVATOR_TYPE>;
 let rosMockObstaclePublisher: rclnodejs.Publisher<typeof LUNABOTICS_OBSTACLE_TYPE>;
 let rosSimResetPublisher: rclnodejs.Publisher<typeof ROS2_BOOL_TYPE>;
 let rosClient: rclnodejs.Client<typeof LUNABOTICS_PATH_TYPE>;
@@ -191,6 +198,10 @@ rclnodejs.init().then(() => {
     rosSimResetPublisher = node.createPublisher(
         ROS2_BOOL_TYPE,
         "website/reset"
+    );
+    rosExcavatorPublisher = node.createPublisher(
+        LUNABOTICS_EXCAVATOR_TYPE,
+        "/physical_robot/excavator"
     );
     node.createSubscription(
         LUNABOTICS_LIDAR_ROTATION_TYPE,

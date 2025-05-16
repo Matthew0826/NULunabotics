@@ -11,6 +11,7 @@ import ObjModelAnimator from "../three/obj";
 import SpeedSlider from "./speed-slider";
 import { useState } from "react";
 import { useKeyboardController } from "@/app/lib/keyboard-controller";
+import { useGamepadManagerContext } from "./gamepad-state-provider";
 
 export default function DashboardPanels() {
     const mapPanel = (
@@ -19,8 +20,7 @@ export default function DashboardPanels() {
         </Panel>
     );
 
-    // const [speed, setSpeed] = useKeyboardController();
-    // console.log("Speed: ", speed);
+    const { state, setState, speed, setSpeed } = useGamepadManagerContext();
 
     return (
         <div className="flex flex-row gap-4 p-6 h-full w-full">
@@ -52,8 +52,11 @@ export default function DashboardPanels() {
                     {/* <BatteryIndicator /> */}
                     <WebSocketGraph graphInfo={tempGraphPower} />
                 </Panel>
-                <Panel title="Speed">
-                    <SpeedSlider value={0.5} setValue={undefined} />
+                <Panel title="Wheel Speed">
+                    <SpeedSlider value={speed} setValue={setSpeed} />
+                </Panel>
+                <Panel title="Serial Ports">
+                    <p>hi</p>
                 </Panel>
             </div>
             <div className="w-[66vw] hidden xl:block flex-2">{mapPanel}</div>

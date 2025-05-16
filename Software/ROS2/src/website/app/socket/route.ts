@@ -45,6 +45,8 @@ export function SOCKET(
                 stopLoopingAction();
                 publishSimReset(messageJson.message);
             } else if (messageJson.type === "controls") {
+                console.log("Controls message received");
+                console.log(messageJson.message);
                 publishToROS2(messageJson.message);
             }
         } catch (error) { }

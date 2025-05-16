@@ -40,14 +40,12 @@ export default function LidarVisual() {
             .map((message: Message) => message.message)
             .flat()
             .map((newObstacle: any) => {
-                return { x: newObstacle.position.x, y: newObstacle.position.y, radius: newObstacle.radius, isHole: true }
-            }))];
-        // console.log(obstaclesMessages);
-
+                return { x: newObstacle.position.x, y: newObstacle.position.y, radius: newObstacle.radius, isHole: !newObstacle.is_rock, relativeX: newObstacle.relative_position.x, relativeY: newObstacle.relative_position.y };
+            }))].slice(-5);
         setObstacles(obstaclesMessages);
     }, [messages]);
     const getMaxDistance = () => {
-        return 500; //Math.max(...lidarData.map((point) => point.distance));
+        return 200; //Math.max(...lidarData.map((point) => point.distance));
     };
 
     // Angle is in radians
@@ -74,26 +72,29 @@ export default function LidarVisual() {
     function getDivFromLidar(
         point: Point,
         index: number,
-        doInterpolateColor: boolean
+        doInterpolateColor: boolean,
+        radius: number = 4
     ): JSX.Element {
         return (
             <div
                 className="absolute rounded-full -translate-y-1/2 -translate-x-1/2"
                 style={{
-                    width: 4,
-                    height: 4,
+                    width: radius,
+                    height: radius,
                     backgroundColor: doInterpolateColor
                         ? interpolateColor(
                             [0, 255, 0],
                             [255, 0, 0],
                             //   point.weight / 256
                             // how far away from moving average
-                            Math.min(
-                                1.0,
-                                getAveragePreviousPoint(
-                                    Math.floor(point.angle)
-                                ).distance / 200.0
-                            )
+                            Math.max(
+                                0.0,
+                                Math.min(
+                                    1.0,
+                                    (getAveragePreviousPoint(
+                                        Math.floor(point.angle)
+                                    ).distance || 0.0) / 200.0
+                                ))
                         )
                         : "blue",
                     left: `${50 + 50 * (point.distance / getMaxDistance()) * Math.cos(point.angle)}%`,
@@ -105,10 +106,10 @@ export default function LidarVisual() {
     }
     return (
         <div className="relative w-[35vh] h-[35vh] m-2">
-            {/*lidarData.map((point, index) =>
+            {lidarData.map((point, index) =>
                 getDivFromLidar(point, index, true)
-            )*/}
-            {previousLidarData.length > 0 && (
+            )}
+            {/* {previousLidarData.length > 0 && (
                 Array.from({ length: 360 / THRESHOLD_DEGS }).map((_, index) =>
                     getDivFromLidar(
                         getAveragePreviousPoint((index * THRESHOLD_DEGS) / 180.0 * Math.PI),
@@ -116,22 +117,15 @@ export default function LidarVisual() {
                         false
                     )
                 )
-            )}
+            )} */}
             <img
                 src="/lidar_icon.svg"
                 alt="Lidar Icon"
                 className="absolute w-[10%] h-auto top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2"
             />
             {obstacles.map((obstacle, index) => (
-                <Obstacle
-                    key={index}
-                    x={obstacle.x * 100}
-                    y={obstacle.y * 100}
-                    radius={obstacle.radius * 100}
-                    isHole={obstacle.isHole}
-                    parentHeight={getMaxDistance()}
-                    parentWidth={getMaxDistance()}
-                />
+                /*obstalce has x, y, and radius. render a div in the same way that lidar points are rendered */
+                getDivFromLidar({ angle: Math.atan2(obstacle.relativeY, obstacle.relativeX), distance: Math.hypot(obstacle.relativeX, obstacle.relativeY), weight: 100 }, index, true, obstacle.radius * 2)
             ))}
         </div>
     );

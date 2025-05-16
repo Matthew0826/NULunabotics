@@ -30,7 +30,8 @@ export var gamepadData = {};
 
 export function gamepadLoop(
     sendToServer: (messageType: string, message: any) => void,
-    setState: React.Dispatch<React.SetStateAction<GamepadState>>
+    setState: React.Dispatch<React.SetStateAction<GamepadState>>,
+    speed: number = 0.5
 ) {
     let start: number;
     console.log("Beginning gamepad loop.");
@@ -69,10 +70,10 @@ export function gamepadLoop(
             }
         });
 
-        var x1 = gamepad.axes[0];
-        var y1 = gamepad.axes[1];
-        var x2 = gamepad.axes[2];
-        var y2 = gamepad.axes[3];
+        var x1 = gamepad.axes[0] * speed;
+        var y1 = gamepad.axes[1] * speed;
+        var x2 = gamepad.axes[2] * speed;
+        var y2 = gamepad.axes[3] * speed;
 
         var newData: GamepadState = {
             x1,
@@ -86,7 +87,7 @@ export function gamepadLoop(
 
         if (gamepadData !== newData) {
             gamepadData = newData;
-            sendToServer("controls", {...newData, timestamp: Date.now()});
+            sendToServer("controls", { ...newData, timestamp: Date.now() });
             const end1 = normalizedVectorToPixels(x1, y1);
             const end2 = normalizedVectorToPixels(x2, y2);
             newData.x1 = end1.endX;

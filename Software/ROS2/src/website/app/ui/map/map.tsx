@@ -14,6 +14,8 @@ export type ObstacleType = {
     y: number;
     radius: number;
     isHole: boolean;
+    relativeX: number;
+    relativeY: number;
 };
 
 export type Rect = {
@@ -69,7 +71,7 @@ export default function Map() {
             .map((message: Message) => message.message)
             .flat()
             .map((newObstacle: any) => {
-                return { x: newObstacle.position.x, y: newObstacle.position.y, radius: newObstacle.radius, isHole: true }
+                return { x: newObstacle.position.x, y: newObstacle.position.y, radius: newObstacle.radius, isHole: !newObstacle.is_rock, relativeX: newObstacle.relative_position.x, relativeY: newObstacle.relative_position.y };
             }))];
 
         setObstacles(obstaclesMessages);

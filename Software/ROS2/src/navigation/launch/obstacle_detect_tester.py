@@ -26,9 +26,9 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(ld19_launch_path)
         ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(website_launch_path),
-        ),
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(website_launch_path),
+        # ),
         Node(
             package='navigation',
             executable='obstacle_detector',

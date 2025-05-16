@@ -4,7 +4,7 @@ import DirectionalDisplay from "./directional-display";
 import { useGamepadManagerContext } from "./gamepad-state-provider";
 
 export default function GamepadTester() {
-    const { state, setState } = useGamepadManagerContext();
+    const { state, setState, speed, setSpeed } = useGamepadManagerContext();
     return (
         <>
             <DirectionalDisplay
