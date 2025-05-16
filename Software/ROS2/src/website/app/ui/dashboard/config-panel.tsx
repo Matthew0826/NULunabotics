@@ -31,7 +31,7 @@ export default function ConfigPanel() {
     }
     return (
         <div className="flex flex-col gap-4 p-6 h-full w-full">
-            <p>Note: doesn't save! Remeber to paste your values somewhere.</p>
+            <p>Note: doesn't save! Remember to paste your values somewhere.</p>
             {configState.map((item, index) => (
                 <div className="flex flex-col gap-2 border-2 border-slate-800 p-2 rounded-lg" key={index}>
                     <b className="text-center">{item.node}</b>
