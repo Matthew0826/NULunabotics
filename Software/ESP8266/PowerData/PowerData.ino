@@ -3,6 +3,8 @@
 #include <Arduino.h>
 #include <TheiaSerial.h>
 #include <Wire.h>
+// https://github.com/RobTillaart/INA226
+#include <INA226.h>
 
 #define FIVE_VOLT_MEASUREMENT_PIN A0
 #define MAX_VOLTS 3.3
@@ -12,7 +14,7 @@
 #define MAX_EXPECTED_CURRENT 12.0
 // Data sheet:
 // https://www.ti.com/lit/ds/symlink/ina226.pdf?HQS=dis-dk-null-digikeymode-dsf-pf-null-wwe&ts=1747291379891&ref_url=https%253A%252F%252Fwww.ti.com%252Fgeneral%252Fdocs%252Fsuppproductinfo.tsp%253FdistId%253D10%2526gotoUrl%253Dhttps%253A%252F%252Fwww.ti.com%252Flit%252Fgpn%252Fina226
-#define CALIBRATION (0.00512/((MAX_EXPECTED_CURRENT/32768.0)*0.002)
+#define SHUNT_RESISTANCE 0.002 // Ohms
 
 // Id for publishing to power data type (publisher of power has id of 3)
 #define POWER_ID 3
@@ -25,6 +27,8 @@ typedef struct {
 } Power;
 
 
+INA226 INA(0x40);
+
 void mockCallback(const Power& power) {}
 
 void setup() {
@@ -35,7 +39,17 @@ void setup() {
   TheiaSerial::addId<Power>(POWER_ID, mockCallback);
 
   Wire.begin();
-  // TODO: connect to the current sensor through I2C on ID 64 (0x40 in hex)
+  while (!INA.begin()) {
+    delay(1000);
+  }
+  float shunt = SHUNT_RESISTANCE;           /* shunt (Shunt Resistance in Ohms). Lower shunt gives higher accuracy but lower current measurement range. Recommended value 0.020 Ohm. Min 0.001 Ohm */
+  float current_LSB_mA = 0.05;              /* current_LSB_mA (Current Least Significant Bit in milli Amperes). Recommended values: 0.050, 0.100, 0.250, 0.500, 1, 2, 2.5 (in milli Ampere units) */
+  float current_zero_offset_mA = 0;         /* current_zero_offset_mA (Current Zero Offset in milli Amperes, default = 0) */
+  uint16_t bus_V_scaling_e4 = 10000;        /* bus_V_scaling_e4 (Bus Voltage Scaling Factor, default = 10000) */
+  bool success = INA.configure(shunt, current_LSB_mA, current_zero_offset_mA, bus_V_scaling_e4);
+  delay(20);
+  INA.setMaxCurrentShunt(MAX_EXPECTED_CURRENT, SHUNT_RESISTANCE);
+  delay(20);
 }
 
 void loop() {
@@ -47,13 +61,10 @@ void loop() {
   float voltage5V = rawVoltage3V3 / VOLTAGE_DIVIDER_FORMULA;
 
 
-  // calibrate for 10A
-
-  // read bus voltage to get 12v
-  // read current register to get current
 
   // Read the voltage and current from I2C
-  // TODO: reference datasheet to figure out how to 
+  float voltage12V = INA.getBusVoltage(); 
+  float current = INA.getCurrent_mA() / 1000.0; 
   
   // Write results to Serial connection
   Power power;

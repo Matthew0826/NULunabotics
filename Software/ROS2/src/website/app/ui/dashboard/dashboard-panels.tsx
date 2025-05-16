@@ -17,7 +17,7 @@ import ConfigPanel from "./config-panel";
 
 export default function DashboardPanels() {
     const mapPanel = (
-        <Panel title="Map">
+        <Panel title="Map" canHide={false}>
             <Map />
         </Panel>
     );
@@ -30,24 +30,20 @@ export default function DashboardPanels() {
                 {/* <div className="xl:hidden">{mapPanel}</div> */}
                 <div className="xl:hidden">{mapPanel}</div>
                 {/* <BatteryIndicator /> */}
-                <Panel title="Autonomous">
+                <Panel title="Autonomous" canHide={false}>
                     <Timer startTime={0} />
                 </Panel>
                 <Panel title="LiDAR">
                     <LidarVisual />
-                </Panel>
-                {/*<Panel title="Power">
-                    <WebSocketGraph graphInfo={tempGraphPower} />
-                </Panel>
-                */}
-                <Panel title="Wheel Speed">
-                    <SpeedSlider value={speed} setValue={setSpeed} />
                 </Panel>
                 <Panel title="Config">
                     <ConfigPanel />
                 </Panel>
                 <Panel title="Serial Ports">
                     <SerialPortDisplay />
+                </Panel>
+                <Panel title="Wheel Speed">
+                    <SpeedSlider value={speed} setValue={setSpeed} />
                 </Panel>
                 <Panel title="">
                     <ObjModelAnimator
@@ -62,6 +58,9 @@ export default function DashboardPanels() {
                             maxPolarAngle: Math.PI * 0.75,  // Can't go below model
                             minPolarAngle: Math.PI * 0.25   // Can't go fully above model
                         }} />
+                </Panel>
+                <Panel title="Power">
+                    <WebSocketGraph graphInfo={tempGraphPower} />
                 </Panel>
             </div>
             <div className="w-[66vw] hidden xl:block flex-2">{mapPanel}</div>

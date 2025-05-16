@@ -23,6 +23,7 @@ function Timer({ startTime }: TimerProps) {
             sendToServer("beginAutonomous", {});
         }
     };
+
     const stopTimer = () => {
         setIsRunning(false);
         if (intervalRef.current) {
@@ -41,14 +42,12 @@ function Timer({ startTime }: TimerProps) {
 
     const min = Math.floor(elapsedTime / 60);
     const sec = elapsedTime % 60;
-    // h-full items-center rounded-xl p-6 gap-x-4 bg-black-900/50 border border-black-800 bg-slate-100
     return (
         <div className="flex-cols items-center content-center justify-center justify-items-center font-mono text-2xl">
             <div>
-                <span className="">{min}</span>
-                <span className="unit">:</span>
-                <span className="">{sec.toString().padStart(2, "0")}</span>
-                {/* <span className="unit">sec</span> */}
+                <span>{min}</span>
+                <span>:</span>
+                <span>{sec.toString().padStart(2, "0")}</span>
             </div>
             <div>
                 <button

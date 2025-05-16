@@ -20,7 +20,7 @@ def upload_sketch(port: str, sketch_name: str, is_nano: bool):
     sketch_dir = os.path.dirname(sketch_path)
 
     if is_nano:
-        fqbn = "arduino:avr:nano:cpu=atmega328old"
+        fqbn = "arduino:avr:nano"#:cpu=atmega328old"
         additional_flags = []#["--build-property", "upload.speed=57600"]
         board_name = "Arduino Nano"
     else:

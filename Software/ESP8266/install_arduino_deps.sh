@@ -42,6 +42,7 @@ echo "Fusion library installed at $LIB_DIR"
 arduino-cli lib install SimpleVector
 arduino-cli lib install "Adafruit MPU6050"
 arduino-cli lib install Servo
+arduino-cli lib install INA226
 
 # Support for ESP8266
 arduino-cli core update-index
