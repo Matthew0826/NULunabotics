@@ -148,7 +148,7 @@ class Pathfinder(Node):
         # get path in world points
         filtered_path = [grid_to_world(node.x, node.y) for node in filtered_path]
         response.nodes = [Point(x=point[0],y=point[1]) for point in filtered_path]
-        self.get_logger().info(f"Path found with confidence threshold: {confidence_threshold} (({start.x}, {start.y}) till ({end.x}, {end.y}))")
+        # self.get_logger().info(f"Path found with confidence threshold: {confidence_threshold} (({start.x}, {start.y}) till ({end.x}, {end.y}))")
         # self.debug_map()
         self.website_path_visualizer.publish(PathVisual(nodes=response.nodes))
         return response

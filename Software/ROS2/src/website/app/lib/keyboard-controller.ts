@@ -1,60 +1,68 @@
-import { Dispatch, SetStateAction, useEffect, useReducer, useRef, useState } from "react";
-import { defaults, GamepadState, useGamepadManagerContext } from "../ui/dashboard/gamepad-state-provider";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { useGamepadManagerContext } from "../ui/dashboard/gamepad-state-provider";
 import { useWebSocketContext } from "./web-socket-context";
 
 const defaultsNormalized = {
-    x1: 0,
-    y1: 0,
-    x2: 0,
-    y2: 0,
-    buttonL: false,
-    buttonR: false,
+    x: 0,
+    y: 0,
+    actuatorPower: 0,
+    isActuator: false,
+    conveyorSpeed: 0.0,
     timestamp: 0,
 };
 
 function statesAreEqual(a: any, b: any): boolean {
-    return Object.keys(a).every(k => a[k] === b[k]) &&
-        Object.keys(b).every(k => a[k] === b[k]);
+    return Object.keys(a).every(k => a[k] == b[k]) &&
+        Object.keys(b).every(k => a[k] == b[k]);
 }
 
 export function useKeyboardController(): [number, Dispatch<SetStateAction<number>>] {
     const { messages, sendToServer } = useWebSocketContext();
     const { state, setState } = useGamepadManagerContext();
     const [speed, setSpeed] = useState(0.5);
-    const speedRed = useRef(0.5);
+    const [flipped, setFlipped] = useState(false);
+    const speedRef = useRef(0.5);
     useEffect(() => {
-        speedRed.current = speed;
+        speedRef.current = speed;
         function handleKeyDown(event: KeyboardEvent) {
             const newState = { ...defaultsNormalized };
             if (event.key === "ArrowUp" || event.key === "w") {
-                newState.y1 = speedRed.current;
-                newState.y2 = speedRed.current;
+                newState.x = 0;
+                newState.y = speedRef.current;
             }
             if (event.key === "ArrowDown" || event.key === "s") {
-                newState.y1 = -speedRed.current;
-                newState.y2 = -speedRed.current;
+                newState.x = 0;
+                newState.y = -speedRef.current;
             }
             if (event.key === "d") {
-                newState.y1 = speedRed.current;
-                newState.y2 = -speedRed.current;
+                newState.x = speedRef.current;
+                newState.y = 0;
             }
             if (event.key === "a") {
-                newState.y1 = -speedRed.current;
-                newState.y2 = speedRed.current;
+                newState.x = -speedRef.current;
+                newState.y = 0;
             }
-            if (event.key === "z" || event.key === "q") {
-                newState.buttonL = true;//!newState.buttonL;
+            if (event.key === ",") {
+                newState.actuatorPower = -speedRef.current;
             }
-            if (event.key === "x" || event.key === "e") {
-                newState.buttonR = true; !newState.buttonR;
+            if (event.key === ".") {
+                newState.actuatorPower = speedRef.current;
+            }
+            let flipActuator = false;
+            if (event.key == "q") {
+                flipActuator = true;
+                setFlipped((prev) => !prev);
+            }
+            if (event.key == "e") {
+                newState.conveyorSpeed = speedRef.current;
             }
             newState.timestamp = Date.now();
-            sendToServer("controls", newState);
+            sendToServer("controls", { ...newState, isActuator: flipped });
             setState(newState);
         }
 
         function handleKeyUp(event: KeyboardEvent) {
-            if (!statesAreEqual(state, defaultsNormalized)) {
+            if (state != defaultsNormalized) {
                 sendToServer(
                     "controls",
                     {

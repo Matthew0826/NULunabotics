@@ -30,6 +30,9 @@ MIN_EXCAVATOR_LIFTER_PERCENT = 0.1
 
 CONVEYOR_SPEED = 0.6
 
+EXCAVATION_TIME = 10.0
+BIN_TIME = 3.0
+
 class Odometry(Node):
     """
         This node has an action server that takes requests to move the robot.
@@ -184,22 +187,24 @@ class Odometry(Node):
         
         # get if we should unload
         unload = goal_handle.request.should_unload
-        if unload:
-            self.get_logger().info('unloading')
-            await self.run_unload_bin()
-            self.get_logger().info('unloaded')
-        
         # get if we should excavate
         excavate = goal_handle.request.should_excavate
-        if excavate:
+        if unload:
+            self.get_logger().info('unloading')
+            await self.move_actuator_to(MAX_ACTUATOR_PERCENT)
+            await self.yield_once(delay=BIN_TIME)
+            await self.move_actuator_to(MIN_ACTUATOR_PERCENT)
+            self.get_logger().info('unloaded')
+        elif excavate:
             self.get_logger().info('excavating')
-            # start the excavator
-            await self.move_excavator(MAX_ACTUATOR_PERCENT)
+            # move the excavator up
+            await self.move_excavator_to(MAX_EXCAVATOR_LIFTER_PERCENT)
             self.get_logger().info('excavator in position')
             # start the conveyor
             await self.run_conveyor()
             self.get_logger().info('conveyor done running')
-            await self.move_excavator(MIN_ACTUATOR_PERCENT)
+            # move the excavator down
+            await self.move_excavator_to(MIN_EXCAVATOR_LIFTER_PERCENT)
             self.get_logger().info('excavated')
         
         # send the result
@@ -311,62 +316,60 @@ class Odometry(Node):
 
         # then publish it like usual
         self.excavate_pub.publish(msg)
+    
+    async def move_actuator_to(self, target_percent: float):
+        await self.move_excavator_motor_to_target(
+            target=target_percent,
+            feedback=lambda: self.actuator_percent,
+            pid=self.bin_actuator_pid,
+            drive_callback=lambda power: self.set_excavator_power(0.0, power, 0.0)
+        )
+    
+    def get_excavator_feedback(self):
+        # TODO: use distance sensor when excavator lifter percent is high
+        return self.excavator_lifter_percent
+    
+    async def move_excavator_to(self, target_percent: float):
+        await self.move_excavator_motor_to_target(
+            target=target_percent,
+            feedback=self.get_excavator_feedback,
+            pid=self.excavator_lifter_pid,
+            drive_callback=lambda power: self.set_excavator_power(power, 0.0, 0.0)
+        )
 
-    async def move_excavator(self, target_percent: float):
-        # reset the PID controllers
-        self.excavator_left_actuator_pid.reset()
-        self.excavator_right_actuator_pid.reset()
+    async def move_excavator_motor_to_target(self, target: float, feedback, pid, drive_callback):
+        pid.reset()
         
         # use pid loop to get to the target percent
         while True:
             # find error for PID
-            left_error = target_percent - self.excavator_left_percent
-            right_error = target_percent - self.excavator_right_percent
-            self.get_logger().info(f"error: {left_error}, {right_error}")
+            error = target - feedback()
             # check if completed
-            left_completed = abs(left_error) <= self.actuator_tolerance_percent
-            right_completed = abs(right_error) <= self.actuator_tolerance_percent
-            if left_completed and right_completed: break
+            completed = abs(error) <= self.actuator_tolerance_percent
+            if completed: break
             # update PID
             current_time = self.get_clock().now()
-            left_power = self.excavator_left_actuator_pid.update(left_error, current_time)
-            right_power = self.excavator_right_actuator_pid.update(right_error, current_time)
-            self.get_logger().info(f"power: {left_power}, {right_power}")
+            power = pid.update(error, current_time)
             # make sure theres at least a little power
-            if abs(left_power) < 0.1:
-                left_power = 0.1 if left_power > 0 else -0.1
-            if abs(right_power) < 0.1:
-                right_power = 0.1 if right_power > 0 else -0.1
-            # but if we are done, stop the motors
-            if left_completed:
-                left_power = 0.0
-            if right_completed:
-                right_power = 0.0
-            self.get_logger().info(f"power after: {left_power}, {right_power}")
+            if abs(power) < 0.1:
+                power = 0.1 if power > 0 else -0.1
+            self.get_logger().info(f"power after: {power}")
             # drive the motors for a bit
-            self.set_excavator_power(left_power, right_power, 0.0, False)
+            drive_callback(power)
             await self.yield_once(0.2)
-        self.get_logger().info("done")
         # stop the excavator
         self.stop_excavator()
 
     async def run_conveyor(self):
         # in position, now turn on conveyor
-        self.set_excavator_power(0.0, 0.0, 0.7, False)
+        self.set_excavator_power(0.0, 0.0, CONVEYOR_SPEED)
         # wait to excavate
-        await self.yield_once(10.0)
+        await self.yield_once(EXCAVATION_TIME)
         # stop the conveyor
         self.stop_excavator()
 
     def stop_excavator(self):
-        self.set_excavator_power(0.0, 0.0, 0.0, False)
-
-    async def run_unload_bin(self):
-        # open
-        self.set_excavator_power(0.0, 0.0, 0.0, True)
-        await self.yield_once(3.0)
-        # close
-        self.set_excavator_power(0.0, 0.0, 0.0, False)
+        self.set_excavator_power(0.0, 0.0, 0.0)
         
     def get_degrees_error(self, final_degrees: float):
         """Calculates the difference in degrees between the robot's current orientation

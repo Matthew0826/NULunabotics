@@ -5,16 +5,14 @@ import { gamepadLoop, normalizedVectorToPixels } from "@/app/lib/utils";
 import { useWebSocketContext } from "@/app/lib/web-socket-context";
 import { useContext, useState } from "react";
 import { createContext } from "react";
-import { useEffect, useRef } from "react";
-import WebSocket from "ws";
+import { useEffect } from "react";
 
 export type GamepadState = {
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-    buttonL: boolean;
-    buttonR: boolean;
+    x: number;
+    y: number;
+    actuatorPower: number;
+    isActuator: boolean;
+    conveyorSpeed: number;
     timestamp: number;
 };
 
@@ -26,12 +24,11 @@ type GamepadManagerContextType = {
 };
 
 export const defaults = {
-    x1: 100,
-    y1: 100,
-    x2: 100,
-    y2: 100,
-    buttonL: false,
-    buttonR: false,
+    x: 0,
+    y: 0,
+    actuatorPower: 0,
+    isActuator: false,
+    conveyorSpeed: 0.0,
     timestamp: 0,
 };
 
@@ -51,15 +48,7 @@ export default function GamepadStateProvider({
     children: React.ReactNode;
 }) {
     const { messages, sendToServer } = useWebSocketContext();
-    const [state, setState] = useState<GamepadState>({
-        x1: 0,
-        y1: 0,
-        x2: 0,
-        y2: 0,
-        buttonL: false,
-        buttonR: false,
-        timestamp: 0,
-    });
+    const [state, setState] = useState<GamepadState>(defaults);
     const [speed, setSpeed] = useKeyboardController();
 
     useEffect(() => {

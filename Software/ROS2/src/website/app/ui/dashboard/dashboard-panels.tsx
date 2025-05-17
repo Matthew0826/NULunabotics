@@ -14,6 +14,7 @@ import { useKeyboardController } from "@/app/lib/keyboard-controller";
 import { useGamepadManagerContext } from "./gamepad-state-provider";
 import SerialPortDisplay from "./serial-port-display";
 import ConfigPanel from "./config-panel";
+import ExcavatorVisual from "./excavator_temp_visual";
 
 export default function DashboardPanels() {
     const mapPanel = (
@@ -36,6 +37,9 @@ export default function DashboardPanels() {
                 <Panel title="LiDAR">
                     <LidarVisual />
                 </Panel>
+                <Panel title="Excavator">
+                    <ExcavatorVisual />
+                </Panel>
                 <Panel title="Config">
                     <ConfigPanel />
                 </Panel>
@@ -45,7 +49,7 @@ export default function DashboardPanels() {
                 <Panel title="Wheel Speed">
                     <SpeedSlider value={speed} setValue={setSpeed} />
                 </Panel>
-                <Panel title="">
+                {/* <Panel title="">
                     <ObjModelAnimator
                         objUrl="/models/lunabot4.obj"
                         mtlUrl="/models/lunabot4.mtl"
@@ -58,7 +62,7 @@ export default function DashboardPanels() {
                             maxPolarAngle: Math.PI * 0.75,  // Can't go below model
                             minPolarAngle: Math.PI * 0.25   // Can't go fully above model
                         }} />
-                </Panel>
+                </Panel> */}
                 <Panel title="Power">
                     <WebSocketGraph graphInfo={tempGraphPower} />
                 </Panel>

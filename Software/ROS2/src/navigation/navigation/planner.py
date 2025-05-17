@@ -142,16 +142,17 @@ class Planner(Node):
         
         
         # check if start was in the construction (aka dump) zone and if "self.previous_position" is in the excavation zone
-        allowed_to_excavate = ((get_zone(self.start.x, self.start.y) == DUMP_ZONE and \
-           get_zone(self.previous_position.x, self.previous_position.y) == EXCAVATION_ZONE)) or \
-               (get_zone(self.start.x, self.start.y) == START_ZONE and \
-              get_zone(self.previous_position.x, self.previous_position.y) == EXCAVATION_ZONE)
-        allowed_to_dump = (get_zone(self.start.x, self.start.y) == DUMP_ZONE and \
-              get_zone(self.previous_position.x, self.previous_position.y) == BERM_ZONE)
+        start_zone = get_zone(self.start.x, self.start.y)
+        end_zone = get_zone(self.previous_position.x, self.previous_position.y)
+        allowed_to_excavate = (start_zone == DUMP_ZONE and end_zone == EXCAVATION_ZONE) or \
+               (start_zone == START_ZONE and end_zone == EXCAVATION_ZONE)
+        allowed_to_dump = (start_zone == DUMP_ZONE and end_zone == BERM_ZONE)
+        self.get_logger().info(f"started in {start_zone} and ended in {end_zone}")
         if allowed_to_excavate or allowed_to_dump:
             # we are at the end, we need to dig/dump (no path to travel to)
             excavation_start_time = self.get_clock().now()
-            # await self.send_drive_goal([], should_excavate=allowed_to_excavate, should_dump=allowed_to_dump)
+            self.get_logger().info(f"Excavate: {allowed_to_excavate and should_excavate}, dump: {allowed_to_dump and should_dump}")
+            await self.send_drive_goal([], should_excavate=allowed_to_excavate and should_excavate, should_dump=allowed_to_dump and should_dump)
             excavation_end_time = self.get_clock().now()
             self.drive_time += (excavation_end_time - excavation_start_time).nanoseconds // 1_000_000
             self.get_logger().info(f"Excavation took {self.drive_time} ms")
@@ -161,7 +162,7 @@ class Planner(Node):
         result = Plan.Result()
         current_time = self.get_clock().now()
         result.time_elapsed_millis = (current_time - start_time).nanoseconds // 1000000
-        # self.get_logger().info("Done. Planner took " + str(result.time_elapsed_millis - self.drive_time) + " ms to plan.")
+        self.get_logger().info("Done. Planner took " + str(result.time_elapsed_millis - self.drive_time) + " ms to plan.")
         return result
 
     async def send_drive_goal(self, targets, should_excavate=False, should_dump=False):

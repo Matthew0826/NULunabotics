@@ -70,31 +70,21 @@ export function gamepadLoop(
             }
         });
 
-        var x1 = gamepad.axes[0] * speed;
-        var y1 = gamepad.axes[1] * speed;
-        var x2 = gamepad.axes[2] * speed;
-        var y2 = gamepad.axes[3] * speed;
-
-        var newData: GamepadState = {
-            x1,
-            y1,
-            x2,
-            y2,
-            buttonL: gamepad.buttons[4].pressed,
-            buttonR: gamepad.buttons[5].pressed,
-            timestamp: 0,
-        };
-
+        var x1 = gamepad.axes[0];
+        var y1 = gamepad.axes[1];
+        var x2 = gamepad.axes[2];
+        var y2 = gamepad.axes[3];
+        const newData = {
+            x: x1,
+            y: y1,
+            conveyorSpeed: gamepad.buttons[5].pressed ? speed : 0.0,
+            isActuator: !gamepad.buttons[4].pressed,
+            actuatorPower: y2 * speed,
+            timestamp: Date.now()
+        }
         if (gamepadData !== newData) {
-            gamepadData = newData;
-            sendToServer("controls", { ...newData, timestamp: Date.now() });
-            const end1 = normalizedVectorToPixels(x1, y1);
-            const end2 = normalizedVectorToPixels(x2, y2);
-            newData.x1 = end1.endX;
-            newData.y1 = end1.endY;
-            newData.x2 = end2.endX;
-            newData.y2 = end2.endY;
             setState(newData);
+            sendToServer("controls", newData);
         }
 
         requestAnimationFrame(step);
