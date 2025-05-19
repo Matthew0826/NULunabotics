@@ -2,7 +2,7 @@
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32
+from lunabotics_interfaces.msg import PowerData
 from sensor_msgs.msg import BatteryState
 import numpy as np
 from collections import deque
@@ -22,8 +22,8 @@ class BatteryPercentageCalculator(Node):
         
         # Subscribers
         self.power_sub = self.create_subscription(
-            Float32, 
-            '/sensors/power_data', 
+            PowerData, 
+            'sensors/power_data', 
             self.power_callback, 
             10)
         
@@ -43,28 +43,8 @@ class BatteryPercentageCalculator(Node):
         self.voltage_history = deque(maxlen=self.filter_window_size)
         self.current_history = deque(maxlen=self.filter_window_size)
         
-        # Create voltage to capacity lookup table (based on 20°C curve)
-        # These are approximate values from your graph - replace with actual measured points
-        self.voltage_points = np.array([
-            12.8,  # 100%
-            12.75, # 90%
-            12.65, # 80%
-            12.5,  # 70%
-            12.35, # 60%
-            12.2,  # 50%
-            12.0,  # 40%
-            11.8,  # 30%
-            11.5,  # 20%
-            11.0,  # 10%
-            8.8    # 0%
-        ])
-        
-        self.capacity_points = np.array([100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0])
-        
         # Timer for periodic updates
         self.timer = self.create_timer(1.0, self.update_battery_state)
-        
-        self.get_logger().info('Battery Percentage Calculator initialized')
     
     def power_callback(self, msg):
         volts = msg.voltage12v
@@ -74,19 +54,30 @@ class BatteryPercentageCalculator(Node):
         self.latest_current = amps
         self.current_history.append(amps)
     
+    def battery_voltage(self, capacity_percent):
+        x = capacity_percent / 100
+        return 13.0366 - 1.5192*x - 3.9305*x**2 + 18.0276*x**3 - 15.6828*x**4
+    
     def voltage_to_capacity(self, voltage):
         """
         Convert voltage to capacity percentage using the lookup table
         with linear interpolation between points
         """
-        # Handle edge cases
-        if voltage >= self.voltage_points[0]:
-            return 100.0
-        if voltage <= self.voltage_points[-1]:
+        if voltage >= 13.0366:
             return 0.0
-            
-        # Find position in the lookup table using interpolation
-        return np.interp(voltage, self.voltage_points[::-1], self.capacity_points[::-1])
+        if voltage <= 10.0:
+            return 100.0
+        
+        left, right = 0.0, 100.0
+        while right - left > 0.01:
+            mid = (left + right) / 2
+            mid_voltage = self.battery_voltage(mid)
+            if mid_voltage > voltage:
+                left = mid
+            else:
+                right = mid
+        
+        return (left + right) / 2
     
     def correct_for_load(self, voltage, current):
         """
@@ -143,7 +134,7 @@ class BatteryPercentageCalculator(Node):
         corrected_voltage = self.correct_for_load(voltage, current)
         
         # Calculate capacity percentage
-        percentage = self.voltage_to_capacity(corrected_voltage)
+        percentage = 100 - self.voltage_to_capacity(corrected_voltage)
         
         # Calculate C-rate for information
         c_rate = abs(current) / self.nominal_capacity
@@ -178,7 +169,7 @@ class BatteryPercentageCalculator(Node):
         msg.charge = self.nominal_capacity * (percentage / 100.0)  # Ah
         
         self.battery_pub.publish(msg)
-        self.get_logger().debug(f'Battery: {percentage:.1f}%, {voltage:.2f}V, {current:.2f}A, C-rate: {c_rate:.2f}C')
+        # self.get_logger().info(f'Battery: {percentage:.1f}%, {voltage:.2f}V, {current:.2f}A, C-rate: {c_rate:.2f}C')
 
 def main(args=None):
     rclpy.init(args=args)

@@ -42,7 +42,7 @@ export default function WebSocketGraph({
             .flat())];
         const currents = powerMessages.map((message: any) => message.current);
         const voltages = powerMessages.map((message: any) => message.voltage);
-        const percent = powerMessages.length != 0 ? powerMessages[powerMessages.length - 1].percent : 0;
+        const percent = powerMessages.length != 0 ? powerMessages[powerMessages.length - 1].percentage : 0;
 
         const newGraph = { ...graph };
         newGraph.dataSets["current"].data = currents;
