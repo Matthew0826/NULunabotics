@@ -49,8 +49,8 @@ class SpacialDataPublisher(Node):
         self.orientation_correction_sub = self.create_subscription(AccelerometerCorrection, '/sensors/accelerometer_correction', self.on_orientation_correction, 10)
         
         # keep track of positions
-        self.x = 448.0
-        self.y = 100.0
+        self.x = 100.0
+        self.y = 300.0
         self.orientation = float(random.randint(0, 360))
         self.initial_orientation = -self.orientation
         

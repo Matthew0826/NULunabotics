@@ -22,6 +22,8 @@ const LUNABOTICS_RECT_TYPE = "lunabotics_interfaces/msg/Rect";
 const LUNABOTICS_PATH_VISUAL_TYPE = "lunabotics_interfaces/msg/PathVisual";
 const LUNABOTICS_EXCAVATOR_TYPE = "lunabotics_interfaces/msg/Excavator";
 const LUNABOTICS_EXCAVATOR_PERCENT_TYPE = "lunabotics_interfaces/msg/ExcavatorPotentiometer";
+const LUNABOTICS_ORIENTATION_CORRECTION_TYPE = "lunabotics_interfaces/msg/AccelerometerCorrection";
+const LUNABOTICS_POWER_TYPE = "lunabotics_interfaces/msg/PowerData";
 const ROS2_FLOAT_TYPE = "std_msgs/msg/Float32";
 const ROS2_BOOL_TYPE = "std_msgs/msg/Bool";
 const ROS2_STRING_TYPE = "std_msgs/msg/String";
@@ -81,6 +83,13 @@ export const publishCodeUpload = (messageJson: any) => {
     const codeUploadMsg = rclnodejs.createMessageObject(ROS2_STRING_TYPE);
     codeUploadMsg.data = messageJson.port;
     rosCodeUploadPublisher.publish(codeUploadMsg);
+}
+
+export const publishOrientationCorrection = (messageJson: any) => {
+    const orientationMsg = rclnodejs.createMessageObject(LUNABOTICS_ORIENTATION_CORRECTION_TYPE);
+    orientationMsg.initial_angle = messageJson.orientationCorrection;
+    orientationMsg.should_reset = false;
+    rosOrientationCorrectionPublisher.publish(orientationMsg);
 }
 
 export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, callback: (point: any[]) => void) => {
@@ -205,6 +214,7 @@ let rosMockObstaclePublisher: rclnodejs.Publisher<typeof LUNABOTICS_OBSTACLE_TYP
 let rosSimResetPublisher: rclnodejs.Publisher<typeof ROS2_BOOL_TYPE>;
 let rosConfigPublisher: rclnodejs.Publisher<typeof LUNABOTICS_CONFIG_TYPE>;
 let rosCodeUploadPublisher: rclnodejs.Publisher<typeof ROS2_STRING_TYPE>;
+let rosOrientationCorrectionPublisher: rclnodejs.Publisher<typeof LUNABOTICS_ORIENTATION_CORRECTION_TYPE>;
 let rosClient: rclnodejs.Client<typeof LUNABOTICS_PATH_TYPE>;
 let planActionClient: rclnodejs.ActionClient<typeof LUNABOTICS_PLAN_TYPE>;
 
@@ -236,11 +246,15 @@ rclnodejs.init().then(() => {
         ROS2_STRING_TYPE,
         "website/arduino_upload"
     );
+    rosOrientationCorrectionPublisher = node.createPublisher(
+        LUNABOTICS_ORIENTATION_CORRECTION_TYPE,
+        "sensors/accelerometer_correction"
+    );
     node.createSubscription(
         LUNABOTICS_LIDAR_ROTATION_TYPE,
         "sensors/lidar",
         (msg: any) => {
-            sendToClient("lidar", msg.points);
+            sendToClient("lidar", msg.points, true);
         }
     );
     let previousObstacle: any = null;
@@ -259,21 +273,21 @@ rclnodejs.init().then(() => {
         (msg: any) => {
             robotPosition.x = msg.x;
             robotPosition.y = msg.y;
-            sendToClient("position", msg);
+            sendToClient("position", msg, false);
         }
     );
     node.createSubscription(
         LUNABOTICS_RECT_TYPE,
         "/sensors/position_confidence",
         (msg: any) => {
-            sendToClient("position_confidence", msg);
+            sendToClient("position_confidence", msg, true);
         }
     );
     node.createSubscription(
         ROS2_FLOAT_TYPE,
         "sensors/orientation",
         (msg: any) => {
-            sendToClient("orientation", msg.data);
+            sendToClient("orientation", msg.data, true);
         }
     );
     node.createSubscription(
@@ -308,21 +322,28 @@ rclnodejs.init().then(() => {
         LUNABOTICS_EXCAVATOR_TYPE,
         "physical_robot/excavator",
         (msg: any) => {
-            sendToClient("excavator", msg);
+            sendToClient("excavator", msg, true);
         }
     )
     node.createSubscription(
         LUNABOTICS_EXCAVATOR_PERCENT_TYPE,
         "sensors/excavator_percent",
         (msg: any) => {
-            sendToClient("excavator_percent", msg);
+            sendToClient("excavator_percent", msg, true);
         }
     )
     node.createSubscription(
         ROS2_FLOAT_TYPE,
         "sensors/excavator_distance",
         (msg: any) => {
-            sendToClient("distance_sensor", msg);
+            sendToClient("distance_sensor", msg, true);
+        }
+    )
+    node.createSubscription(
+        LUNABOTICS_POWER_TYPE,
+        "sensors/power_data",
+        (msg: any) => {
+            sendToClient("power", msg, true);
         }
     )
     rosClient = node.createClient(

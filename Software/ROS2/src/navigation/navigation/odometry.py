@@ -1,3 +1,4 @@
+import asyncio
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionServer
@@ -12,6 +13,7 @@ from navigation.pathfinding import distance
 from sensors.spin_node_helper import spin_nodes
 
 from navigation.pid import PIDController
+from navigation.pid_tuner import tune_pid
 
 
 from std_msgs.msg import Float32
@@ -189,6 +191,7 @@ class Odometry(Node):
         unload = goal_handle.request.should_unload
         # get if we should excavate
         excavate = goal_handle.request.should_excavate
+        self.get_logger().info(f"unload: {unload}; excavate: {excavate}")
         if unload:
             self.get_logger().info('unloading')
             await self.move_actuator_to(MAX_ACTUATOR_PERCENT)
@@ -285,10 +288,10 @@ class Odometry(Node):
 
         # message class
         msg = Motors()
-        msg.front_left_wheel = left_power
-        msg.front_right_wheel = right_power
-        msg.back_left_wheel = left_power
-        msg.back_right_wheel = right_power
+        msg.front_left_wheel = float(left_power)
+        msg.front_right_wheel = float(right_power)
+        msg.back_left_wheel = float(left_power)
+        msg.back_right_wheel = float(right_power)
 
         # then publish it like usual
         self.motor_pub.publish(msg)
@@ -353,7 +356,7 @@ class Odometry(Node):
             # make sure theres at least a little power
             if abs(power) < 0.1:
                 power = 0.1 if power > 0 else -0.1
-            self.get_logger().info(f"power after: {power}")
+            self.get_logger().info(f"power after: {power}, error: {error}")
             # drive the motors for a bit
             drive_callback(power)
             await self.yield_once(0.2)
@@ -371,11 +374,13 @@ class Odometry(Node):
     def stop_excavator(self):
         self.set_excavator_power(0.0, 0.0, 0.0)
         
-    def get_degrees_error(self, final_degrees: float):
+    def get_degrees_error(self, final_degrees: float, current_degrees: float = None):
         """Calculates the difference in degrees between the robot's current orientation
             and a desired orientation."""
         # find the difference between the desired and current orientation
-        return ((final_degrees - self.orientation + 180) % 360) - 180
+        if current_degrees is None:
+            current_degrees = self.orientation
+        return ((final_degrees - current_degrees + 180) % 360) - 180
 
     async def drive(self, left_power: float, right_power: float, seconds: float):
         """Sets the motor power for a given duration."""
@@ -404,6 +409,13 @@ class Odometry(Node):
         dy = self.position.y - destination.y
         desired_theta = math.degrees(math.atan2(dy, dx))
         return self.get_degrees_error(desired_theta)
+    
+    def get_distance_error(self, destination: Point, current_position: Point = None):
+        """Calculates the distance between the robot's current position
+            and a given destination."""
+        if current_position is None:
+            current_position = self.position
+        return distance(current_position, destination)
     
     async def to_orient(self, final_orientation: float):
         """Rotates to a given orientation with PID control."""
@@ -584,6 +596,24 @@ def positive_angle(angle: float):
 def main(args=None):
     rclpy.init(args=args)
     odometry = Odometry()
+    # asyncio.run(tune_pid(
+    #     odometry,
+    #     odometry.orientation_pid,
+    #     lambda robot: robot.orientation,
+    #     0.0,
+    #     90.0,
+    #     odometry.get_degrees_error,
+    #     odometry.to_orient,
+    # ))
+    asyncio.run(tune_pid(
+        odometry,
+        odometry.linear_drive_pid,
+        lambda robot: robot.position,
+        Point(x=100.0, y=300.0),
+        Point(x=200.0, y=400.0),
+        odometry.get_distance_error,
+        odometry.to_position,
+    ))
     spin_nodes(odometry, is_async=True, threads=4)
     
 

@@ -63,8 +63,8 @@ void loop() {
 
 
   // Read the voltage and current from I2C
-  float voltage12V = INA.getBusVoltage(); 
-  float current = INA.getCurrent_mA() / 1000.0; 
+  float voltage12V = INA.getBusVoltage();
+  float current = INA.getCurrent_mA() / 1000.0;
   
   // Write results to Serial connection
   Power power;

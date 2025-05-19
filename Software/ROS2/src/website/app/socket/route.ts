@@ -2,7 +2,7 @@
 
 import { IncomingMessage } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
-import { lidarPoints, publishCodeUpload, publishConfig, publishMockObstacle, publishSimReset, publishMotorsToROS2, sendPathfindingRequest, sendPlanAction, startLoopingAction, stopLoopingAction } from "../lib/ros2";
+import { lidarPoints, publishCodeUpload, publishConfig, publishMockObstacle, publishSimReset, publishMotorsToROS2, publishOrientationCorrection, sendPathfindingRequest, sendPlanAction, startLoopingAction, stopLoopingAction } from "../lib/ros2";
 import { sendToClient, sockets } from "../lib/sockets";
 
 export function GET() {
@@ -50,6 +50,8 @@ export function SOCKET(
                 publishConfig(messageJson.message);
             } else if (messageJson.type === "uploadCode") {
                 publishCodeUpload(messageJson.message);
+            } else if (messageJson.type === "orientationCorrection") {
+                publishOrientationCorrection(messageJson.message);
             }
         } catch (error) { }
     });

@@ -64,6 +64,13 @@ export default function WebSocketProvider({
             // messageBuffer.current.push(message);
             if (message.type === "obstacles") {
                 setMessages((prev) => [...prev, message]);
+            } else if (message.type === "power") {
+                setMessages((prev) => {
+                    let powerMsgCount = 0;
+                    const otherMessages = prev.filter((a) => a.type != message.type);
+                    const powerMessages = [...prev.filter((a) => a.type == message.type), message].slice(-10);
+                    return [...otherMessages, ...powerMessages];
+                });
             } else if (message.type === "resetAutonomous") {
                 setMessages([]);
             } else {

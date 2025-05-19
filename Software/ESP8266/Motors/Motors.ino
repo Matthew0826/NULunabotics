@@ -8,6 +8,10 @@
 #define REVERSE_PULSE_WIDTH 500.0 // in microseconds
 
 #define MOTOR_COUNT 4
+// on the board, it goes 11, 6, 9, 5
+// so from left to right:
+// left back, right back, right front, left front
+// at the time of writing this comment, it is just most important that the right wheels go in the center 2 JST connectors
 byte motorPins[MOTOR_COUNT] = {5, 9, 11, 6};
 Servo motors[MOTOR_COUNT];
 

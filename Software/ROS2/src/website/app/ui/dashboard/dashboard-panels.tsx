@@ -8,13 +8,15 @@ import BatteryIndicator from "./battery-indicator";
 import Timer from "./timer";
 import LidarVisual from "./lidar-visual";
 import ObjModelAnimator from "../three/obj";
-import SpeedSlider from "./speed-slider";
+import Slider from "./slider";
 import { useState } from "react";
 import { useKeyboardController } from "@/app/lib/keyboard-controller";
 import { useGamepadManagerContext } from "./gamepad-state-provider";
 import SerialPortDisplay from "./serial-port-display";
 import ConfigPanel from "./config-panel";
 import ExcavatorVisual from "./excavator_temp_visual";
+import OrientationCorrection from "./orientation-correction";
+import ControlsReminder from "./controls-reminder";
 
 export default function DashboardPanels() {
     const mapPanel = (
@@ -34,20 +36,29 @@ export default function DashboardPanels() {
                 <Panel title="Autonomous" canHide={false}>
                     <Timer startTime={0} />
                 </Panel>
-                <Panel title="LiDAR">
-                    <LidarVisual />
-                </Panel>
                 <Panel title="Excavator">
                     <ExcavatorVisual />
                 </Panel>
-                <Panel title="Config">
+                <Panel title="Power">
+                    <WebSocketGraph graphInfo={tempGraphPower} />
+                </Panel>
+                <Panel title="Orientation Correction">
+                    <OrientationCorrection />
+                </Panel>
+                <Panel title="Wheel Speed" hiddenByDefault={true}>
+                    <Slider labels={[0.0, 0.5, 1.0]} value={speed} setValue={setSpeed} />
+                </Panel>
+                <Panel title="Config" hiddenByDefault={true}>
                     <ConfigPanel />
                 </Panel>
-                <Panel title="Serial Ports">
+                <Panel title="LiDAR" hiddenByDefault={true}>
+                    <LidarVisual />
+                </Panel>
+                <Panel title="Serial Ports" hiddenByDefault={true}>
                     <SerialPortDisplay />
                 </Panel>
-                <Panel title="Wheel Speed">
-                    <SpeedSlider value={speed} setValue={setSpeed} />
+                <Panel title="Controls" hiddenByDefault={true}>
+                    <ControlsReminder />
                 </Panel>
                 {/* <Panel title="">
                     <ObjModelAnimator
@@ -63,9 +74,6 @@ export default function DashboardPanels() {
                             minPolarAngle: Math.PI * 0.25   // Can't go fully above model
                         }} />
                 </Panel> */}
-                <Panel title="Power">
-                    <WebSocketGraph graphInfo={tempGraphPower} />
-                </Panel>
             </div>
             <div className="w-[66vw] hidden xl:block flex-2">{mapPanel}</div>
         </div>

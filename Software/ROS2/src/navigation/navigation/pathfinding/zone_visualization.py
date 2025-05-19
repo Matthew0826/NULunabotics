@@ -75,8 +75,8 @@ legend_patches = [Rectangle((0, 0), 1, 1, color=colors[i], label=name)
                                    ['Out of Bounds', 'Start Zone', 'Excavation Zone', 'Dump Zone', 'Berm Zone'])]
 plt.legend(handles=legend_patches, loc='upper right')
 
-ROBOT_WIDTH = 71
-ROBOT_LENGTH = 98
+ROBOT_WIDTH = 68 # units: cm
+ROBOT_LENGTH = 102  # units: cm
 ROBOT_RADIUS = math.sqrt((ROBOT_WIDTH/2)**2 + (ROBOT_LENGTH/2)**2) / 2
 
 # Define example zones to visualize the Zone class points

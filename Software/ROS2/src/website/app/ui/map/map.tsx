@@ -66,6 +66,7 @@ export default function Map() {
                 }
             }));
         }
+
         const obstaclesMessages = [...new Set(messages
             .filter((message: Message) => message.type === "obstacles")
             .map((message: Message) => message.message)
@@ -76,6 +77,7 @@ export default function Map() {
 
         setObstacles(obstaclesMessages);
     }, [messages]);
+
     return (
         <div style={{ padding: "1vw" }}>
             <div

@@ -12,8 +12,8 @@ import math
 # Note: 0, 0 is defined as the top left corner of the map
 
 # TODO: make this a ros parameter
-ROBOT_WIDTH = 75 # units: cm
-ROBOT_LENGTH = 105  # units: cm
+ROBOT_WIDTH = 68 # units: cm
+ROBOT_LENGTH = 102  # units: cm
 ROBOT_RADIUS = int(math.sqrt((ROBOT_WIDTH**2 + ROBOT_LENGTH**2)) / 2.0) + 4
 
 # threshold needed for a cell to be considered an obstacle between 0 and 1

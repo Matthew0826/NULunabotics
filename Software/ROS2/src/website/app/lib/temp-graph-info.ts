@@ -5,11 +5,21 @@ export const tempGraphPower = {
     xAxisLabel: "time (s)",
     yAxisLabel: "watts (W)",
     dataSets: {
-        "Test Data": {
-            label: "Test Data",
-            color: "rgb(0, 0, 0)",
+        "current": {
+            label: "Current (A)",
+            color: "rgb(189, 49, 49)",
             data: [],
         },
+        "12V": {
+            label: "Battery Voltage (V)",
+            color: "rgb(75, 88, 166)",
+            data: [],
+        },
+        "5V": {
+            label: "Logic Voltage (V)",
+            color: "rgb(70, 165, 84)",
+            data: [],
+        }
     },
 };
 

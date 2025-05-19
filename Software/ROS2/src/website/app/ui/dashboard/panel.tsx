@@ -4,12 +4,14 @@ export default function Panel({
     children,
     title,
     canHide = true,
+    hiddenByDefault = false
 }: {
     children: React.ReactNode;
     title: string;
     canHide?: boolean;
+    hiddenByDefault?: boolean;
 }) {
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState(!hiddenByDefault);
     const togglePanel = () => {
         setOpen(!open);
     }
@@ -26,9 +28,9 @@ export default function Panel({
                     onClick={togglePanel}
                 >
                     {open ? (
-                        <span>⮟</span>
-                    ) : (
                         <span>⮝</span>
+                    ) : (
+                        <span>⮟</span>
                     )}
                 </button>}
             </div>}

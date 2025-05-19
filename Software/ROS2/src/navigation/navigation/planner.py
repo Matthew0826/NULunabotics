@@ -30,8 +30,8 @@ from sensors.spin_node_helper import spin_nodes
 
 # TODO: use actual values
 LIDAR_VIEW_DISTANCE = 80 # cm
-ROBOT_WIDTH = 71
-ROBOT_LENGTH = 98
+ROBOT_WIDTH = 68 # units: cm
+ROBOT_LENGTH = 102  # units: cm
 HAS_REACHED_TARGET_THRESHOLD = 20
 ROBOT_RADIUS = (((ROBOT_WIDTH/2)**2 + (ROBOT_LENGTH/2)**2) ** 0.5) / 2
 
@@ -148,14 +148,14 @@ class Planner(Node):
                (start_zone == START_ZONE and end_zone == EXCAVATION_ZONE)
         allowed_to_dump = (start_zone == DUMP_ZONE and end_zone == BERM_ZONE)
         self.get_logger().info(f"started in {start_zone} and ended in {end_zone}")
-        if allowed_to_excavate or allowed_to_dump:
-            # we are at the end, we need to dig/dump (no path to travel to)
-            excavation_start_time = self.get_clock().now()
-            self.get_logger().info(f"Excavate: {allowed_to_excavate and should_excavate}, dump: {allowed_to_dump and should_dump}")
-            await self.send_drive_goal([], should_excavate=allowed_to_excavate and should_excavate, should_dump=allowed_to_dump and should_dump)
-            excavation_end_time = self.get_clock().now()
-            self.drive_time += (excavation_end_time - excavation_start_time).nanoseconds // 1_000_000
-            self.get_logger().info(f"Excavation took {self.drive_time} ms")
+        # if allowed_to_excavate or allowed_to_dump:
+        # we are at the end, we need to dig/dump (no path to travel to)
+        excavation_start_time = self.get_clock().now()
+        self.get_logger().info(f"Excavate: {allowed_to_excavate and should_excavate}, dump: {allowed_to_dump and should_dump}")
+        await self.send_drive_goal([], should_excavate=should_excavate, should_dump=should_dump)
+        excavation_end_time = self.get_clock().now()
+        self.drive_time += (excavation_end_time - excavation_start_time).nanoseconds // 1_000_000
+        self.get_logger().info(f"Excavation took {self.drive_time} ms")
         
         # "Je gagne!"
         goal_handle.succeed()
