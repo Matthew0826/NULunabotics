@@ -3,23 +3,18 @@ import { Message } from "./web-socket-context";
 export const tempGraphPower = {
     name: "Power",
     xAxisLabel: "time (s)",
-    yAxisLabel: "watts (W)",
+    yAxisLabel: "",
     dataSets: {
         "current": {
             label: "Current (A)",
-            color: "rgb(189, 49, 49)",
+            color: "rgb(95, 188, 123)",
             data: [],
         },
-        "12V": {
+        "voltage": {
             label: "Battery Voltage (V)",
-            color: "rgb(75, 88, 166)",
+            color: "rgb(14, 18, 37)",
             data: [],
         },
-        "5V": {
-            label: "Logic Voltage (V)",
-            color: "rgb(70, 165, 84)",
-            data: [],
-        }
     },
 };
 

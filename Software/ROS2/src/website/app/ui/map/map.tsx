@@ -1,7 +1,7 @@
 import { Message, useWebSocketContext } from "@/app/lib/web-socket-context";
 import Obstacle from "./obstacle";
 import RobotPath, { Point } from "./robot-path";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Robot from "./robot";
 
 export const MAP_WIDTH = 5.48; // meters
@@ -78,8 +78,16 @@ export default function Map() {
         setObstacles(obstaclesMessages);
     }, [messages]);
 
+    // used to focus the map div when the page loads
+    // so that keyboard controls work
+    const divRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        divRef?.current?.focus();
+    }, []);
+
     return (
-        <div style={{ padding: "1vw" }}>
+        <div style={{ padding: "1vw" }} ref={divRef}>
             <div
                 className="flex flex-wrap relative mx-auto gap-0"
                 style={{

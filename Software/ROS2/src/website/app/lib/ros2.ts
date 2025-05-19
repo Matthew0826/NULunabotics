@@ -27,6 +27,7 @@ const LUNABOTICS_POWER_TYPE = "lunabotics_interfaces/msg/PowerData";
 const ROS2_FLOAT_TYPE = "std_msgs/msg/Float32";
 const ROS2_BOOL_TYPE = "std_msgs/msg/Bool";
 const ROS2_STRING_TYPE = "std_msgs/msg/String";
+const ROS2_BATTERY_TYPE = "sensor_msgs/msg/BatteryState";
 const LUNABOTICS_SERIAL_PORT_TYPE = "lunabotics_interfaces/msg/SerialPortStates";
 const LUNABOTICS_CONFIG_TYPE = "lunabotics_interfaces/msg/Config";
 
@@ -340,10 +341,10 @@ rclnodejs.init().then(() => {
         }
     )
     node.createSubscription(
-        LUNABOTICS_POWER_TYPE,
-        "sensors/power_data",
+        ROS2_BATTERY_TYPE,
+        "battery/state",
         (msg: any) => {
-            sendToClient("power", msg, true);
+            sendToClient("battery", msg, true);
         }
     )
     rosClient = node.createClient(

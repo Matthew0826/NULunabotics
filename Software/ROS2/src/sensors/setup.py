@@ -25,7 +25,8 @@ setup(
             'positioning = sensors.positioning:main',
             'power_data = sensors.power_data:main',
             'mock_positioning = sensors.mock_positioning:main',
-            'serial_port_manager = sensors.serial_port_manager:main'
+            'serial_port_manager = sensors.serial_port_manager:main',
+            'battery = sensors.battery:main',
         ],
     },
 )

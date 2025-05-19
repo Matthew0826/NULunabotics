@@ -51,14 +51,19 @@ def generate_launch_description():
              output='screen'
          ),
         
-        # # sensor board nodes
-         Node(
-             package='sensors',
-             executable='positioning',
-             output='screen'
-         ),
+        # sensor board nodes
+        Node(
+            package='sensors',
+            executable='positioning',
+            output='screen'
+        ),
+        Node(
+            package='sensors',
+            executable='battery',
+            output='screen'
+        ),
         
-        # # driving nodes
+        # driving nodes
          Node(
              package='navigation',
              executable='odometry',

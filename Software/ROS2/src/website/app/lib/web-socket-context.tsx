@@ -64,7 +64,7 @@ export default function WebSocketProvider({
             // messageBuffer.current.push(message);
             if (message.type === "obstacles") {
                 setMessages((prev) => [...prev, message]);
-            } else if (message.type === "power") {
+            } else if (message.type === "battery") {
                 setMessages((prev) => {
                     let powerMsgCount = 0;
                     const otherMessages = prev.filter((a) => a.type != message.type);
