@@ -3,7 +3,6 @@
 #include "Hashtable.h"
 #include <Arduino.h>
 
-
 class TheiaSerial {
 private:
     typedef void (*ParserFunc)(const uint8_t* data, size_t len);
@@ -12,6 +11,12 @@ private:
         ParserFunc parser;
         size_t structSize;
     };
+
+    // Serial buffer parameters
+    static const size_t READ_BUFFER_SIZE = 256;
+    static inline uint8_t readBuffer[READ_BUFFER_SIZE];
+    static inline size_t readBufferHead = 0;
+    static inline size_t readBufferTail = 0;
 
     // Registry: pub_id -> handler
     static inline Hashtable<int, HandlerEntry>& registry() {
@@ -37,6 +42,33 @@ private:
         return t;
     }
 
+    // Helper to read a byte from our buffer
+    static bool readByte(uint8_t& byteOut) {
+        if (readBufferHead == readBufferTail) {
+            return false; // Buffer is empty
+        }
+        byteOut = readBuffer[readBufferHead];
+        readBufferHead = (readBufferHead + 1) % READ_BUFFER_SIZE;
+        return true;
+    }
+
+    // Fill the buffer with available Serial data
+    static void fillBuffer() {
+        while (Serial.available() > 0) {
+            // Calculate next position after tail
+            size_t nextTail = (readBufferTail + 1) % READ_BUFFER_SIZE;
+            
+            // Check if buffer is full
+            if (nextTail == readBufferHead) {
+                break; // Buffer full
+            }
+            
+            // Read byte and store it
+            readBuffer[readBufferTail] = Serial.read();
+            readBufferTail = nextTail;
+        }
+    }
+
 public:
     // Static trampoline parser: looks up real handler and calls it
     template<typename T>
@@ -60,6 +92,9 @@ public:
         while (!Serial) {
             delay(10);
         }
+        // Initialize buffer pointers
+        readBufferHead = 0;
+        readBufferTail = 0;
     }
 
     // Register an ID and its handler
@@ -85,6 +120,8 @@ public:
     static void sendFramedMessage(int pubId, const T& data) {
         sendHeader(pubId, sizeof(T));
         Serial.write(reinterpret_cast<const uint8_t*>(&data), sizeof(T));
+        // Wait for transmission to complete
+        Serial.flush();
     }
 
     // Deserialize payload into struct
@@ -104,15 +141,16 @@ public:
             sendHeader(id, payloadLen);
             delay(10);
             // Write a blank message
-            for (int i; i < payloadLen; i++) {
+            for (int i = 0; i < payloadLen; i++) {
                 Serial.write(0x00);
-                delay(10);
             }
         }
     }
 
     // Read and dispatch incoming messages
     static void tick() {
+        // First, fill our buffer with any available data
+        fillBuffer();
 
         static enum {
             WAIT_HEADER_1,
@@ -127,19 +165,26 @@ public:
         static uint16_t payloadLength = 0;
         static uint16_t payloadIndex = 0;
         static uint8_t payloadBuffer[256];
+        static unsigned long lastByteTime = 0;
+        
+        // Handle timeout to recover from incomplete message reception
+        if (state != WAIT_HEADER_1 && millis() - lastByteTime > 100) {
+            state = WAIT_HEADER_1; // Reset state if stuck waiting for bytes
+        }
 
-        while (Serial.available()) {
-            uint8_t byteIn = Serial.read();
+        uint8_t byteIn;
+        while (readByte(byteIn)) {  // Process buffered bytes
+            lastByteTime = millis();
 
             switch (state) {
                 case WAIT_HEADER_1:
                     if (byteIn == 0xAB) state = WAIT_HEADER_2;
-                    else return;
+                    // else return; // Invalid start byte
                     break;
 
                 case WAIT_HEADER_2:
                     state = (byteIn == 0xCD) ? READ_PUB_ID : WAIT_HEADER_1;
-                    if (byteIn != 0xCD) return;
+                    // if (byteIn != 0xCD) return;
                     break;
 
                 case READ_PUB_ID:
@@ -148,14 +193,14 @@ public:
                     if (byteIn == 0xFF) {
                         broadcastIds();
                         state = WAIT_HEADER_1;
-                        return;
+                        // return;
                     // Check if the id was registered for this board
                     } else if (registry().exists((int)pubId)) {
                         state = READ_LEN_1;
                     // So it must be an unknown id
                     } else {
                         state = WAIT_HEADER_1;
-                        return;
+                        // return;
                     }
                     break;
 
@@ -168,7 +213,7 @@ public:
                     payloadLength |= byteIn;
                     if (payloadLength > sizeof(payloadBuffer)) {
                         state = WAIT_HEADER_1;  // payload too big
-                        return;
+                        // return;
                     } else {
                         payloadIndex = 0;
                         state = READ_PAYLOAD;
@@ -181,10 +226,19 @@ public:
                         auto entry = registry().get((int)pubId);
                         entry->parser(payloadBuffer, payloadLength);
                         state = WAIT_HEADER_1;
-                        return;
+                        // return;
                     }
                     break;
             }
+        }
+    }
+
+    // Get the number of bytes available in our buffer
+    static size_t available() {
+        if (readBufferTail >= readBufferHead) {
+            return readBufferTail - readBufferHead;
+        } else {
+            return READ_BUFFER_SIZE - readBufferHead + readBufferTail;
         }
     }
 };

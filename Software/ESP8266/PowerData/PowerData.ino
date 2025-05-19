@@ -4,7 +4,7 @@
 #include <TheiaSerial.h>
 #include <Wire.h>
 // https://github.com/RobTillaart/INA226
-#include <INA226.h>
+#include "INA226.h"
 
 #define FIVE_VOLT_MEASUREMENT_PIN A0
 #define MAX_VOLTS 3.3

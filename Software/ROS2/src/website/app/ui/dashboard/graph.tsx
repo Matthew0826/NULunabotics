@@ -21,7 +21,7 @@ export default function Graph({
 }: GraphProps) {
     const dataSetsArray = Object.values(dataSets);
     // these are labels at the bottom of the graph (x axis)
-    const labels = Array.from({ length: dataSetsArray[0].data.length }, (_, i) => i + Math.max(timeCounter, 10) - 10);
+    const labels = Array.from({ length: 10 }, (_, i) => i - 10);
     const data = {
         labels: labels,
         datasets: dataSetsArray.map((dataSet) => {

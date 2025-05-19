@@ -99,8 +99,8 @@ void loop() {
 
   // Create a LinearActuatorPercent struct to hold the percent values
   PotentiometerPercents excavatorPercents;
-  excavatorPercents.excavatorLifterPercent = actuatorPercent;
-  excavatorPercents.actuatorPercent = excavatorPercent;
+  excavatorPercents.excavatorLifterPercent = excavatorPercent;
+  excavatorPercents.actuatorPercent = actuatorPercent;
 
   // Send the percent values to the Raspberry Pi
   TheiaSerial::sendFramedMessage(EXCAVATOR_PERCENT_ID, excavatorPercents);

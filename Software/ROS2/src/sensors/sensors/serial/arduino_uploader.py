@@ -6,7 +6,7 @@ import argparse
 # On Linux, install it with
 # curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
 
-def upload_sketch(port: str, sketch_name: str, is_nano: bool):
+def upload_sketch(port: str, sketch_name: str, is_nano: bool, old_nano: bool = False):
     """
     Compile and upload an Arduino sketch using arduino-cli.
 
@@ -20,8 +20,11 @@ def upload_sketch(port: str, sketch_name: str, is_nano: bool):
     sketch_dir = os.path.dirname(sketch_path)
 
     if is_nano:
-        fqbn = "arduino:avr:nano"#:cpu=atmega328old"
-        additional_flags = []#["--build-property", "upload.speed=57600"]
+        if old_nano:
+            fqbn = "arduino:avr:nano:cpu=atmega328old"
+        else:
+            fqbn = "arduino:avr:nano"
+        additional_flags = []
         board_name = "Arduino Nano"
     else:
         fqbn = "esp8266:esp8266:nodemcuv2"
@@ -50,9 +53,10 @@ def main(args=None):
     parser.add_argument("port", type=str, help="Serial port (e.g., '/dev/ttyUSB0')")
     parser.add_argument("sketch_name", type=str, help="Full path to the sketch .ino file")
     parser.add_argument("--nano", action="store_true", help="Specify if the board is Arduino Nano")
+    parser.add_argument("--old", action="store_true", help="Specify if the board is an old Arduino Nano")
     args = parser.parse_args(args)
 
-    upload_sketch(args.port, args.sketch_name, args.nano)
+    upload_sketch(args.port, args.sketch_name, args.nano, args.old)
 
 # example command to run the script:
 # python3 arduino_uploader.py /dev/ttyUSB0 Motors --nano
