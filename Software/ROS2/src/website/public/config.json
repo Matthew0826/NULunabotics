@@ -1,58 +1,58 @@
 [
-    {
-        "node": "odometry",
-        "categories": [
-            {
-                "category": "orientation_pid",
-                "settings": [
-                    {
-                        "setting": "Kp",
-                        "value": "0.015"
-                    },
-                    {
-                        "setting": "Ki",
-                        "value": "0.0005"
-                    },
-                    {
-                        "setting": "Kd",
-                        "value": "0.002"
-                    }
-                ]
-            },
-            {
-                "category": "linear_drive_pid",
-                "settings": [
-                    {
-                        "setting": "Kp",
-                        "value": "0.03"
-                    },
-                    {
-                        "setting": "Ki",
-                        "value": "0.001"
-                    },
-                    {
-                        "setting": "Kd",
-                        "value": "0.01"
-                    }
-                ]
-            },
-            {
-                "category": "angular_drive_pid",
-                "settings": [
-                    {
-                        "setting": "Kp",
-                        "value": "0.008"
-                    },
-                    {
-                        "setting": "Ki",
-                        "value": "0.0"
-                    },
-                    {
-                        "setting": "Kd",
-                        "value": "0.0"
-                    }
-                ]
-            }
+  {
+    "node": "odometry",
+    "categories": [
+      {
+        "category": "orientation_pid",
+        "settings": [
+          {
+            "setting": "Kp",
+            "value": "0.015"
+          },
+          {
+            "setting": "Ki",
+            "value": "0.0005"
+          },
+          {
+            "setting": "Kd",
+            "value": "0.002"
+          }
         ]
-    }
+      },
+      {
+        "category": "linear_drive_pid",
+        "settings": [
+          {
+            "setting": "Kp",
+            "value": "0.03"
+          },
+          {
+            "setting": "Ki",
+            "value": "0.001"
+          },
+          {
+            "setting": "Kd",
+            "value": "0.01"
+          }
+        ]
+      },
+      {
+        "category": "angular_drive_pid",
+        "settings": [
+          {
+            "setting": "Kp",
+            "value": "0.008"
+          },
+          {
+            "setting": "Ki",
+            "value": "0.0"
+          },
+          {
+            "setting": "Kd",
+            "value": "0.0"
+          }
+        ]
+      }
+    ]
+  }
 ]

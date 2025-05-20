@@ -1,11 +1,11 @@
 // ObjModelAnimator.tsx
-import {useEffect, useRef, useState} from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import {OBJLoader} from 'three/examples/jsm/loaders/OBJLoader.js';
-import {MTLLoader} from 'three/examples/jsm/loaders/MTLLoader.js';
-import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
-import {useGamepadManagerContext} from "@/app/ui/dashboard/gamepad-state-provider";
-import {Group, Object3DEventMap} from "three";
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { useGamepadManagerContext } from "@/app/ui/dashboard/gamepad-state-provider";
+import { Group, Object3DEventMap } from "three";
 
 interface ObjModelAnimatorProps {
     baseFilename: string;
@@ -32,30 +32,31 @@ interface ModelPart {
 }
 
 const ObjModelAnimator = ({
-                              baseFilename,
-                              wheelFilename,
-                              backgroundColor = '#ffffff',
-                              transparent = true,
-                              width = '100%',
-                              height = '100%',
-                              enableControls = true,
-                              controlsConfig = {
-                                  enableZoom: true,
-                                  enablePan: true,
-                                  autoRotate: false,
-                                  autoRotateSpeed: 1.0,
-                                  dampingFactor: 0.05,
-                                  maxPolarAngle: Math.PI,
-                                  minPolarAngle: 0
-                              }
-                          }: ObjModelAnimatorProps) => {
+    baseFilename,
+    wheelFilename,
+    backgroundColor = '#ffffff',
+    transparent = true,
+    width = '100%',
+    height = '100%',
+    enableControls = true,
+    controlsConfig = {
+        enableZoom: true,
+        enablePan: true,
+        autoRotate: false,
+        autoRotateSpeed: 1.0,
+        dampingFactor: 0.05,
+        maxPolarAngle: Math.PI,
+        minPolarAngle: 0
+    }
+}: ObjModelAnimatorProps) => {
     const mountRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     // const [modelParts, setModelParts] = useState<ModelPart[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [cameraPosition, setCameraPosition] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 5));
 
-    const {speed} = useGamepadManagerContext();
+    const { speed } = useGamepadManagerContext();
 
     // Scene references stored for access in animation functions
     const sceneRef = useRef<{
@@ -100,7 +101,7 @@ const ObjModelAnimator = ({
             0.1,
             1000
         );
-        camera.position.z = 5;
+        camera.position.z = 3;
         sceneRef.current.camera = camera;
 
         // Renderer setup
@@ -214,9 +215,9 @@ const ObjModelAnimator = ({
         //     [0, 2]
         // ];
         const wheelPositions = [
-            [1,   1],
-            [-1,  1],
-            [1,  -1],
+            [1, 1],
+            [-1, 1],
+            [1, -1],
             [-1, -1]
         ];
 
@@ -279,8 +280,15 @@ const ObjModelAnimator = ({
 
             if (sceneRef.current.baseModel) {
                 // We no longer rotate the entire model here since OrbitControls handles that
-                sceneRef.current.wheelModels?.forEach(part => {
-                    part.rotation.x += 0.02 * speed;
+                // first two are front, last two are back
+
+                const leftWheels = sceneRef.current.wheelModels?.filter(wheel => wheel.position.x < 0);
+                const rightWheels = sceneRef.current.wheelModels?.filter(wheel => wheel.position.x > 0);
+                leftWheels?.forEach(part => {
+                    part.rotation.x += 0.065 * speed;
+                });
+                rightWheels?.forEach(part => {
+                    part.rotation.x -= 0.065 * speed;
                 });
             }
 
@@ -311,8 +319,8 @@ const ObjModelAnimator = ({
     }, [baseFilename, backgroundColor, transparent, enableControls, controlsConfig]);
 
     return (
-        <div ref={containerRef} style={{width, height, position: 'relative'}}>
-            <div ref={mountRef} style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%'}}/>
+        <div ref={containerRef} style={{ width, height, position: 'relative' }}>
+            <div ref={mountRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
             {isLoading && (
                 <div style={{
                     position: 'absolute',
