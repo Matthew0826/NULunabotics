@@ -16,12 +16,14 @@ import { useWebSocketContext } from "@/app/lib/web-socket-context";
 
 type ConfigType = {
     node: string;
-    category: string;
-    settings: {
-        setting: string;
-        value: string | number | boolean;
+    categories: {
+        category: string;
+        settings: {
+            setting: string;
+            value: string;
+        }[];
     }[];
-};
+}[];
 
 type Profiles = {
     [key: string]: ConfigType;
@@ -34,7 +36,6 @@ export default function ConfigPanel() {
     const [loadedConfigState, setLoadedConfigState] = useState<Profiles | null>(null);
     const [profileState, setProfileState] = useState<string | null>(null);
 
-    // what is this?
     const { messages, sendToServer } = useWebSocketContext();
 
     // using this to listen to the messages from the server
@@ -48,7 +49,14 @@ export default function ConfigPanel() {
         // we can now load the config profile
         if (lastMessage.type === "loadConfigProfile") {
             const newProfile = lastMessage.message;
-            setProfileState(newProfile);
+            setProfileState(newProfile.profile);
+            setLoadedConfigState((prevConfig) => {
+                if (prevConfig) {
+                    return { ...prevConfig, [newProfile]: newProfile.config };
+                } else {
+                    return { [newProfile]: newProfile.config };
+                }
+            });
         }
     }, [messages]);
 
@@ -62,7 +70,7 @@ export default function ConfigPanel() {
         if (loadedConfigState && profileState) {
             sendToServer("saveConfigProfile", {
                 profileName: profileState,
-                config: configState,
+                config: loadedConfigState,
             });
         }
     };
@@ -107,7 +115,7 @@ export default function ConfigPanel() {
     return (
         <div className="flex flex-col gap-4 p-6 h-full w-full">
             <p className="text-xs">Note: doesn't save! Remember to paste your values somewhere.</p>
-            {loadedConfigState.map((item, nodeIndex) => (
+            {loadedConfigState[profileState].map((item, nodeIndex) => (
                 <div className="flex flex-col gap-2 border-2 border-slate-800 p-4 rounded-lg" key={`node-${item.node}-${nodeIndex}`}>
                     <b className="text-center">{item.node}</b>
                     {item.categories.map((category, catIndex) => (

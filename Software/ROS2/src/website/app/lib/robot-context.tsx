@@ -1,8 +1,10 @@
-import {createContext, Dispatch, ReactNode, SetStateAction, useContext, useEffect, useRef, useState} from "react";
-import {tempStartingData} from "@/app/lib/temp-graph-info";
-import {Message, useWebSocketContext} from "@/app/lib/web-socket-context";
-import {Point} from "@/app/lib/ros2";
-import {ObstacleType} from "@/app/ui/map/map";
+"use client";
+
+import { createContext, Dispatch, ReactNode, SetStateAction, useContext, useEffect, useRef, useState } from "react";
+import { tempStartingData } from "@/app/lib/temp-graph-info";
+import { Message, useWebSocketContext } from "@/app/lib/web-socket-context";
+import { Point } from "@/app/lib/ros2";
+import { ObstacleType } from "@/app/ui/map/map";
 
 type RobotContextType = {
     leftWheelSpeed: number;
@@ -16,15 +18,15 @@ type RobotContextType = {
 const RobotContext = createContext<RobotContextType>({
     leftWheelSpeed: 0,
     rightWheelSpeed: 0,
-    setLeftWheelSpeed: () => {},
-    setRightWheelSpeed: () => {},
+    setLeftWheelSpeed: () => { },
+    setRightWheelSpeed: () => { },
     excavatorPosition: 0,
-    setExcavatorPosition: () => {},
+    setExcavatorPosition: () => { },
 });
 
 export const useRobotContext = () => useContext(RobotContext);
 
-export default function RobotContextProvider({children}: { children: ReactNode; }) {
+export default function RobotContextProvider({ children }: { children: ReactNode; }) {
 
     const [leftWheelSpeed, setLeftWheelSpeed] = useState<number>(0);
     const [rightWheelSpeed, setRightWheelSpeed] = useState<number>(0);

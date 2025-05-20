@@ -53,7 +53,10 @@ export function SOCKET(
                 publishOrientationCorrection(messageJson.message);
             } else if (messageJson.type == "loadConfigProfile") {
                 // based on the name of profile, returns information for that profile
-                sendToClient("loadConfigProfile", getConfigFromProfile(messageJson.message))
+                sendToClient("loadConfigProfile", {
+                    profile: messageJson.message,
+                    config: getConfigFromProfile(messageJson.message)
+                });
             } else if (messageJson.type === "saveConfigProfile") {
                 publishConfig(messageJson.message);
             }
@@ -66,7 +69,10 @@ export function SOCKET(
     sockets.add(client);
 
     // assume default
-    sendToClient("config", getConfigFromProfile("default"))
+    sendToClient("loadConfigProfile", {
+        profile: "default",
+        config: getConfigFromProfile("default")
+    });
 
     return () => { }; //clearInterval(interval);
 }
