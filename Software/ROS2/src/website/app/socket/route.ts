@@ -4,6 +4,7 @@ import { IncomingMessage } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
 import { lidarPoints, publishCodeUpload, publishConfig, publishMockObstacle, publishSimReset, publishMotorsToROS2, publishOrientationCorrection, sendPathfindingRequest, sendPlanAction, startLoopingAction, stopLoopingAction } from "../lib/ros2";
 import { sendToClient, sockets } from "../lib/sockets";
+import { getConfigFromProfile } from "../lib/config-manager";
 
 export function GET() {
     const headers = new Headers();
@@ -46,18 +47,26 @@ export function SOCKET(
                 publishSimReset(messageJson.message);
             } else if (messageJson.type === "controls") {
                 publishMotorsToROS2(messageJson.message);
-            } else if (messageJson.type === "config") {
-                publishConfig(messageJson.message);
             } else if (messageJson.type === "uploadCode") {
                 publishCodeUpload(messageJson.message);
             } else if (messageJson.type === "orientationCorrection") {
                 publishOrientationCorrection(messageJson.message);
+            } else if (messageJson.type == "loadConfigProfile") {
+                // based on the name of profile, returns information for that profile
+                sendToClient("loadConfigProfile", getConfigFromProfile(messageJson.message))
+            } else if (messageJson.type === "saveConfigProfile") {
+                publishConfig(messageJson.message);
             }
-        } catch (error) { }
+        } catch (error) {
+            console.error("Error parsing message:", error);
+        }
     });
 
     console.log("Client connected");
     sockets.add(client);
+
+    // assume default
+    sendToClient("config", getConfigFromProfile("default"))
 
     return () => { }; //clearInterval(interval);
 }

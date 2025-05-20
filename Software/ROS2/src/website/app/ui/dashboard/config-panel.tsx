@@ -3,59 +3,111 @@ import config from "public/config.json";
 import Config from "./config";
 import { useWebSocketContext } from "@/app/lib/web-socket-context";
 
+// type ConfigType = {
+//     node: string;
+//     categories: {
+//         category: string;
+//         settings: {
+//             setting: string;
+//             value: string | number | boolean;
+//         }[];
+//     }[];
+// }[];
+
 type ConfigType = {
     node: string;
-    categories: {
-        category: string;
-        settings: {
-            setting: string;
-            value: string | number | boolean;
-        }[];
+    category: string;
+    settings: {
+        setting: string;
+        value: string | number | boolean;
     }[];
-}[];
+};
+
+type Profiles = {
+    [key: string]: ConfigType;
+};
 
 export default function ConfigPanel() {
-    const [configState, setConfig] = useState<ConfigType | null>(null);
+    // const [configState, setConfig] = useState<ConfigType | null>(null);
+
+    // important states
+    const [loadedConfigState, setLoadedConfigState] = useState<Profiles | null>(null);
+    const [profileState, setProfileState] = useState<string | null>(null);
+
+    // what is this?
     const { messages, sendToServer } = useWebSocketContext();
 
+    // using this to listen to the messages from the server
     useEffect(() => {
-        setConfig(config);
-    }, []);
+        // return if no message from the server
+        if (messages.length <= 0) { return; }
 
-    const handleChangeConfig = (node: string, category: string, setting: string, value: string) => {
-        setConfig((prevConfig) => {
-            if (!prevConfig) return prevConfig;
+        // get the last message
+        const lastMessage = messages[messages.length - 1];
 
-            const newConfig = [...prevConfig];
-            const nodeIndex = newConfig.findIndex((item) => item.node === node);
-            if (nodeIndex !== -1) {
-                const categoryIndex = newConfig[nodeIndex].categories.findIndex((cat) => cat.category === category);
-                if (categoryIndex !== -1) {
-                    const settingIndex = newConfig[nodeIndex].categories[categoryIndex].settings.findIndex((set) => set.setting === setting);
-                    if (settingIndex !== -1) {
-                        newConfig[nodeIndex].categories[categoryIndex].settings[settingIndex].value = value;
-                    }
-                }
-            }
-            return newConfig;
-        });
+        // we can now load the config profile
+        if (lastMessage.type === "loadConfigProfile") {
+            const newProfile = lastMessage.message;
+            setProfileState(newProfile);
+        }
+    }, [messages]);
 
-        sendToServer("config", {
-            node: node,
-            category: category,
-            setting: setting,
-            value: value,
-        });
+    // request the config from the server for the new profile
+    const handleLoadProfile = (profileName: string) => {
+        sendToServer("loadConfigProfile", profileName);
     };
 
-    if (!configState) {
+    // request the server save current config to current profile
+    const handleSaveProfile = () => {
+        if (loadedConfigState && profileState) {
+            sendToServer("saveConfigProfile", {
+                profileName: profileState,
+                config: configState,
+            });
+        }
+    };
+
+    // update our config state from user interaction
+    const handleTextboxInteraction = (node: string, category: string, setting: string, value: string) => {
+        return;
+    }
+
+    // const handleChangeConfig = (node: string, category: string, setting: string, value: string) => {
+    //     setConfig((prevConfig) => {
+    //         if (!prevConfig) return prevConfig;
+
+    //         const newConfig = [...prevConfig];
+    //         const nodeIndex = newConfig.findIndex((item) => item.node === node);
+    //         if (nodeIndex !== -1) {
+    //             const categoryIndex = newConfig[nodeIndex].categories.findIndex((cat) => cat.category === category);
+    //             if (categoryIndex !== -1) {
+    //                 const settingIndex = newConfig[nodeIndex].categories[categoryIndex].settings.findIndex((set) => set.setting === setting);
+    //                 if (settingIndex !== -1) {
+    //                     newConfig[nodeIndex].categories[categoryIndex].settings[settingIndex].value = value;
+    //                 }
+    //             }
+    //         }
+    //         return newConfig;
+    //     });
+
+    //     sendToServer("config", {
+    //         node: node,
+    //         category: category,
+    //         setting: setting,
+    //         value: value,
+    //     });
+    // };
+
+    // ensure we have loaded before rendering
+    if (!loadedConfigState || !profileState) {
         return <div className="flex flex-col gap-4 p-6 h-full w-full">Loading configuration...</div>;
     }
 
+    // actual rendering of the config panel
     return (
         <div className="flex flex-col gap-4 p-6 h-full w-full">
             <p className="text-xs">Note: doesn't save! Remember to paste your values somewhere.</p>
-            {configState.map((item, nodeIndex) => (
+            {loadedConfigState.map((item, nodeIndex) => (
                 <div className="flex flex-col gap-2 border-2 border-slate-800 p-4 rounded-lg" key={`node-${item.node}-${nodeIndex}`}>
                     <b className="text-center">{item.node}</b>
                     {item.categories.map((category, catIndex) => (
@@ -67,7 +119,7 @@ export default function ConfigPanel() {
                                         key={`setting-${item.node}-${category.category}-${setting.setting}-${settingIndex}`}
                                         setting={setting.setting}
                                         value={setting.value.toString()}
-                                        handleChange={(value) => handleChangeConfig(item.node, category.category, setting.setting, value)}
+                                        handleChange={(value) => handleTextboxInteraction(item.node, category.category, setting.setting, value)}
                                     />
                                 ))}
                             </div>
