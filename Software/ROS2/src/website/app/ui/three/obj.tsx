@@ -11,6 +11,7 @@ import {useRobotContext} from "@/app/lib/robot-context";
 interface ObjModelAnimatorProps {
     baseFilename: string;
     wheelFilename: string;
+    excavatorFilename: string;
     backgroundColor?: string;
     transparent?: boolean;
     width?: string | number;
@@ -35,6 +36,7 @@ interface ModelPart {
 const ObjModelAnimator = ({
     baseFilename,
     wheelFilename,
+    excavatorFilename,
     backgroundColor = '#ffffff',
     transparent = true,
     width = '100%',
@@ -57,7 +59,7 @@ const ObjModelAnimator = ({
     const [error, setError] = useState<string | null>(null);
     const [cameraPosition, setCameraPosition] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 5));
 
-    const { leftWheelSpeed, rightWheelSpeed } = useRobotContext();
+    const { leftWheelSpeed, rightWheelSpeed, excavatorPosition } = useRobotContext();
 
     // Scene references stored for access in animation functions
     const sceneRef = useRef<{
@@ -66,6 +68,7 @@ const ObjModelAnimator = ({
         renderer: THREE.WebGLRenderer | null;
         baseModel: THREE.Group | null;
         wheelModels: THREE.Group[] | null;
+        excavatorModel: THREE.Group | null;
         controls: OrbitControls | null;
         animating: boolean;
     }>({
@@ -74,6 +77,7 @@ const ObjModelAnimator = ({
         renderer: null,
         baseModel: null,
         wheelModels: null,
+        excavatorModel: null,
         controls: null,
         animating: false
     });
@@ -192,12 +196,12 @@ const ObjModelAnimator = ({
         loadModel(baseFilename, (object: Group) => {
             sceneRef.current.baseModel = object;
 
-            // Compute bounding box
-            const box = new THREE.Box3().setFromObject(object);
-            const center = box.getCenter(new THREE.Vector3());
+            object.scale.multiplyScalar(MODEL_SCALE);
+            scene.add(object);
+        });
 
-            // Recenter object to origin
-            // object.position.sub(center);
+        loadModel(excavatorFilename, (object: Group) => {
+            sceneRef.current.baseModel = object;
 
             object.scale.multiplyScalar(MODEL_SCALE);
             scene.add(object);
@@ -291,6 +295,11 @@ const ObjModelAnimator = ({
                 rightWheels?.forEach(part => {
                     part.rotation.x -= 0.065 * rightWheelSpeed;
                 });
+
+                // Rotate the excavator model
+                if (sceneRef.current.excavatorModel) {
+                    sceneRef.current.excavatorModel.rotation.y = excavatorPosition * 28/180 * Math.PI; // About 18 degrees moves it from fully up to down.
+                }
             }
 
             if (sceneRef.current.renderer && sceneRef.current.scene && sceneRef.current.camera) {

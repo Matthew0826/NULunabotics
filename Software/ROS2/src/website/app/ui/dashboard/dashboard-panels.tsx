@@ -61,6 +61,7 @@ export default function DashboardPanels() {
                     <ObjModelAnimator
                         baseFilename="/models/lunabot_base"
                         wheelFilename="/models/lunabot_wheel"
+                        excavatorFilename="/models/lunabot_excavator"
                         height={'50vh'}
                         controlsConfig={{
                             enablePan: false,
