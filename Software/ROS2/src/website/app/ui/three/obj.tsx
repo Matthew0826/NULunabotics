@@ -6,6 +6,7 @@ import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { useGamepadManagerContext } from "@/app/ui/dashboard/gamepad-state-provider";
 import { Group, Object3DEventMap } from "three";
+import {useRobotContext} from "@/app/lib/robot-context";
 
 interface ObjModelAnimatorProps {
     baseFilename: string;
@@ -56,7 +57,7 @@ const ObjModelAnimator = ({
     const [error, setError] = useState<string | null>(null);
     const [cameraPosition, setCameraPosition] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 5));
 
-    const { speed } = useGamepadManagerContext();
+    const { leftWheelSpeed, rightWheelSpeed } = useRobotContext();
 
     // Scene references stored for access in animation functions
     const sceneRef = useRef<{
@@ -285,10 +286,10 @@ const ObjModelAnimator = ({
                 const leftWheels = sceneRef.current.wheelModels?.filter(wheel => wheel.position.x < 0);
                 const rightWheels = sceneRef.current.wheelModels?.filter(wheel => wheel.position.x > 0);
                 leftWheels?.forEach(part => {
-                    part.rotation.x += 0.065 * speed;
+                    part.rotation.x += 0.065 * leftWheelSpeed;
                 });
                 rightWheels?.forEach(part => {
-                    part.rotation.x -= 0.065 * speed;
+                    part.rotation.x -= 0.065 * rightWheelSpeed;
                 });
             }
 
