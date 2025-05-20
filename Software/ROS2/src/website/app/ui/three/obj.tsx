@@ -1,13 +1,15 @@
 // ObjModelAnimator.tsx
-import { useEffect, useRef, useState } from 'react';
+import {useEffect, useRef, useState} from 'react';
 import * as THREE from 'three';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
-import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import {OBJLoader} from 'three/examples/jsm/loaders/OBJLoader.js';
+import {MTLLoader} from 'three/examples/jsm/loaders/MTLLoader.js';
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
+import {useGamepadManagerContext} from "@/app/ui/dashboard/gamepad-state-provider";
+import {Group, Object3DEventMap} from "three";
 
 interface ObjModelAnimatorProps {
-    objUrl: string;
-    mtlUrl?: string;
+    baseFilename: string;
+    wheelFilename: string;
     backgroundColor?: string;
     transparent?: boolean;
     width?: string | number;
@@ -30,71 +32,49 @@ interface ModelPart {
 }
 
 const ObjModelAnimator = ({
-    objUrl,
-    mtlUrl,
-    backgroundColor = '#ffffff',
-    transparent = true,
-    width = '100%',
-    height = '100%',
-    enableControls = true,
-    controlsConfig = {
-        enableZoom: true,
-        enablePan: true,
-        autoRotate: false,
-        autoRotateSpeed: 1.0,
-        dampingFactor: 0.05,
-        maxPolarAngle: Math.PI,
-        minPolarAngle: 0
-    }
-}: ObjModelAnimatorProps) => {
+                              baseFilename,
+                              wheelFilename,
+                              backgroundColor = '#ffffff',
+                              transparent = true,
+                              width = '100%',
+                              height = '100%',
+                              enableControls = true,
+                              controlsConfig = {
+                                  enableZoom: true,
+                                  enablePan: true,
+                                  autoRotate: false,
+                                  autoRotateSpeed: 1.0,
+                                  dampingFactor: 0.05,
+                                  maxPolarAngle: Math.PI,
+                                  minPolarAngle: 0
+                              }
+                          }: ObjModelAnimatorProps) => {
     const mountRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const [modelParts, setModelParts] = useState<ModelPart[]>([]);
+    // const [modelParts, setModelParts] = useState<ModelPart[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+
+    const {speed} = useGamepadManagerContext();
 
     // Scene references stored for access in animation functions
     const sceneRef = useRef<{
         scene: THREE.Scene | null;
         camera: THREE.PerspectiveCamera | null;
         renderer: THREE.WebGLRenderer | null;
-        model: THREE.Group | null;
+        baseModel: THREE.Group | null;
+        wheelModels: THREE.Group[] | null;
         controls: OrbitControls | null;
         animating: boolean;
     }>({
         scene: null,
         camera: null,
         renderer: null,
-        model: null,
+        baseModel: null,
+        wheelModels: null,
         controls: null,
         animating: false
     });
-
-    // Function to find a specific part by name
-    const getPartByName = (name: string): THREE.Object3D | null => {
-        const part = modelParts.find(p => p.name === name);
-        return part ? part.object : null;
-    };
-
-    // Example animation function - rotate a specific part
-    const animatePart = (partName: string, axis: 'x' | 'y' | 'z', speed: number = 0.01) => {
-        const part = getPartByName(partName);
-        if (!part) return;
-
-        if (axis === 'x') part.rotation.x += speed;
-        if (axis === 'y') part.rotation.y += speed;
-        if (axis === 'z') part.rotation.z += speed;
-    };
-
-    // Example function to move a part
-    const movePart = (partName: string, axis: 'x' | 'y' | 'z', distance: number) => {
-        const part = getPartByName(partName);
-        if (!part) return;
-
-        if (axis === 'x') part.position.x += distance;
-        if (axis === 'y') part.position.y += distance;
-        if (axis === 'z') part.position.z += distance;
-    };
 
     // Load and set up the 3D scene
     useEffect(() => {
@@ -164,47 +144,34 @@ const ObjModelAnimator = ({
         scene.add(bottomLight);
 
         // Load OBJ file
-        const loadModel = () => {
-            const objLoader = new OBJLoader();
+        const loadModel = (objPath: string, loadedModel: (object: Group) => void) => {
+            const objUrl = `${objPath}.obj`;
+            const mtlUrl = `${objPath}.mtl`;
 
-            objLoader.load(
-                objUrl,
-                (object) => {
-                    // Success callback
-                    sceneRef.current.model = object;
+            const mtlLoader = new MTLLoader();
+            mtlLoader.load(
+                mtlUrl,
+                (materials) => {
+                    materials.preload();
+                    const objLoader = new OBJLoader();
+                    objLoader.setMaterials(materials);
 
-                    // Center the model
-                    const box = new THREE.Box3().setFromObject(object);
-                    const center = box.getCenter(new THREE.Vector3());
-                    center.x = 0;
-                    center.z = 0;
-                    center.y /= 2;
-                    object.position.sub(center);
+                    objLoader.load(
+                        objUrl,
+                        (object) => {
+                            // Same success handling as above
+                            loadedModel(object);
 
-                    // Normalize the model size
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    object.scale.multiplyScalar(3 / maxDim);
-
-                    // Add to scene
-                    scene.add(object);
-
-                    // Extract individual parts
-                    const parts: ModelPart[] = [];
-                    object.traverse((child) => {
-                        if (child instanceof THREE.Mesh && child.name) {
-                            parts.push({
-                                name: child.name,
-                                object: child
-                            });
+                        },
+                        (xhr) => {
+                            console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
+                        },
+                        (error) => {
+                            console.error('Error loading OBJ:', error);
+                            setError('Failed to load 3D model');
+                            setIsLoading(false);
                         }
-                    });
-
-                    setModelParts(parts);
-                    setIsLoading(false);
-
-                    console.log('Model loaded successfully');
-                    console.log('Available parts:', parts.map(p => p.name));
+                    );
                 },
                 // Progress callback
                 (xhr) => {
@@ -219,69 +186,62 @@ const ObjModelAnimator = ({
             );
         };
 
-        // Load materials first if MTL URL is provided
-        if (mtlUrl) {
-            const mtlLoader = new MTLLoader();
-            mtlLoader.load(
-                mtlUrl,
-                (materials) => {
-                    materials.preload();
-                    const objLoader = new OBJLoader();
-                    objLoader.setMaterials(materials);
+        const MODEL_SCALE = 0.2;
+        loadModel(baseFilename, (object: Group) => {
+            sceneRef.current.baseModel = object;
 
-                    objLoader.load(
-                        objUrl,
-                        (object) => {
-                            // Same success handling as above
-                            sceneRef.current.model = object;
+            // Compute bounding box
+            const box = new THREE.Box3().setFromObject(object);
+            const center = box.getCenter(new THREE.Vector3());
 
-                            const box = new THREE.Box3().setFromObject(object);
-                            const center = box.getCenter(new THREE.Vector3());
-                            center.x = 0;
-                            center.z = 0;
-                            center.y /= 2;
-                            object.position.sub(center);
+            // Recenter object to origin
+            // object.position.sub(center);
 
-                            const size = box.getSize(new THREE.Vector3());
-                            const maxDim = Math.max(size.x, size.y, size.z);
-                            object.scale.multiplyScalar(2.5 / maxDim);
+            object.scale.multiplyScalar(MODEL_SCALE);
+            scene.add(object);
+        });
 
-                            scene.add(object);
+        const WHEEL_OFFSET_X = 1.72188;  // In meters from blend file
+        const WHEEL_OFFSET_Z = 2.27074;  // In meters from blend file
+        // const WHEEL_OFFSET_Y = -1.52909; // In meters from blend file
+        const WHEEL_OFFSET_Y = -1.1233; // In meters from blend file
+        // Y and z are swapped to match the model's orientation in the scene
 
-                            const parts: ModelPart[] = [];
-                            object.traverse((child) => {
-                                if (child instanceof THREE.Mesh && child.name) {
-                                    parts.push({
-                                        name: child.name,
-                                        object: child
-                                    });
-                                }
-                            });
+        // const wheelPositions = [
+        //     [0, 0],
+        //     [-2, 2],
+        //     [-2, 0],
+        //     [0, 2]
+        // ];
+        const wheelPositions = [
+            [1,   1],
+            [-1,  1],
+            [1,  -1],
+            [-1, -1]
+        ];
 
-                            setModelParts(parts);
-                            setIsLoading(false);
-                        },
-                        (xhr) => {
-                            console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
-                        },
-                        (error) => {
-                            console.error('Error loading OBJ:', error);
-                            setError('Failed to load 3D model');
-                            setIsLoading(false);
-                        }
-                    );
-                },
-                undefined,
-                (error) => {
-                    console.error('Error loading MTL:', error);
-                    // Fall back to loading without materials
-                    loadModel();
-                }
-            );
-        } else {
-            // Load model without materials
-            loadModel();
-        }
+        loadModel(wheelFilename, (wheel: Group) => {
+            sceneRef.current.wheelModels = []
+
+            wheelPositions.forEach(([xSign, ySign], i) => {
+                const wheelClone = wheel.clone(); // clone so each wheel is independent
+                wheelClone.position.set(
+                    xSign * WHEEL_OFFSET_X * MODEL_SCALE,
+                    WHEEL_OFFSET_Y * MODEL_SCALE,
+                    ySign * WHEEL_OFFSET_Z * MODEL_SCALE
+                );
+                // wheelClone.position.set(0,0,0)
+                // wheelClone.translateX(xSign * WHEEL_OFFSET_X * MODEL_SCALE);
+                // wheelClone.translateY(WHEEL_OFFSET_Y * MODEL_SCALE);
+                // wheelClone.translateZ(ySign * WHEEL_OFFSET_Z * MODEL_SCALE);
+                wheelClone.scale.multiplyScalar(MODEL_SCALE);
+
+                sceneRef.current.wheelModels?.push(wheelClone);
+                scene.add(wheelClone);
+            });
+
+            setIsLoading(false);
+        });
 
         // Handle container resize
         const handleResize = () => {
@@ -317,21 +277,10 @@ const ObjModelAnimator = ({
                 sceneRef.current.controls.update();
             }
 
-            // Example animation - you can customize this
-            // Replace with your own animation logic
-            if (sceneRef.current.model) {
+            if (sceneRef.current.baseModel) {
                 // We no longer rotate the entire model here since OrbitControls handles that
-                // But we can still animate specific parts
-                modelParts.forEach(part => {
-                    // This is where you would add your custom animations
-                    // For example, if there's a part named "wheel":
-                    if (part.name === "wheel") {
-                        part.object.rotation.z += 0.02;
-                    }
-                    // Or if there's a part named "door":
-                    if (part.name === "door") {
-                        // Open/close animation logic here
-                    }
+                sceneRef.current.wheelModels?.forEach(part => {
+                    part.rotation.x += 0.02 * speed;
                 });
             }
 
@@ -359,42 +308,11 @@ const ObjModelAnimator = ({
                 }
             }
         };
-    }, [objUrl, mtlUrl, backgroundColor, transparent, enableControls, controlsConfig]);
-
-    // Example of a public method to expose animation control
-    // You could add more methods as needed
-    useEffect(() => {
-        // This is an example of how you could expose animation methods
-        // to parent components if needed
-        if (typeof window !== 'undefined') {
-            (window as any).animateModelPart = (partName: string, axis: 'x' | 'y' | 'z', speed: number) => {
-                animatePart(partName, axis, speed);
-            };
-
-            (window as any).moveModelPart = (partName: string, axis: 'x' | 'y' | 'z', distance: number) => {
-                movePart(partName, axis, distance);
-            };
-
-            // Add a method to reset the camera view
-            (window as any).resetModelView = () => {
-                if (sceneRef.current.controls) {
-                    sceneRef.current.controls.reset();
-                }
-            };
-        }
-
-        return () => {
-            if (typeof window !== 'undefined') {
-                delete (window as any).animateModelPart;
-                delete (window as any).moveModelPart;
-                delete (window as any).resetModelView;
-            }
-        };
-    }, [modelParts]);
+    }, [baseFilename, backgroundColor, transparent, enableControls, controlsConfig]);
 
     return (
-        <div ref={containerRef} style={{ width, height, position: 'relative' }}>
-            <div ref={mountRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
+        <div ref={containerRef} style={{width, height, position: 'relative'}}>
+            <div ref={mountRef} style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%'}}/>
             {isLoading && (
                 <div style={{
                     position: 'absolute',

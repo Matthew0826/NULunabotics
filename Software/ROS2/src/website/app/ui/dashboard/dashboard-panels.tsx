@@ -4,19 +4,16 @@ import { tempGraphPower } from "@/app/lib/temp-graph-info";
 import Map from "../map/map";
 import Panel from "./panel";
 import WebSocketGraph from "./web-socket-graph";
-import BatteryIndicator from "./battery-indicator";
 import Timer from "./timer";
 import LidarVisual from "./lidar-visual";
-import ObjModelAnimator from "../three/obj";
 import Slider from "./slider";
-import { useState } from "react";
-import { useKeyboardController } from "@/app/lib/keyboard-controller";
 import { useGamepadManagerContext } from "./gamepad-state-provider";
 import SerialPortDisplay from "./serial-port-display";
 import ConfigPanel from "./config-panel";
 import ExcavatorVisual from "./excavator_temp_visual";
 import OrientationCorrection from "./orientation-correction";
 import ControlsReminder from "./controls-reminder";
+import ObjModelAnimator from "@/app/ui/three/obj";
 
 export default function DashboardPanels() {
     const mapPanel = (
@@ -60,10 +57,10 @@ export default function DashboardPanels() {
                 <Panel title="Controls" hiddenByDefault={true}>
                     <ControlsReminder />
                 </Panel>
-                {/* <Panel title="">
+                <Panel title="">
                     <ObjModelAnimator
-                        objUrl="/models/lunabot4.obj"
-                        mtlUrl="/models/lunabot4.mtl"
+                        baseFilename="/models/lunabot_base"
+                        wheelFilename="/models/lunabot_wheel"
                         height={'50vh'}
                         controlsConfig={{
                             enablePan: false,
@@ -73,7 +70,7 @@ export default function DashboardPanels() {
                             maxPolarAngle: Math.PI * 0.75,  // Can't go below model
                             minPolarAngle: Math.PI * 0.25   // Can't go fully above model
                         }} />
-                </Panel> */}
+                </Panel>
             </div>
             <div className="w-[66vw] hidden xl:block flex-2">{mapPanel}</div>
         </div>
