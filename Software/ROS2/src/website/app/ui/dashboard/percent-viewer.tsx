@@ -2,7 +2,7 @@ const getColor = (value: number) => {
     if (value > 0.9 || value < 0.1) {
         return "red-400"
     } else if (value > 0.7 || value < 0.3) {
-        return "slate-600"
+        return "orange-300"
     } else {
         return "emerald-400"
     }
@@ -22,6 +22,7 @@ export default function PercentViewer({ description, values }: { description: st
                 <span className="text-xs text-gray-500">50%</span>
                 <span className="text-xs text-gray-500">100%</span>
             </div>
+            <div className="bg-orange-300 hidden absolute" />
         </div>
     )
 }

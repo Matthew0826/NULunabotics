@@ -12,7 +12,7 @@
 // so from left to right:
 // left back, right back, right front, left front
 // at the time of writing this comment, it is just most important that the right wheels go in the center 2 JST connectors
-byte motorPins[MOTOR_COUNT] = {5, 9, 11, 6};
+byte motorPins[MOTOR_COUNT] = {5, 11, 9, 6};
 Servo motors[MOTOR_COUNT];
 
 typedef struct {

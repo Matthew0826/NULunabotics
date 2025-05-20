@@ -74,8 +74,8 @@ class Odometry(Node):
 
         # initalize position
         self.position = Point()
-        self.position.x = 448
-        self.position.y = 100
+        self.position.x = 448.0
+        self.position.y = 100.0
 
         # initalize orientation
         self.orientation = 0.0
@@ -474,7 +474,6 @@ class Odometry(Node):
             # reverse error calculation if going backward
             # shift the PID notion of "aligned" by 180.0
             if go_reverse:
-                # self.get_logger().info("CHANGE ORIENTATION ERROR (REVERSE)")
                 orientation_error = (orientation_error + 180.0) % (360.0) - 180.0
 
             # check if completed
@@ -605,15 +604,21 @@ def main(args=None):
     #     odometry.get_degrees_error,
     #     odometry.to_orient,
     # ))
-    asyncio.run(tune_pid(
-        odometry,
-        odometry.linear_drive_pid,
-        lambda robot: robot.position,
-        Point(x=100.0, y=300.0),
-        Point(x=200.0, y=400.0),
-        odometry.get_distance_error,
-        odometry.to_position,
-    ))
+    start_point = Point()
+    start_point.x = 100.1
+    start_point.y = 300.1
+    end_point = Point()
+    end_point.x = 200.1
+    end_point.y = 400.1
+    # asyncio.run(tune_pid(
+    #     odometry,
+    #     odometry.linear_drive_pid,
+    #     lambda robot: robot.position,
+    #     start_point,
+    #     end_point,
+    #     odometry.get_distance_error,
+    #     odometry.to_position,
+    # ))
     spin_nodes(odometry, is_async=True, threads=4)
     
 

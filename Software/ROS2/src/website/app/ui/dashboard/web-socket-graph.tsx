@@ -73,6 +73,10 @@ export default function WebSocketGraph({
                     />
                     <div className="absolute right-[-6px] w-1.5 h-3 bg-gray-700" />
                 </div>
+
+                <span className="ml-2 text-sm font-semibold text-gray-700">
+                    {`${Math.floor(batteryPercent * 100)}%`}
+                </span>
             </div>
         </>
     );

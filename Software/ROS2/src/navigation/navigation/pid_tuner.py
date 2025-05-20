@@ -19,7 +19,7 @@ async def tune_pid(robot, pid, get_current_value, start_destination, end_destina
     kp_values = np.linspace(0.005, 0.03, 6)  # Range around 0.015
     ki_values = np.linspace(0.0001, 0.001, 5)  # Range around 0.0005
     kd_values = np.linspace(0.0005, 0.004, 6)  # Range around 0.002
-        
+    
     best_params = {
         'Kp': 0.015,  # Initialize with working simulation values
         'Ki': 0.0005,
@@ -81,17 +81,18 @@ async def tune_pid(robot, pid, get_current_value, start_destination, end_destina
             # Calculate overshoot - if we've gone past the target
             # For rotation, check if we've rotated too far
             # This needs special handling based on the nature of the error function
-            if end_destination > start_destination:
-                overshoot = max(0, current_value - end_destination)
+            overshoot = error_calculator(current_value, end_destination)
+            if overshoot > 0:
+                overshoot = max(0, overshoot)
             else:
-                overshoot = max(0, end_destination - current_value)
+                overshoot = max(0, error_calculator(end_destination, current_value))
             
             if overshoot > 0:
                 max_overshoot = max(max_overshoot, overshoot)
             
             # Count oscillations
             if len(history) > 2:
-                current_direction = history[-1] - history[-2]
+                current_direction = error_calculator(history[-1], history[-2])
                 if last_direction is not None and (
                     (current_direction > 0 and last_direction < 0) or 
                     (current_direction < 0 and last_direction > 0)

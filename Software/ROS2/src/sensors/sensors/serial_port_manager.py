@@ -39,6 +39,7 @@ class SerialPortManager(Node):
         # keep track of arduino folders
         self.arduino_folders: dict[int, str] = {}
         self.is_board_nano: dict[int, bool] = {}
+        self.is_board_old_nano: dict[int, bool] = {}
         self.publish_serial_port_state()
     
     def on_arduino_upload(self, msg: String):
@@ -53,8 +54,9 @@ class SerialPortManager(Node):
                     return
                 folder = self.arduino_folders[ids[0]]
                 is_nano = self.is_board_nano[ids[0]]
+                is_old_nano = self.is_board_old_nano[ids[0]]
                 print("uploading arduino folder", folder)
-                self.serial_ports[port].request_arduino_upload(folder, is_nano)
+                self.serial_ports[port].request_arduino_upload(folder, is_nano, is_old_nano)
                 break
         else:
             print(f"Serial port {msg.data} not found")
@@ -73,6 +75,7 @@ class SerialPortManager(Node):
                 first_id = ids[0]
                 state.name = self.arduino_folders[first_id]
             topics = [self.ros_pubs[i].topic_name for i in ids if i in self.ros_pubs]
+            topics += [self.ros_subs[i].topic_name for i in ids if i in self.ros_subs]
             state.topics = topics
             states.append(state)
         msg.states = states

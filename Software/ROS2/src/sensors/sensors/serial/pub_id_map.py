@@ -18,6 +18,7 @@ def read_id_map_file(node, file_path: str):
         ros_msg_type = get_message(ros_type)
         node.arduino_folders[pub_id] = arduino_folder
         node.is_board_nano[pub_id] = is_nano
+        node.is_board_old_nano[pub_id] = i.get('old_nano', False)
         if is_ros_pub:
             node.add_ros_pub(pub_id, ros_msg_type, topic)
         else:

@@ -201,7 +201,7 @@ class SerialPort:
         self.write_serial_bytes(b'\xFF')
         print(f"Requesting broadcast of ids from {self.port}")
     
-    def request_arduino_upload(self, folder: str, is_nano: bool):
+    def request_arduino_upload(self, folder: str, is_nano: bool, is_old_nano: bool = False):
         self.close()
-        upload_sketch(self.port, f"~/NULunabotics/Software/ESP8266/{folder}/{folder}.ino", is_nano)
+        upload_sketch(self.port, f"~/NULunabotics/Software/ESP8266/{folder}/{folder}.ino", is_nano, is_old_nano)
         self.open()

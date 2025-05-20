@@ -8,14 +8,14 @@ export default function GamepadTester() {
     return (
         <>
             <DirectionalDisplay
-                x={state.x1}
-                y={state.y1}
-                buttonPressed={state.buttonL}
+                x={state.x}
+                y={state.y}
+                buttonPressed={state.isActuator}
             />
             <DirectionalDisplay
-                x={state.x2}
-                y={state.y2}
-                buttonPressed={state.buttonR}
+                x={0}
+                y={state.actuatorPower}
+                buttonPressed={state.conveyorSpeed > 0}
             />
         </>
     );
