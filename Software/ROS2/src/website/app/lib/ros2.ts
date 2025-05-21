@@ -327,6 +327,13 @@ rclnodejs.init().then(() => {
         }
     )
     node.createSubscription(
+        LUNABOTICS_MOTORS_TYPE,
+        "physical_robot/motors",
+        (msg: any) => {
+            sendToClient("motors", msg, false);
+        }
+    )
+    node.createSubscription(
         LUNABOTICS_EXCAVATOR_PERCENT_TYPE,
         "sensors/excavator_percent",
         (msg: any) => {

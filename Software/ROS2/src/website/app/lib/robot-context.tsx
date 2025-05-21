@@ -1,5 +1,3 @@
-"use client";
-
 import {createContext, Dispatch, ReactNode, SetStateAction, useContext, useEffect, useRef, useState} from "react";
 import {tempStartingData} from "@/app/lib/temp-graph-info";
 import {Message, useWebSocketContext} from "@/app/lib/web-socket-context";
@@ -23,22 +21,13 @@ type RobotContextType = {
     lidarOrigin: Pos3D;
 };
 
-const mockLidarPoints: Point[] = Array.from({ length: 12 }, (_, i) => {
-    const angle = (i * 5 * Math.PI) / 180; // convert degrees to radians
-    return {
-        distance: 4 + 0.2 * Math.sin(i), // some variation in distance
-        angle,
-        weight: 1.0
-    };
-});
-
 const RobotContext = createContext<RobotContextType>({
     leftWheelSpeed: 0,
     rightWheelSpeed: 0,
-    setLeftWheelSpeed: () => {},
-    setRightWheelSpeed: () => {},
-    excavatorPosition: 1, // between 0-1
-    setExcavatorPosition: () => {},
+    setLeftWheelSpeed: () => { },
+    setRightWheelSpeed: () => { },
+    excavatorPosition: 0,
+    setExcavatorPosition: () => { },
     lidarPoints: Point,
     setLidarPoints: () => {},
     lidarOrigin: {
@@ -49,12 +38,12 @@ const RobotContext = createContext<RobotContextType>({
 
 export const useRobotContext = () => useContext(RobotContext);
 
-export default function RobotContextProvider({children}: { children: ReactNode; }) {
+export default function RobotContextProvider({ children }: { children: ReactNode; }) {
 
     const [leftWheelSpeed, setLeftWheelSpeed] = useState<number>(0);
     const [rightWheelSpeed, setRightWheelSpeed] = useState<number>(0);
     const [excavatorPosition, setExcavatorPosition] = useState<number>(0);
-    const [lidarData, setLidarData] = useState<Point[]>(mockLidarPoints);
+    const [lidarData, setLidarData] = useState<Point[]>([]);
     const [obstacles, setObstacles] = useState<ObstacleType[]>([]);
 
     const lidarOrigin: Pos3D = {
@@ -69,8 +58,8 @@ export default function RobotContextProvider({children}: { children: ReactNode; 
             // in the case of a reset, clear the path data
             setLeftWheelSpeed(0);
             setRightWheelSpeed(0);
-            setExcavatorPosition(0.2);
-            setLidarData(mockLidarPoints);
+            setExcavatorPosition(0);
+            setLidarData([]);
             setObstacles([]);
             return;
         }
