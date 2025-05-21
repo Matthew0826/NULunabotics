@@ -3,7 +3,7 @@ from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 
 
-def spin_nodes(*nodes, shutdown_callback=lambda n: None, is_async=False):
+def spin_nodes(*nodes, shutdown_callback=lambda n: None, is_async=False, threads=2):
     """
     Spins the given nodes in a multi-threaded executor, or spins them syncronously if there's one node or is_async is false.
     Node that if multiple nodes are passed, it'll use a multi-threaded executor.
@@ -24,7 +24,7 @@ def spin_nodes(*nodes, shutdown_callback=lambda n: None, is_async=False):
             rclpy.spin(nodes[0])
         else:
             # use multi threaded executor so that the node can run async functions
-            executor = MultiThreadedExecutor()
+            executor = MultiThreadedExecutor(num_threads=threads)
             # add each node to the executor
             for node in nodes:
                 executor.add_node(node)

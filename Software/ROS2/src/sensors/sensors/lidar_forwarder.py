@@ -44,26 +44,18 @@ class LidarForwarder(Node):
         Waits until a full rotation of points is received, then publishes them.
         """
         # self.get_logger().info(str(msg))
-        self.get_logger().info(f"got {len(msg.ranges)} points")
+        # self.get_logger().info(f"got {len(msg.ranges)} points")
         # scan in new points
         points = self.process_laser_scan(msg)
         # self.full_rotation_of_points.extend(points)
-        if self.count % 10 == 0:
-            self.get_logger().info(f"sending points")# in {time() - msg.header.stamp.nanoseconds/1000} seconds")
+        if self.count % 2 == 0:
+            now = self.get_clock().now()
+            # self.get_logger().info(f"sending points in {(now.nanoseconds - msg.header.stamp.nanosec)/1_000_000} ms")
             data_to_send = LidarRotation()
             data_to_send.points = points
-            data_to_send.timestamp = 0#msg.header.stamp
+            data_to_send.timestamp = msg.header.stamp.nanosec//1_000
             self.lidar_publisher.publish(data_to_send)
         self.count += 1
-        # wait until enough points for a full rotation
-        # if len(self.full_rotation_of_points) >= PACKETS_PER_ROTATION * POINTS_PER_PACKET:
-        #     # create a packet of points
-        #     packet = list(self.full_rotation_of_points)[:PACKETS_PER_ROTATION * POINTS_PER_PACKET]
-        #     data_to_send = LidarRotation()
-        #     data_to_send.points = packet
-        #     self.lidar_publisher.publish(data_to_send)
-        #     # clear the deque for the next rotation
-        #     self.full_rotation_of_points.clear()
         
     def process_laser_scan(self, msg):
         """
@@ -108,8 +100,8 @@ class LidarForwarder(Node):
         """
         lidar_point = LiDAR()
         lidar_point.weight = int(self.sanatize_number(weight, 255, 255))
-        lidar_point.distance = int(distance)#self.sanatize_number(distance, 65535, 0))
-        lidar_point.angle = float(angle)#self.sanatize_number(angle, 2 * math.pi, 0.0))
+        lidar_point.distance = int(distance * 100)#self.sanatize_number(distance, 65535, 0))
+        lidar_point.angle = float(angle) + math.pi/35 #self.sanatize_number(angle, 2 * math.pi, 0.0))
         return lidar_point
 
 

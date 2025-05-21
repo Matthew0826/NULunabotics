@@ -2,7 +2,7 @@ import WebSocket from "ws";
 
 export const sockets = new Set<WebSocket>();
 
-export function sendToClient(category: string, message: any) {
+export function sendToClient(category: string, message: any, canBeLossy: boolean = false) {
     sockets.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify({ type: category, message }));

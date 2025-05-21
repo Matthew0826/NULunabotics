@@ -1,24 +1,41 @@
+import asyncio
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionServer
 
-from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallbackGroup
 
 
 # the self driver agent action
-from lunabotics_interfaces.msg import Point, Motors, Excavator, PathVisual, ExcavatorPotentiometer
+from lunabotics_interfaces.msg import Point, Motors, Excavator, PathVisual, ExcavatorPotentiometer, AccelerometerCorrection, Config
 from lunabotics_interfaces.action import SelfDriver
-from navigation.pathfinder_helper import distance
+from lunabotics_interfaces.srv import TunePID
+from navigation.pathfinding import distance
 from sensors.spin_node_helper import spin_nodes
 
 from navigation.pid import PIDController
+from navigation.pid_tuner import tune_pid
+from navigation.pid_tuner2 import PIDTuner
 
 
 from std_msgs.msg import Float32
 import math
 
-MAX_EXCAVATOR_PERCENT = 0.9
-MIN_EXCAVATOR_PERCENT = 0.1
+MAX_ACTUATOR_PERCENT = 0.9
+MIN_ACTUATOR_PERCENT = 0.1
+
+# when the excavator lifter motor is at this %, the distance sensor can be used to detect the ground
+DISTANCE_SENSOR_ENABLE_THRESHOLD = 0.7
+# when the distance sensor is this far away, the excavator should stop and start digging
+DISTANCE_SENSOR_TOLERANCE = 8  # cm
+
+MAX_EXCAVATOR_LIFTER_PERCENT = 0.9
+MIN_EXCAVATOR_LIFTER_PERCENT = 0.1
+
+CONVEYOR_SPEED = 0.6
+
+EXCAVATION_TIME = 10.0
+BIN_TIME = 3.0
 
 class Odometry(Node):
     """
@@ -29,16 +46,21 @@ class Odometry(Node):
     def __init__(self):
         super().__init__('odometry')
 
-        # idk you need it for some reason
-        self.callback_group = ReentrantCallbackGroup()
+        # these make sure each subcriber/action/publisher gets time to run
+        self.action_group = ReentrantCallbackGroup()      # For action server
+        self.sensor_group = ReentrantCallbackGroup()      # For sensor callbacks
+        self.control_group = MutuallyExclusiveCallbackGroup()  # For control outputs
+        self.config_group = ReentrantCallbackGroup()      # For configuration
 
+        # action server is used to drive the robot
+        # it's in its own callback group so it can run async functions
         self._action_server = ActionServer(
             self,
             SelfDriver,
             'self_driver',
             execute_callback=self.on_goal_request,
             cancel_callback=self.on_cancel,
-            callback_group=self.callback_group
+            callback_group=self.action_group
         )
         
         # action values to store for when its done
@@ -49,33 +71,43 @@ class Odometry(Node):
         self.deg_tolerance = 3.0 
         # margin of error for movement (centimeters)
         self.dist_tolerance = 15.0
+        # margin of error for excavator actuators (percent)
+        self.actuator_tolerance_percent = 0.03
 
         # initalize position
         self.position = Point()
-        self.position.x = 448
-        self.position.y = 100
+        self.position.x = 448.0
+        self.position.y = 100.0
 
         # initalize orientation
         self.orientation = 0.0
         self.last_orientation_time = self.get_clock().now()
+        self.has_corrected_orientation = False
         
-        # initalize linear actuator percentage for the excavator
+        # initalize linear actuator percentage for opening the bin
         # 0% is contracted and 100% is extended
-        self.excavator_left_percent = 0.0
-        self.excavator_right_percent = 0.0
+        self.actuator_percent = 0.0
+        self.excavator_lifter_percent = 0.0
+        self.excavator_ground_distance = -1.0  # cm
         
-        # dummy timer to keep event loop alive :)
-        # self.create_timer(0.05, lambda: None)
-
         # ros publishers and subscribers
-        self.motor_pub = self.create_publisher(Motors, 'physical_robot/motors', 10)
-        self.excavate_pub = self.create_publisher(Excavator, 'physical_robot/excavator', 10)
-        self.position_sub = self.create_subscription(Point, 'sensors/position', self.on_position, 10)
-        self.orientation_sub = self.create_subscription(Float32, 'sensors/orientation', self.on_orientation, 10)
-        self.excavator_percent_sub = self.create_subscription(ExcavatorPotentiometer, 'sensors/excavator_percent', self.on_excavator_percent, 10)
-        self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/odometry_path', 10)
+        # control
+        self.motor_pub = self.create_publisher(Motors, 'physical_robot/motors', 10, callback_group=self.control_group)
+        self.excavate_pub = self.create_publisher(Excavator, 'physical_robot/excavator', 10, callback_group=self.control_group)
+        self.orientation_corrector = self.create_publisher(AccelerometerCorrection, 'sensors/accelerometer_correction', 10, callback_group=self.control_group)
         
-        # PID controllers (some notes from ChatGPT:)
+        # config
+        self.config_sub = self.create_subscription(Config, 'website/config', self.on_config, 10, callback_group=self.config_group)
+        self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/odometry_path', 10, callback_group=self.config_group)
+        self.pid_tuner_server = self.create_service(TunePID, 'pid_tuner', self.on_pid_tune, callback_group=self.config_group)
+        
+        # sensors
+        self.position_sub = self.create_subscription(Point, 'sensors/position', self.on_position, 10, callback_group=self.sensor_group)
+        self.orientation_sub = self.create_subscription(Float32, 'sensors/orientation', self.on_orientation, 10, callback_group=self.sensor_group)
+        self.excavator_distance_sub = self.create_subscription(Float32, 'sensors/excavator_distance', self.on_excavator_distance, 10, callback_group=self.sensor_group)
+        self.excavator_percent_sub = self.create_subscription(ExcavatorPotentiometer, 'sensors/excavator_percent', self.on_excavator_percent, 10, callback_group=self.sensor_group)
+        
+        # PID controllers (some notes from ChatGPT: )
         # Kp: Proportional Gain
             #  Corrects based on the current error.
             #  High Kp = fast response, but may overshoot or oscillate.
@@ -94,9 +126,75 @@ class Odometry(Node):
         # especially when the speed of the simulation is increased
         self.angular_drive_pid = PIDController(Kp=0.008, Ki=0.0, Kd=0.0, output_limits=(-0.35, 0.35))
         
-        self.excavator_left_actuator_pid = PIDController(Kp=0.01, Ki=0.0, Kd=0.0, output_limits=(-1.0, 1.0))
-        self.excavator_right_actuator_pid = PIDController(Kp=0.01, Ki=0.0, Kd=0.0, output_limits=(-1.0, 1.0))
+        self.bin_actuator_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-1.0, 1.0))
+        self.excavator_lifter_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-1.0, 1.0))
 
+    async def on_pid_tune(self, request, response):
+        """Called when a PID tuning request is received."""
+        # get the PID controller
+        pid = None
+        match request.pid:
+            case "orientation_pid":
+                pid = self.orientation_pid
+            case "linear_drive_pid":
+                pid = self.linear_drive_pid
+            case "angular_drive_pid":
+                pid = self.angular_drive_pid
+            case "bin_actuator_pid":
+                pid = self.bin_actuator_pid
+            case "excavator_lifter_pid":
+                pid = self.excavator_lifter_pid
+
+        if pid is None:
+            response.success = False
+            return response
+        
+        tuner = PIDTuner(logger=self.get_logger().info)
+        # tune the PID controller
+        result = await tuner.tune_pid(
+            robot=self,
+            pid=pid,
+            get_current_value=lambda robot: robot.orientation,
+            start_destination=0.0,
+            end_destination=90.0,
+            error_calculator=self.get_degrees_error,
+            move_function=self.to_orient,
+            method=request.strategy,
+            plot_results=False
+        )
+        
+        # set the PID controller values in response
+        response.kp = pid.Kp
+        response.ki = pid.Ki
+        response.kd = pid.Kd
+
+        response.success = True
+        return response
+
+    # when the config is received for tuning pid loop
+    def on_config(self, config: Config):
+        if config.node != "odometry":
+            return
+        chosen_pid = None
+        match config.category:
+            case "orientation_pid":
+                chosen_pid = self.orientation_pid
+            case "linear_drive_pid":
+                chosen_pid = self.linear_drive_pid
+            case "angular_drive_pid":
+                chosen_pid = self.angular_drive_pid
+        if chosen_pid is not None:
+            match config.setting:
+                case "Kp":
+                    chosen_pid.Kp = float(config.value)
+                    self.get_logger().info(f"set Kp to {chosen_pid.Kp} on {config.category}")
+                case "Ki":
+                    chosen_pid.Ki = float(config.value)
+                    self.get_logger().info(f"set Ki to {chosen_pid.Ki} on {config.category}")
+                case "Kd":
+                    chosen_pid.Kd = float(config.value)
+                    self.get_logger().info(f"set Kd to {chosen_pid.Kd} on {config.category}")
+        
     # when someone calls this action
     # SelfDriver.action:
     # # Request
@@ -120,27 +218,41 @@ class Odometry(Node):
 
         # get points
         points = goal_handle.request.targets
-        self.get_logger().info('received goal with {0} points'.format(len(points)))
+        # self.get_logger().info('received goal with {0} points'.format(len(points)))
+        
+        # correct the orientation (the robot is rotated randomly at the start of the competition)
+        if not self.has_corrected_orientation:
+            self.get_logger().info('correcting orientation')
+            # perform the correction
+            await self.perform_orientation_correction()
+            self.get_logger().info('corrected orientation')
+            # set the flag to true so we dont do it again
+            self.has_corrected_orientation = True
 
         # drive in reverse if told by the goal
         await self.to_path(points, goal_handle, feedback_msg, goal_handle.request.should_reverse)
         
         # get if we should unload
         unload = goal_handle.request.should_unload
-        if unload:
-            self.get_logger().info('unloading')
-            await self.run_unload_bin()
-            self.get_logger().info('unloaded')
-        
         # get if we should excavate
         excavate = goal_handle.request.should_excavate
-        if excavate:
+        self.get_logger().info(f"unload: {unload}; excavate: {excavate}")
+        if unload:
+            self.get_logger().info('unloading')
+            await self.move_actuator_to(MAX_ACTUATOR_PERCENT)
+            await self.yield_once(delay=BIN_TIME)
+            await self.move_actuator_to(MIN_ACTUATOR_PERCENT)
+            self.get_logger().info('unloaded')
+        elif excavate:
             self.get_logger().info('excavating')
-            # start the excavator
-            await self.move_excavator(MAX_EXCAVATOR_PERCENT)
+            # move the excavator up
+            await self.move_excavator_to(MAX_EXCAVATOR_LIFTER_PERCENT)
+            self.get_logger().info('excavator in position')
             # start the conveyor
             await self.run_conveyor()
-            await self.move_excavator(MIN_EXCAVATOR_PERCENT)
+            self.get_logger().info('conveyor done running')
+            # move the excavator down
+            await self.move_excavator_to(MIN_EXCAVATOR_LIFTER_PERCENT)
             self.get_logger().info('excavated')
         
         # send the result
@@ -174,19 +286,29 @@ class Odometry(Node):
         
     # when excavator percent updates
     def on_excavator_percent(self, percent):
-        self.set_excavator_percent(percent.left_actuator_percent, percent.right_actuator_percent)
+        self.set_excavator_percent(percent.excavator_lifter_percent, percent.actuator_percent)
+        
+    # when excavator distance updates
+    def on_excavator_distance(self, distance):
+        self.set_excavator_distance(distance.data)
 
     def set_position(self, position: Point):
         """Called by the ROS subscriber."""
         self.position = position
     
-    def set_excavator_percent(self, left_percent: float, right_percent: float):
+    def set_excavator_distance(self, distance: float):
+        # distances far away are not very accurate and not needed
+        if distance < 0.0 or distance > 200.0:
+            return
+        self.excavator_ground_distance = distance
+    
+    def set_excavator_percent(self, excavator_lifter_percent: float, actuator_percent: float):
         """Called by the ROS subscriber. Enforces percent between 0 and 1."""
-        if (left_percent < 0.0 or left_percent > 1.0 and right_percent < 0.0 or right_percent > 1.0):
+        if (excavator_lifter_percent < 0.0 or excavator_lifter_percent > 1.0 and actuator_percent < 0.0 or actuator_percent > 1.0):
             self.get_logger().info(f"invalid excavator percent")
             return
-        self.excavator_left_percent = left_percent
-        self.excavator_right_percent = right_percent
+        self.excavator_lifter_percent = excavator_lifter_percent
+        self.actuator_percent = actuator_percent
 
     def set_orientation(self, orientation: float):
         """Called by the ROS subscriber. Enforces orientation between 0 and 360 degrees."""
@@ -198,7 +320,8 @@ class Odometry(Node):
         delta_time = (self.get_clock().now() - self.last_orientation_time).nanoseconds / 1_000_000_000
         hz = 1.0/delta_time
         if hz < 5:
-            self.get_logger().info(f"lagging! {hz}hz")
+            pass
+            # self.get_logger().info(f"lagging! {hz}hz")
         self.last_orientation_time = self.get_clock().now()
 
     def set_motor_power(self, left_power: float, right_power: float):
@@ -210,10 +333,10 @@ class Odometry(Node):
 
         # message class
         msg = Motors()
-        msg.front_left_wheel = left_power
-        msg.front_right_wheel = right_power
-        msg.back_left_wheel = left_power
-        msg.back_right_wheel = right_power
+        msg.front_left_wheel = float(left_power)
+        msg.front_right_wheel = float(right_power)
+        msg.back_left_wheel = float(left_power)
+        msg.back_right_wheel = float(right_power)
 
         # then publish it like usual
         self.motor_pub.publish(msg)
@@ -221,11 +344,11 @@ class Odometry(Node):
 
     # set the power of the conveyor and outtake motors on the excavator
     # actuator_power: -1.0 is retract; 1.0 is extend
-    def set_excavator_power(self, left_actuator_power: float, right_actuator_power: float, conveyor_power: float, hatch_open: bool):
+    def set_excavator_power(self, excavator_lift_power: float, actuator_power: float, conveyor_power: float):
         """Set the power of the excavator motors."""
 
-        if (abs(left_actuator_power) > 1.0 or abs(right_actuator_power) > 1.0):
-            self.get_logger.info(f"actuator motor power must be between -1.0 and 1.0: L({left_actuator_power}), R({right_actuator_power})")
+        if (abs(excavator_lift_power) > 1.0 or abs(actuator_power) > 1.0):
+            self.get_logger.info(f"motor power must be between -1.0 and 1.0: L({excavator_lift_power}), R({actuator_power})")
             return
 
         # ensure motor power between -1.0 and 1.0
@@ -235,72 +358,74 @@ class Odometry(Node):
 
         # message class (cannot move and excavate)
         msg = Excavator()
-        msg.left_actuator_speed = left_actuator_power
-        msg.right_actuator_speed = right_actuator_power
-        msg.conveyor = conveyor_power
-        msg.hatch = hatch_open
+        msg.excavator_lifter_speed = float(excavator_lift_power)
+        msg.actuator_speed = float(actuator_power)
+        msg.conveyor_speed = float(conveyor_power)
 
         # then publish it like usual
         self.excavate_pub.publish(msg)
+    
+    async def move_actuator_to(self, target_percent: float):
+        await self.move_excavator_motor_to_target(
+            target=target_percent,
+            feedback=lambda: self.actuator_percent,
+            pid=self.bin_actuator_pid,
+            drive_callback=lambda power: self.set_excavator_power(0.0, power, 0.0)
+        )
+    
+    def get_excavator_feedback(self):
+        # TODO: use distance sensor when excavator lifter percent is high
+        return self.excavator_lifter_percent
+    
+    async def move_excavator_to(self, target_percent: float):
+        await self.move_excavator_motor_to_target(
+            target=target_percent,
+            feedback=self.get_excavator_feedback,
+            pid=self.excavator_lifter_pid,
+            drive_callback=lambda power: self.set_excavator_power(power, 0.0, 0.0)
+        )
 
-    async def move_excavator(self, target_percent: float):
-        # reset the PID controllers
-        self.excavator_left_actuator_pid.reset()
-        self.excavator_right_actuator_pid.reset()
-        tolerance_percent = 0.05
+    async def move_excavator_motor_to_target(self, target: float, feedback, pid, drive_callback):
+        pid.reset()
         
         # use pid loop to get to the target percent
         while True:
             # find error for PID
-            left_error = target_percent - self.excavator_left_percent
-            right_error = target_percent - self.excavator_right_percent
+            error = target - feedback()
             # check if completed
-            left_completed = abs(left_error) <= tolerance_percent
-            right_completed = abs(right_error) <= tolerance_percent
-            if left_completed and right_completed: break
+            completed = abs(error) <= self.actuator_tolerance_percent
+            if completed: break
             # update PID
             current_time = self.get_clock().now()
-            left_power = self.excavator_left_actuator_pid.update(left_error, current_time)
-            right_power = self.excavator_right_actuator_pid.update(right_error, current_time)
+            power = pid.update(error, current_time)
             # make sure theres at least a little power
-            if abs(left_power) < 0.1:
-                left_power = 0.1 if left_power > 0 else -0.1
-            if abs(right_power) < 0.1:
-                right_power = 0.1 if right_power > 0 else -0.1
-            # but if we are done, stop the motors
-            if left_completed:
-                left_power = 0.0
-            if right_completed:
-                right_power = 0.0
+            if abs(power) < 0.1:
+                power = 0.1 if power > 0 else -0.1
+            self.get_logger().info(f"power after: {power}, error: {error}")
             # drive the motors for a bit
-            self.set_excavator_power(left_power, right_power, 0.0, False)
+            drive_callback(power)
             await self.yield_once(0.2)
         # stop the excavator
         self.stop_excavator()
 
     async def run_conveyor(self):
         # in position, now turn on conveyor
-        self.set_excavator_power(0.0, 0.0, 0.7, False)
+        self.set_excavator_power(0.0, 0.0, CONVEYOR_SPEED)
         # wait to excavate
-        await self.yield_once(10.0)
+        await self.yield_once(EXCAVATION_TIME)
         # stop the conveyor
         self.stop_excavator()
 
     def stop_excavator(self):
-        self.set_excavator_power(0.0, 0.0, 0.0, False)
-
-    async def run_unload_bin(self):
-        # open
-        self.set_excavator_power(0.0, 0.0, 0.0, True)
-        await self.yield_once(3.0)
-        # close
-        self.set_excavator_power(0.0, 0.0, 0.0, False)
+        self.set_excavator_power(0.0, 0.0, 0.0)
         
-    def get_degrees_error(self, final_degrees: float):
+    def get_degrees_error(self, final_degrees: float, current_degrees: float = None):
         """Calculates the difference in degrees between the robot's current orientation
             and a desired orientation."""
         # find the difference between the desired and current orientation
-        return ((final_degrees - self.orientation + 180) % 360) - 180
+        if current_degrees is None:
+            current_degrees = self.orientation
+        return ((final_degrees - current_degrees + 180) % 360) - 180
 
     async def drive(self, left_power: float, right_power: float, seconds: float):
         """Sets the motor power for a given duration."""
@@ -330,21 +455,31 @@ class Odometry(Node):
         desired_theta = math.degrees(math.atan2(dy, dx))
         return self.get_degrees_error(desired_theta)
     
+    def get_distance_error(self, destination: Point, current_position: Point = None):
+        """Calculates the distance between the robot's current position
+            and a given destination."""
+        if current_position is None:
+            current_position = self.position
+        return distance(current_position, destination)
+    
     async def to_orient(self, final_orientation: float):
         """Rotates to a given orientation with PID control."""
         # reset the PID controller
         self.orientation_pid.reset()
+        self.get_logger().info(f"want to rotate to {int(final_orientation)} degrees")
         
         while True:
             # find error for PID
             error = self.get_degrees_error(final_orientation)
             # check if completed
+            self.get_logger().info(f"tol: {self.deg_tolerance}, error: {error}")
             if abs(error) <= self.deg_tolerance: break
             # update PID
             power = self.orientation_pid.update(error, self.get_clock().now())
             # make sure theres at least a little power so the robot continues turning
             if abs(power) < 0.1:
                 power = 0.1 if power > 0 else -0.1
+            self.get_logger().info(f"power after: {power}, error: {error}")
             # drive the motors for a bit
             await self.drive(-power, power, seconds=0.2)
             await self.yield_once()
@@ -353,13 +488,13 @@ class Odometry(Node):
 
         # stop the motors
         self.set_motor_power(0.0, 0.0)
-        self.get_logger().info(f"rotated to {int(self.orientation)} degrees. (wanted {int(final_orientation)})")
+        # self.get_logger().info(f"rotated to {int(self.orientation)} degrees. (wanted {int(final_orientation)})")
 
     async def to_position(self, destination: Point, go_reverse: bool = False):
         """Drives to a given destination with PID control."""
         start_time = self.get_clock().now()
         # calculate orientation to face position
-        self.get_logger().info(f"want to go to position {destination.x}, {destination.y}")
+        # self.get_logger().info(f"want to go to position {destination.x}, {destination.y}")
         self.website_path_visualizer.publish(PathVisual(nodes=[self.position, destination]))
 
         # flip robot around if going reverse
@@ -367,12 +502,17 @@ class Odometry(Node):
         if (go_reverse):
             deg_offset = 180.0
 
+        # return early if already at the position
+        error = distance(self.position, destination)
+        if error < self.dist_tolerance: return
+        
         await self.face_position(destination, deg_offset)
         after_orientation_time = self.get_clock().now()
         
         # reset the PID controllers
         self.linear_drive_pid.reset()
         self.angular_drive_pid.reset()
+        
         
         while True:
             # find error
@@ -382,7 +522,7 @@ class Odometry(Node):
             # reverse error calculation if going backward
             # shift the PID notion of "aligned" by 180.0
             if go_reverse:
-                err_orient = (err_orient + 180.0) % (360.0) - 180.0
+                orientation_error = (orientation_error + 180.0) % (360.0) - 180.0
 
             # check if completed
             if error < self.dist_tolerance: break
@@ -405,19 +545,19 @@ class Odometry(Node):
 
 
         self.set_motor_power(0.0, 0.0)
-        self.get_logger().info(f"drove to {int(self.position.x)}, {int(self.position.y)} (wanted {int(destination.x)}, {int(destination.y)})")
+        # self.get_logger().info(f"drove to {int(self.position.x)}, {int(self.position.y)} (wanted {int(destination.x)}, {int(destination.y)})")
         after_moving_time = self.get_clock().now()
         # calculate time taken to move
         time_taken = (after_moving_time - start_time).nanoseconds // 1_000_000
-        self.get_logger().info(f"took {time_taken} milliseconds to move")
+        # self.get_logger().info(f"took {time_taken} milliseconds to move")
         # calculate time taken to orient
         orientation_time = (after_orientation_time - start_time).nanoseconds // 1_000_000
-        self.get_logger().info(f"took {orientation_time} milliseconds to orient")
+        # self.get_logger().info(f"took {orientation_time} milliseconds to orient")
 
     # orient the rover to face a position
     async def face_position(self, destination: Point, deg_offset: float = 0.0):
         """Rotates to face a given position."""
-        self.get_logger().info(f"want to face {destination.x}, {destination.y}")
+        # self.get_logger().info(f"want to face {destination.x}, {destination.y}")
         angle_rad = math.atan2(self.position.y - destination.y, destination.x - self.position.x)
         new_orientation = positive_angle(math.degrees(angle_rad))
 
@@ -426,14 +566,19 @@ class Odometry(Node):
 
         # move to face position plus client specified offset
         new_orientation = positive_angle(new_orientation + deg_offset)
-
+        initial_error = self.get_degrees_error(new_orientation)
+        # if we are already facing the position, no need to rotate
+        if abs(initial_error) <= 15.0:
+            # self.get_logger().info(f"already facing position {int(new_orientation)} degrees")
+            return
         await self.to_orient(new_orientation)
-        self.get_logger().info(f"faced position: old {int(old_orientation)}; new {int(self.orientation)}; desired {int(new_orientation)}")
+        # self.get_logger().info(f"faced position: old {int(old_orientation)}; new {int(self.orientation)}; desired {int(new_orientation)}")
 
     # navigate along an entire path worth of coordinates (points)
     async def to_path(self, points, goal_handle, feedback_msg, go_reverse: bool):
         """Drives to a series of points in order, while reporting its progress over the goal handle."""
         points_len = len(points)
+        # go_reverse = True
         
         # loop through each point and go there on the path
         # we enumerate to keep track of iterations
@@ -452,6 +597,44 @@ class Odometry(Node):
         
         # empty list to show its done
         self.website_path_visualizer.publish(PathVisual(nodes=[]))
+    
+    async def perform_orientation_correction(self):
+        start_position = self.position
+        start_orientation = self.orientation
+        # drive forwards a bit
+        drive_target = 35  # cm
+        while True:
+            # check if we have driven far enough
+            error = distance(start_position, self.position)
+            if error >= drive_target: break
+            await self.drive(0.35, 0.35, seconds=0.2)
+        self.get_logger().info(f"driven {int(error)} cm to correct orientation")
+        self.set_motor_power(0.0, 0.0)
+        end_position = self.position
+        end_orientation = self.orientation
+        # calculate the angle from start to the target
+        angle_rad = math.atan2(start_position.y - end_position.y, end_position.x - start_position.x)
+        # calculate the difference in orientations (due to drift from driving)
+        drift = positive_angle(end_orientation - start_orientation)
+        # find corrected orientation
+        corrected_orientation = positive_angle(math.degrees(angle_rad) - drift)
+        orientation_error = positive_angle(corrected_orientation - start_orientation)
+        # corrected_orientation should be close a multiple of 90 degrees
+        # find the closest multiple of 90 degrees
+        closest_multiple = round(corrected_orientation / 90.0) * 90.0
+        self.get_logger().info(f"corrected orientation: {int(corrected_orientation)} degrees (is it close to {int(closest_multiple)}?)")
+        # publish correction
+        correction = AccelerometerCorrection()
+        correction.initial_angle = -orientation_error
+        correction.should_reset = False
+        self.orientation_corrector.publish(correction)
+    
+    async def perform_orientation_test(self, what):
+        self.get_logger().info(f"Kp: {self.orientation_pid.Kp}, Kd: {self.orientation_pid.Kd}, Ki: {self.orientation_pid.Ki}")
+        await self.to_orient(0.0)
+        self.get_logger().info(f"orientation: {self.orientation}")
+        await self.to_orient(90.0)
+        self.get_logger().info(f"orientation: {self.orientation}")
 
 
 # should this be replaced with sigmoid function later?
@@ -467,7 +650,22 @@ def positive_angle(angle: float):
 def main(args=None):
     rclpy.init(args=args)
     odometry = Odometry()
-    spin_nodes(odometry, is_async=True)
+    # start_point = Point()
+    # start_point.x = 100.1
+    # start_point.y = 300.1
+    # end_point = Point()
+    # end_point.x = 200.1
+    # end_point.y = 400.1
+    # asyncio.run(tuner.tune_pid(
+    #     odometry,
+    #     odometry.linear_drive_pid,
+    #     lambda robot: robot.position,
+    #     start_point,
+    #     end_point,
+    #     odometry.get_distance_error,
+    #     odometry.to_position,
+    # ))
+    spin_nodes(odometry, is_async=True, threads=4)
     
 
 if __name__ == '__main__':

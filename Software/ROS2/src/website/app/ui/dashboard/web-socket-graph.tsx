@@ -10,7 +10,8 @@ import {
 } from "react";
 import Graph from "./graph";
 import { Dataset } from "@/app/lib/utils";
-import { useWebSocketContext } from "@/app/lib/web-socket-context";
+import { Message, useWebSocketContext } from "@/app/lib/web-socket-context";
+import BatteryIndicator from "./battery-indicator";
 
 export type GraphInfo = {
     name: string;
@@ -29,32 +30,54 @@ export default function WebSocketGraph({
     const { messages, sendToServer } = useWebSocketContext();
 
     const [graph, setGraph] = useState<GraphInfo>(graphInfo);
+    const [timeCounter, setTimeCounter] = useState(0);
+
+    const [batteryPercent, setBatteryPercent] = useState(0);
 
     useEffect(() => {
         if (messages.length == 0) return;
-        const data = messages[messages.length - 1];
-        if (!data.type.startsWith("graph")) return;
-        for (const dataPoint of data.message) {
-            const graphName = dataPoint.graph as string;
-            if (graph.name != graphName) {
-                continue;
-            }
-            const dataSetName = dataPoint.dataSet as string;
-            const newData = dataPoint.newData as number[];
-            const dataSet = graph.dataSets[dataSetName];
-            dataSet.data.push(...newData);
-            graph.dataSets[dataSetName] = dataSet;
-            setGraph({ ...graph });
-        }
+        const powerMessages = [...new Set(messages
+            .filter((message: Message) => message.type === "battery")
+            .map((message: Message) => message.message)
+            .flat())];
+        const currents = powerMessages.map((message: any) => message.current);
+        const voltages = powerMessages.map((message: any) => message.voltage);
+        const percent = powerMessages.length != 0 ? powerMessages[powerMessages.length - 1].percentage : 0;
+
+        const newGraph = { ...graph };
+        newGraph.dataSets["current"].data = currents;
+        newGraph.dataSets["voltage"].data = voltages;
+        setGraph(newGraph);
+        setBatteryPercent(percent);
+        // setTimeCounter((prev) => prev + 1);
     }, [messages]);
 
     return (
-        <Graph
-            key={graph.name}
-            dataSets={graph.dataSets}
-            title={graph.name}
-            xAxisLabel={graph.xAxisLabel}
-            yAxisLabel={graph.yAxisLabel}
-        />
+        <>
+            <Graph
+                key={graph.name}
+                dataSets={graph.dataSets}
+                title={graph.name}
+                xAxisLabel={graph.xAxisLabel}
+                yAxisLabel={graph.yAxisLabel}
+                timeCounter={timeCounter}
+            />
+
+            <div className="fixed top-4 right-4 flex items-center bg-white p-2 rounded-lg shadow-lg">
+                <div className="w-14 h-6 border-2 border-gray-700 rounded flex items-center relative">
+
+                    <div
+                        className={`h-full transition-all duration-300 ${batteryPercent * 100 > 20 ? "bg-green-500" : "bg-red-500"
+                            }`}
+                        style={{ width: `${Math.floor(batteryPercent * 100)}%` }}
+                    />
+                    <div className="absolute right-[-6px] w-1.5 h-3 bg-gray-700" />
+                </div>
+
+                <span className="ml-2 text-sm font-semibold text-gray-700">
+                    {`${Math.floor(batteryPercent * 100)}%`}
+                </span>
+            </div>
+        </>
     );
 }

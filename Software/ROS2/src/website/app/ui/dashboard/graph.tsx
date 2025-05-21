@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Chart, { ChartConfiguration } from "chart.js/auto";
 import { Dataset } from "@/app/lib/utils";
 
@@ -9,6 +9,7 @@ type GraphProps = {
     title: string;
     xAxisLabel: string;
     yAxisLabel: string;
+    timeCounter: number;
 };
 
 export default function Graph({
@@ -16,17 +17,17 @@ export default function Graph({
     title,
     xAxisLabel,
     yAxisLabel,
+    timeCounter
 }: GraphProps) {
     const dataSetsArray = Object.values(dataSets);
-    const labels = dataSetsArray[0].data
-        .slice(-10)
-        .map((_, i) => i + dataSetsArray[0].data.length);
+    // these are labels at the bottom of the graph (x axis)
+    const labels = Array.from({ length: 10 }, (_, i) => i - 10);
     const data = {
         labels: labels,
         datasets: dataSetsArray.map((dataSet) => {
             return {
                 label: dataSet.label,
-                data: dataSet.data.slice(-10),
+                data: dataSet.data,
                 borderColor: dataSet.color,
                 fill: false,
                 cubicInterpolationMode: "monotone",
@@ -59,22 +60,29 @@ export default function Graph({
                         display: true,
                         text: yAxisLabel,
                     },
-                    beginAtZero: true,
-                    //   suggestedMin: -10,
-                    //   suggestedMax: 200
+                    beginAtZero: true
                 },
             },
         },
     };
-    const chartRef = useRef(null);
+    const chartRef = useRef<HTMLCanvasElement>(null);
+    const chartInstance = useRef<Chart>(null);
 
     useEffect(() => {
-        const myChart = new Chart(chartRef.current!!, config);
+        if (!chartInstance.current) {
+            chartInstance.current = new Chart(chartRef.current!!, config);
+        } else {
+            chartInstance.current.data = data;
+            chartInstance.current.update('none');
+        }
 
         return () => {
-            myChart.destroy();
+            if (chartInstance.current) {
+                chartInstance.current.destroy();
+                chartInstance.current = null;
+            }
         };
-    }, [data]);
+    }, [data, config]);
 
     return <canvas ref={chartRef} />;
 }

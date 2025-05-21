@@ -1,7 +1,7 @@
 import { Message, useWebSocketContext } from "@/app/lib/web-socket-context";
 import Obstacle from "./obstacle";
 import RobotPath, { Point } from "./robot-path";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Robot from "./robot";
 
 export const MAP_WIDTH = 5.48; // meters
@@ -14,6 +14,8 @@ export type ObstacleType = {
     y: number;
     radius: number;
     isHole: boolean;
+    relativeX: number;
+    relativeY: number;
 };
 
 export type Rect = {
@@ -31,7 +33,12 @@ export default function Map() {
     const [obstacles, setObstacles] = useState<ObstacleType[]>([]);
     const [robot, setRobot] = useState({ x: 448, y: 100, width: 71, height: 98, rotation: 0, posConfidenceRect: { x1: 0, y1: 0, x2: 0, y2: 0 } });
     useEffect(() => {
-        if (messages.length == 0) return;
+        if (messages.length == 0) {
+            // in the case of a reset, clear the path data
+            setPathData([]);
+            setOdometryPathData([]);
+            return;
+        }
         const lastMessage = messages[messages.length - 1];
         if (lastMessage.type === "path") {
             const data = (lastMessage?.message || []).map((point: any) => ([point.x, point.y]));
@@ -59,18 +66,28 @@ export default function Map() {
                 }
             }));
         }
+
         const obstaclesMessages = [...new Set(messages
             .filter((message: Message) => message.type === "obstacles")
             .map((message: Message) => message.message)
             .flat()
             .map((newObstacle: any) => {
-                return { x: newObstacle.position.x, y: newObstacle.position.y, radius: newObstacle.radius, isHole: true }
+                return { x: newObstacle.position.x, y: newObstacle.position.y, radius: newObstacle.radius, isHole: !newObstacle.is_rock, relativeX: newObstacle.relative_position.x, relativeY: newObstacle.relative_position.y };
             }))];
 
         setObstacles(obstaclesMessages);
     }, [messages]);
+
+    // used to focus the map div when the page loads
+    // so that keyboard controls work
+    const divRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        divRef?.current?.focus();
+    }, []);
+
     return (
-        <div style={{ padding: "1vw" }}>
+        <div style={{ padding: "1vw" }} ref={divRef}>
             <div
                 className="flex flex-wrap relative mx-auto gap-0"
                 style={{

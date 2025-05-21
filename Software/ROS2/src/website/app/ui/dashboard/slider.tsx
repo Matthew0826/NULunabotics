@@ -1,0 +1,55 @@
+import { Dispatch, SetStateAction, useState } from 'react';
+
+export default function Slider({ labels, value, setValue }: { labels: number[], value: number; setValue: Dispatch<SetStateAction<number>> | undefined }) {
+    const [isDragging, setIsDragging] = useState(false);
+
+    const handleChange = (e: any) => {
+        if (setValue) {
+            setValue(parseFloat(e.target.value));
+        }
+    };
+
+    return (
+        <div className="w-full max-w-md mx-auto py-8 px-4">
+            <div className="relative">
+                <div className="w-full h-1 bg-gray-200 rounded-full">
+                    <div
+                        className="absolute h-1 bg-zinc-800 rounded-full"
+                        style={{ width: `${value * 100}%` }}
+                    />
+                </div>
+                {labels.map((label, index) => (
+                    <div
+                        key={index}
+                        className="absolute h-3 w-[2px] bg-gray-400 top-1/2 left-1/2 transform -translate-y-1/2"
+                        style={{ left: `${index / (labels.length - 1) * 100}%` }}
+                    />
+                ))}
+                <div
+                    className={`absolute h-4 w-4 rounded-full bg-zinc-800 shadow transform -translate-y-1/2 -translate-x-1/2 top-1/2 cursor-pointer transition-transform ${isDragging ? 'scale-110' : 'hover:scale-110'}`}
+                    style={{ left: `${value * 100}%` }}
+                />
+                <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={value}
+                    onChange={handleChange}
+                    onMouseDown={() => setIsDragging(true)}
+                    onMouseUp={() => setIsDragging(false)}
+                    onTouchStart={() => setIsDragging(true)}
+                    onTouchEnd={() => setIsDragging(false)}
+                    className="absolute w-full top-0 opacity-0 h-4 cursor-pointer z-10"
+                />
+            </div>
+            <div className="flex justify-between mt-2">
+                {labels.map((label, index) => (
+                    <span key={index} className="text-xs text-gray-500 font-semibold">
+                        {label}
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+};

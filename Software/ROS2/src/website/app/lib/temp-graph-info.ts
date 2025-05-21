@@ -3,11 +3,16 @@ import { Message } from "./web-socket-context";
 export const tempGraphPower = {
     name: "Power",
     xAxisLabel: "time (s)",
-    yAxisLabel: "watts (W)",
+    yAxisLabel: "",
     dataSets: {
-        "Test Data": {
-            label: "Test Data",
-            color: "rgb(0, 0, 0)",
+        "current": {
+            label: "Current (A)",
+            color: "rgb(95, 188, 123)",
+            data: [],
+        },
+        "voltage": {
+            label: "Battery Voltage (V)",
+            color: "rgb(14, 18, 37)",
             data: [],
         },
     },
@@ -29,19 +34,19 @@ const getRock = (i: number) => {
 }
 
 export const tempStartingData: Message[] = [
-    {
-        type: "lidar",
-        message: [
-            { distance: 200, angle: (7 * Math.PI) / 4, weight: 0 },
-            { distance: 100, angle: (6 * Math.PI) / 4, weight: 0 },
-            { distance: 200, angle: (5 * Math.PI) / 4, weight: 0 },
-            { distance: 120, angle: Math.PI, weight: 0 },
-            { distance: 200, angle: (3 * Math.PI) / 4, weight: 0 },
-            { distance: 200, angle: (2 * Math.PI) / 4, weight: 0 },
-            { distance: 200, angle: Math.PI / 4, weight: 0 },
-            { distance: 200, angle: 0, weight: 0 },
-        ],
-    },
+    // {
+    //     type: "lidar",
+    //     message: [
+    //         { distance: 200, angle: (7 * Math.PI) / 4, weight: 0 },
+    //         { distance: 100, angle: (6 * Math.PI) / 4, weight: 0 },
+    //         { distance: 200, angle: (5 * Math.PI) / 4, weight: 0 },
+    //         { distance: 120, angle: Math.PI, weight: 0 },
+    //         { distance: 200, angle: (3 * Math.PI) / 4, weight: 0 },
+    //         { distance: 200, angle: (2 * Math.PI) / 4, weight: 0 },
+    //         { distance: 200, angle: Math.PI / 4, weight: 0 },
+    //         { distance: 200, angle: 0, weight: 0 },
+    //     ],
+    // },
     // {
     //     type: "obstacles",
     //     message: [

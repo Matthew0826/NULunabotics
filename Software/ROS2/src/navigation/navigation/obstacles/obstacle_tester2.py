@@ -27,8 +27,8 @@ class SimpleLogger:
         self.logger.error(msg)
 
 # Robot and LiDAR configuration
-ROBOT_WIDTH = 50.0   # cm
-ROBOT_LENGTH = 70.0  # cm
+ROBOT_WIDTH = 68 # units: cm
+ROBOT_LENGTH = 102  # units: cm
 ROBOT_HEIGHT = 30.0  # cm
 
 LIDAR_OFFSET_X = 0.0     # cm (0 = center of robot)

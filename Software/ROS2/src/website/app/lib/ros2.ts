@@ -1,6 +1,7 @@
 import * as rclnodejs from "rclnodejs";
 import { sendToClient } from "./sockets";
 import { Point as Vector2 } from "@/app/ui/map/robot-path";
+import { GamepadState } from "../ui/dashboard/gamepad-state-provider";
 const Plan = rclnodejs.require("lunabotics_interfaces/action/Plan");
 
 export const lidarPoints: Point[] = [];
@@ -11,8 +12,7 @@ export type Point = {
     weight: number;
 };
 
-const LUNABOTICS_LIDAR_ROTATION_TYPE =
-    "lunabotics_interfaces/msg/LidarRotation";
+const LUNABOTICS_LIDAR_ROTATION_TYPE = "lunabotics_interfaces/msg/LidarRotation";
 const LUNABOTICS_MOTORS_TYPE = "lunabotics_interfaces/msg/Motors";
 const LUNABOTICS_PATH_TYPE = "lunabotics_interfaces/srv/Path";
 const LUNABOTICS_OBSTACLE_TYPE = "lunabotics_interfaces/msg/Obstacle";
@@ -20,18 +20,38 @@ const LUNABOTICS_PLAN_TYPE = "lunabotics_interfaces/action/Plan";
 const LUNABOTICS_POINT_TYPE = "lunabotics_interfaces/msg/Point";
 const LUNABOTICS_RECT_TYPE = "lunabotics_interfaces/msg/Rect";
 const LUNABOTICS_PATH_VISUAL_TYPE = "lunabotics_interfaces/msg/PathVisual";
+const LUNABOTICS_EXCAVATOR_TYPE = "lunabotics_interfaces/msg/Excavator";
+const LUNABOTICS_EXCAVATOR_PERCENT_TYPE = "lunabotics_interfaces/msg/ExcavatorPotentiometer";
+const LUNABOTICS_ORIENTATION_CORRECTION_TYPE = "lunabotics_interfaces/msg/AccelerometerCorrection";
+const LUNABOTICS_POWER_TYPE = "lunabotics_interfaces/msg/PowerData";
 const ROS2_FLOAT_TYPE = "std_msgs/msg/Float32";
+const ROS2_BOOL_TYPE = "std_msgs/msg/Bool";
+const ROS2_STRING_TYPE = "std_msgs/msg/String";
+const ROS2_BATTERY_TYPE = "sensor_msgs/msg/BatteryState";
+const LUNABOTICS_SERIAL_PORT_TYPE = "lunabotics_interfaces/msg/SerialPortStates";
+const LUNABOTICS_CONFIG_TYPE = "lunabotics_interfaces/msg/Config";
 
-export const publishToROS2 = (messageJson: any) => {
+export const publishMotorsToROS2 = (messageJson: GamepadState) => {
     const motorsMsg = rclnodejs.createMessageObject(LUNABOTICS_MOTORS_TYPE);
-    motorsMsg.front_left_wheel = messageJson.y1;
-    motorsMsg.back_left_wheel = messageJson.y1;
-    motorsMsg.front_right_wheel = messageJson.y2;
-    motorsMsg.back_right_wheel = messageJson.y2;
-    // motorsMsg.conveyor = messageJson.buttonLeft ? 1 : 0;
-    // motorsMsg.outtake = messageJson.buttonRight ? 1 : 0;
+    const x = messageJson.x;
+    const y = messageJson.y;
+    const left = y + x;
+    const right = y - x;
+    const maxMagnitude = Math.max(1, Math.abs(left), Math.abs(right));
+    const leftSpeed = left / maxMagnitude;
+    const rightSpeed = right / maxMagnitude;
+    motorsMsg.front_left_wheel = leftSpeed;
+    motorsMsg.back_left_wheel = leftSpeed;
+    motorsMsg.front_right_wheel = rightSpeed;
+    motorsMsg.back_right_wheel = rightSpeed;
     rosControlsPublisher.publish(motorsMsg);
-    // console.log("Published: ", messageJson);
+
+    const excavatorMsg = rclnodejs.createMessageObject(LUNABOTICS_EXCAVATOR_TYPE);
+    const excavatorSpeed = messageJson.actuatorPower;
+    excavatorMsg.actuator_speed = messageJson.isActuator ? excavatorSpeed : 0.0;
+    excavatorMsg.excavator_lifter_speed = messageJson.isActuator ? 0.0 : excavatorSpeed;
+    excavatorMsg.conveyor_speed = messageJson.conveyorSpeed;
+    rosExcavatorPublisher.publish(excavatorMsg);
 };
 
 export const publishMockObstacle = (messageJson: any) => {
@@ -44,6 +64,34 @@ export const publishMockObstacle = (messageJson: any) => {
         rosMockObstaclePublisher.publish(obstacleMsg);
     }
 };
+
+export const publishSimReset = (messageJson: any) => {
+    const resetMsg = rclnodejs.createMessageObject(ROS2_BOOL_TYPE);
+    resetMsg.data = true;
+    rosSimResetPublisher.publish(resetMsg);
+}
+
+export const publishConfig = (messageJson: any) => {
+    const configMsg = rclnodejs.createMessageObject(LUNABOTICS_CONFIG_TYPE);
+    configMsg.node = messageJson.node;
+    configMsg.category = messageJson.category;
+    configMsg.setting = messageJson.setting;
+    configMsg.value = messageJson.value;
+    rosConfigPublisher.publish(configMsg);
+};
+
+export const publishCodeUpload = (messageJson: any) => {
+    const codeUploadMsg = rclnodejs.createMessageObject(ROS2_STRING_TYPE);
+    codeUploadMsg.data = messageJson.port;
+    rosCodeUploadPublisher.publish(codeUploadMsg);
+}
+
+export const publishOrientationCorrection = (messageJson: any) => {
+    const orientationMsg = rclnodejs.createMessageObject(LUNABOTICS_ORIENTATION_CORRECTION_TYPE);
+    orientationMsg.initial_angle = messageJson.orientationCorrection;
+    orientationMsg.should_reset = false;
+    rosOrientationCorrectionPublisher.publish(orientationMsg);
+}
 
 export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, callback: (point: any[]) => void) => {
     // To view service events use the following command:
@@ -112,7 +160,7 @@ export async function sendPlanAction(start: any, should_excavate: boolean, shoul
     if (goalHandle.isSucceeded()) {
         console.log(`Goal succeeded in ${result.time_elapsed_millis} ms`);
     } else {
-        console.log(`Goal failed with status: ${result}`);
+        console.log(`Goal failed with status: ${goalHandle.status}`);
     }
     return result;
 }
@@ -135,6 +183,7 @@ export function startLoopingAction(excavate: boolean) {
 }
 
 export async function stopLoopingAction() {
+    if (!doLoopAction || !goalHandle) return;
     doLoopAction = false;
     const response = await goalHandle.cancelGoal();
 
@@ -160,9 +209,13 @@ async function timerCallback(goalHandle: rclnodejs.ClientGoalHandle<typeof LUNAB
 }
 
 
-let rosNode: rclnodejs.Node;
 let rosControlsPublisher: rclnodejs.Publisher<typeof LUNABOTICS_MOTORS_TYPE>;
+let rosExcavatorPublisher: rclnodejs.Publisher<typeof LUNABOTICS_EXCAVATOR_TYPE>;
 let rosMockObstaclePublisher: rclnodejs.Publisher<typeof LUNABOTICS_OBSTACLE_TYPE>;
+let rosSimResetPublisher: rclnodejs.Publisher<typeof ROS2_BOOL_TYPE>;
+let rosConfigPublisher: rclnodejs.Publisher<typeof LUNABOTICS_CONFIG_TYPE>;
+let rosCodeUploadPublisher: rclnodejs.Publisher<typeof ROS2_STRING_TYPE>;
+let rosOrientationCorrectionPublisher: rclnodejs.Publisher<typeof LUNABOTICS_ORIENTATION_CORRECTION_TYPE>;
 let rosClient: rclnodejs.Client<typeof LUNABOTICS_PATH_TYPE>;
 let planActionClient: rclnodejs.ActionClient<typeof LUNABOTICS_PLAN_TYPE>;
 
@@ -170,7 +223,6 @@ let robotPosition = { x: 448, y: 100 };
 
 rclnodejs.init().then(() => {
     const node = new rclnodejs.Node("website_backend");
-    rosNode = node;
     rosControlsPublisher = node.createPublisher(
         LUNABOTICS_MOTORS_TYPE,
         "physical_robot/motors"
@@ -179,21 +231,31 @@ rclnodejs.init().then(() => {
         LUNABOTICS_OBSTACLE_TYPE,
         "navigation/obstacles"
     );
+    rosSimResetPublisher = node.createPublisher(
+        ROS2_BOOL_TYPE,
+        "website/reset"
+    );
+    rosExcavatorPublisher = node.createPublisher(
+        LUNABOTICS_EXCAVATOR_TYPE,
+        "/physical_robot/excavator"
+    );
+    rosConfigPublisher = node.createPublisher(
+        LUNABOTICS_CONFIG_TYPE,
+        "website/config"
+    );
+    rosCodeUploadPublisher = node.createPublisher(
+        ROS2_STRING_TYPE,
+        "website/arduino_upload"
+    );
+    rosOrientationCorrectionPublisher = node.createPublisher(
+        LUNABOTICS_ORIENTATION_CORRECTION_TYPE,
+        "sensors/accelerometer_correction"
+    );
     node.createSubscription(
         LUNABOTICS_LIDAR_ROTATION_TYPE,
         "sensors/lidar",
         (msg: any) => {
-            const data = msg.points;
-            lidarPoints.length = 0;
-            for (let i = 0; i < data.length; i++) {
-                const distance = data[i].distance;
-                const angle = data[i].angle;
-                const weight = data[i].weight;
-                if (distance < 15000)
-                    lidarPoints.push({ distance, angle, weight });
-            }
-            console.log(data);
-            sendToClient("lidar", lidarPoints);
+            sendToClient("lidar", msg.points, true);
         }
     );
     let previousObstacle: any = null;
@@ -212,21 +274,21 @@ rclnodejs.init().then(() => {
         (msg: any) => {
             robotPosition.x = msg.x;
             robotPosition.y = msg.y;
-            sendToClient("position", msg);
+            sendToClient("position", msg, false);
         }
     );
     node.createSubscription(
         LUNABOTICS_RECT_TYPE,
         "/sensors/position_confidence",
         (msg: any) => {
-            sendToClient("position_confidence", msg);
+            sendToClient("position_confidence", msg, true);
         }
     );
     node.createSubscription(
         ROS2_FLOAT_TYPE,
         "sensors/orientation",
         (msg: any) => {
-            sendToClient("orientation", msg.data);
+            sendToClient("orientation", msg.data, true);
         }
     );
     node.createSubscription(
@@ -243,7 +305,55 @@ rclnodejs.init().then(() => {
             sendToClient("odometry_path", msg.nodes);
         }
     );
-
+    node.createSubscription(
+        ROS2_BOOL_TYPE,
+        "website/reset",
+        (msg: any) => {
+            sendToClient("reset", msg.data);
+        }
+    );
+    node.createSubscription(
+        LUNABOTICS_SERIAL_PORT_TYPE,
+        "sensors/serial_port_state",
+        (msg: any) => {
+            sendToClient("serial_port_state", msg);
+        }
+    );
+    node.createSubscription(
+        LUNABOTICS_EXCAVATOR_TYPE,
+        "physical_robot/excavator",
+        (msg: any) => {
+            sendToClient("excavator", msg, true);
+        }
+    )
+    node.createSubscription(
+        LUNABOTICS_MOTORS_TYPE,
+        "physical_robot/motors",
+        (msg: any) => {
+            sendToClient("motors", msg, false);
+        }
+    )
+    node.createSubscription(
+        LUNABOTICS_EXCAVATOR_PERCENT_TYPE,
+        "sensors/excavator_percent",
+        (msg: any) => {
+            sendToClient("excavator_percent", msg, true);
+        }
+    )
+    node.createSubscription(
+        ROS2_FLOAT_TYPE,
+        "sensors/excavator_distance",
+        (msg: any) => {
+            sendToClient("distance_sensor", msg, true);
+        }
+    )
+    node.createSubscription(
+        ROS2_BATTERY_TYPE,
+        "battery/state",
+        (msg: any) => {
+            sendToClient("battery", msg, true);
+        }
+    )
     rosClient = node.createClient(
         LUNABOTICS_PATH_TYPE,
         'pathfinder'

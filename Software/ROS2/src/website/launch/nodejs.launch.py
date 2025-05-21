@@ -8,7 +8,7 @@ from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-
+    """Launches the website using Node.js."""
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
 
     share_directory = get_package_share_directory('website')
@@ -21,7 +21,7 @@ def generate_launch_description():
 
     start_javascript_node = Node(
         name='test_node',
-        executable='/home/isaac/.nvm/versions/node/v22.14.0/bin/node',
+        executable='/home/selene/.nvm/versions/node/v22.14.0/bin/node',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time}],
         arguments=[

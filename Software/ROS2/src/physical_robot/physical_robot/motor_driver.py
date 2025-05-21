@@ -45,8 +45,8 @@ class MotorDriver(Node):
             pass
 
     def listener_callback(self, msg):
-        left = msg.left_wheels
-        right = msg.right_wheels
+        left = msg.front_left_wheel
+        right = msg.front_right_wheel
         if abs(left) < 0.05:
             left = 0
         if abs(right) < 0.05:
@@ -54,11 +54,11 @@ class MotorDriver(Node):
         is_delta_left_small = abs(self.prev_left - left) < 0.05
         is_delta_right_small = abs(self.prev_right - right) < 0.05
         if not is_delta_left_small:
-            self.send_serial_packet(LF_CH, -left)
-            self.send_serial_packet(LB_CH, -left)
+            self.send_serial_packet(LF_CH, left)
+            self.send_serial_packet(LB_CH, left)
         if not is_delta_right_small:
-            self.send_serial_packet(RF_CH, right)
-            self.send_serial_packet(RB_CH, right)
+            self.send_serial_packet(RF_CH, -right)
+            self.send_serial_packet(RB_CH, -right)
         self.prev_left = left
         self.prev_right = right
 

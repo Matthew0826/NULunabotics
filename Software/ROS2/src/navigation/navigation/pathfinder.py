@@ -3,17 +3,18 @@ from rclpy.node import Node
 
 from lunabotics_interfaces.msg import Point, Obstacle, PathVisual
 from lunabotics_interfaces.srv import Path
+from std_msgs.msg import Bool
 
-from navigation.pathfinder_helper import *
+from navigation.pathfinding import *
 from sensors.spin_node_helper import spin_nodes
 import math
 
 # Note: 0, 0 is defined as the top left corner of the map
 
 # TODO: make this a ros parameter
-ROBOT_WIDTH = 71 # units: cm
-ROBOT_LENGTH = 98  # units: cm
-ROBOT_RADIUS = int(math.sqrt((ROBOT_WIDTH**2 + ROBOT_LENGTH**2)) / 2.0)
+ROBOT_WIDTH = 68 # units: cm
+ROBOT_LENGTH = 102  # units: cm
+ROBOT_RADIUS = int(math.sqrt((ROBOT_WIDTH**2 + ROBOT_LENGTH**2)) / 2.0) + 4
 
 # threshold needed for a cell to be considered an obstacle between 0 and 1
 INITIAL_OBSTACLE_CONFIDENCE_THRESHOLD = 0.2
@@ -40,6 +41,12 @@ class Pathfinder(Node):
             'navigation/obstacles',
             self.obstacle_callback,
             10)
+        # resets from the website
+        self.reset_subscription = self.create_subscription(
+            Bool,
+            'website/reset',
+            self.reset_callback,
+            10)
         # requests are start and end points for the pathfinder,
         # and it returns a list of points representing the path
         # Note: may return empty list meaning no path was found!
@@ -47,16 +54,25 @@ class Pathfinder(Node):
         # represents the map as a grid of GRID_RESOLUTION cm squares
         # each square is a float from 0 to 1 representing the probability of that square being an obstacle
         # 0 = no obstacle, 1 = obstacle
+        self.grid = []
+        self.init_grid()
+        
+        self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/path', 10)
+    
+    def init_grid(self):
         # begin with all obstacles, then clear the center of the map. this is because the robot should not drive near the edges
         self.grid = [[1 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
         # remove everything that is ROBOT_RADIUS cm away from the edges
-        print(ROBOT_RADIUS)
         for i in range(int(ROBOT_RADIUS), int(MAP_WIDTH - ROBOT_RADIUS)):
             for j in range(int(ROBOT_RADIUS), int(MAP_HEIGHT - ROBOT_RADIUS)):
                 grid_x, grid_y = world_to_grid(i, j)
                 self.grid[grid_y][grid_x] = 0
-        
-        self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/path', 10)
+        # clear all points in berm zone
+        for i in range(MAP_WIDTH):
+            for j in range(MAP_HEIGHT):
+                if get_zone(i, j) == BERM_ZONE:
+                    grid_x, grid_y = world_to_grid(i, j)
+                    self.grid[grid_y][grid_x] = 0
 
     def calculate_path(self, start, end, confidence_threshold):
         """Finds a path from start to end using the A* algorithm."""
@@ -73,7 +89,8 @@ class Pathfinder(Node):
     def add_confidence(self, world_x, world_y, confidence):
         """Adds confidence to the grid at the given world coordinates in cm."""
         grid_x, grid_y = world_to_grid(world_x, world_y)
-        if get_zone(world_x, world_y) != OUT_OF_BOUNDS:
+        zone = get_zone(world_x, world_y)
+        if zone != OUT_OF_BOUNDS and zone != BERM_ZONE:
             # max confidence is 1
             self.grid[grid_y][grid_x] = min(1, self.grid[grid_y][grid_x] + confidence)
 
@@ -126,14 +143,13 @@ class Pathfinder(Node):
             path = self.calculate_path(start, end, confidence_threshold)
             if len(path) == 0:
                 confidence_threshold += OBSTACLE_CONFIDENCE_STRENGTH
-        # filter out points that are 7 cm away from each other
-        filtered_path = self.filter_nearby_points(path, 7)
+        # filter out points that are 11 cm away from each other
+        filtered_path = self.filter_nearby_points(path, 11)
         # get path in world points
         filtered_path = [grid_to_world(node.x, node.y) for node in filtered_path]
         response.nodes = [Point(x=point[0],y=point[1]) for point in filtered_path]
-        print("Path found with confidence threshold:", confidence_threshold)
-        print("Start:", start.x, ",", start.y, "  End:", end.x, ",", end.y)
-        self.debug_map()
+        # self.get_logger().info(f"Path found with confidence threshold: {confidence_threshold} (({start.x}, {start.y}) till ({end.x}, {end.y}))")
+        # self.debug_map()
         self.website_path_visualizer.publish(PathVisual(nodes=response.nodes))
         return response
     
@@ -146,6 +162,12 @@ class Pathfinder(Node):
                 confidence = self.grid[i][j]
                 print(ascii_options[min(9, int(confidence * 10))], end="")
             print()
+    
+    def reset_callback(self, msg):
+        """Resets the grid to all obstacles and clears the center of the map."""
+        if msg.data:
+            self.get_logger().info("Resetting pathfinder grid")
+        self.init_grid()
 
 
 def main(args=None):

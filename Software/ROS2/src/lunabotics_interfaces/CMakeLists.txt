@@ -27,7 +27,11 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/BeaconDistances.msg"
   "msg/PowerData.msg"
   "msg/AccelerometerCorrection.msg"
+  "msg/SerialPortState.msg"
+  "msg/SerialPortStates.msg"
+  "msg/Config.msg"
   "srv/Path.srv"
+  "srv/TunePID.srv"
   "action/SelfDriver.action"
   "action/Plan.action"
 )

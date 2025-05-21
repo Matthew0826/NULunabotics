@@ -1,0 +1,131 @@
+import { useEffect, useState } from "react";
+import config from "public/config.json";
+import Config from "./config";
+import { useWebSocketContext } from "@/app/lib/web-socket-context";
+
+// type ConfigType = {
+//     node: string;
+//     categories: {
+//         category: string;
+//         settings: {
+//             setting: string;
+//             value: string | number | boolean;
+//         }[];
+//     }[];
+// }[];
+
+type ConfigType = {
+    node: string;
+    categories: {
+        category: string;
+        settings: {
+            setting: string;
+            value: string;
+        }[];
+    }[];
+}[];
+
+type Profiles = {
+    [key: string]: ConfigType;
+};
+
+export default function ConfigPanel() {
+    // const [configState, setConfig] = useState<ConfigType | null>(null);
+
+    // important states
+    const [loadedConfigState, setLoadedConfigState] = useState<Profiles | null>(null);
+    const [profileState, setProfileState] = useState<string | null>(null);
+
+    const { messages, sendToServer } = useWebSocketContext();
+
+    // using this to listen to the messages from the server
+    useEffect(() => {
+        // return if no message from the server
+        if (messages.length <= 0) { return; }
+
+        // get the last message
+        const lastMessage = messages[messages.length - 1];
+
+        // we can now load the config profile
+        if (lastMessage.type === "loadConfigProfile") {
+            const newProfile = lastMessage.message;
+            setProfileState(newProfile.profile);
+            setLoadedConfigState((prevConfig) => {
+                if (prevConfig) {
+                    return { ...prevConfig, [newProfile]: newProfile.config };
+                } else {
+                    return { [newProfile]: newProfile.config };
+                }
+            });
+        }
+    }, [messages]);
+
+    // request the config from the server for the new profile
+    const handleLoadProfile = (profileName: string) => {
+        sendToServer("loadConfigProfile", profileName);
+    };
+
+    // request the server save current config to current profile
+    const handleSaveProfile = () => {
+        if (loadedConfigState && profileState) {
+            sendToServer("saveConfigProfile", {
+                profileName: profileState,
+                config: loadedConfigState,
+            });
+        }
+    };
+
+    // update our config state from user interaction
+    const handleTextboxInteraction = (profile: string, node: string, category: string, setting: string, value: string) => {
+        setLoadedConfigState((prev) => {
+            if (!prev) return prev;
+
+            const newConfig = [...prev[profile]];
+            const nodeIndex = newConfig.findIndex((item) => item.node === node);
+            if (nodeIndex !== -1) {
+                const categoryIndex = newConfig[nodeIndex].categories.findIndex((cat) => cat.category === category);
+                if (categoryIndex !== -1) {
+                    const settingIndex = newConfig[nodeIndex].categories[categoryIndex].settings.findIndex((set) => set.setting === setting);
+                    if (settingIndex !== -1) {
+                        newConfig[nodeIndex].categories[categoryIndex].settings[settingIndex].value = value;
+                    }
+                }
+            }
+            const newProfiles = { ...prev };
+            newProfiles[profile] = newConfig;
+            return newProfiles;
+        });
+    }
+
+    // ensure we have loaded before rendering
+    if (!loadedConfigState || !profileState) {
+        return <div className="flex flex-col gap-4 p-6 h-full w-full">Loading configuration...</div>;
+    }
+
+    // actual rendering of the config panel
+    return (
+        <div className="flex flex-col gap-4 p-6 h-full w-full">
+            <p className="text-xs">Note: doesn't save! Remember to paste your values somewhere.</p>
+            {loadedConfigState[profileState].map((item, nodeIndex) => (
+                <div className="flex flex-col gap-2 border-2 border-slate-800 p-4 rounded-lg" key={`node-${item.node}-${nodeIndex}`}>
+                    <b className="text-center">{item.node}</b>
+                    {item.categories.map((category, catIndex) => (
+                        <div key={`category-${item.node}-${category.category}-${catIndex}`} className="mb-4">
+                            <p className="text-center">{category.category.replaceAll("_", " ")}</p>
+                            <div className="text-sm text-gray-700 flex flex-row gap-2">
+                                {category.settings.map((setting, settingIndex) => (
+                                    <Config
+                                        key={`setting-${item.node}-${category.category}-${setting.setting}-${settingIndex}`}
+                                        setting={setting.setting}
+                                        value={setting.value.toString()}
+                                        handleChange={(value) => handleTextboxInteraction(profileState, item.node, category.category, setting.setting, value)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ))}
+        </div>
+    );
+}

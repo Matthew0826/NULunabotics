@@ -1,0 +1,16 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/halgendy/Documents/programming/university/NULunabotics/Software/ROS2/install/physical_robot/lib/python3.12/site-packages",
+        "/home/halgendy/Documents/programming/university/NULunabotics/Software/ROS2/install/navigation/lib/python3.12/site-packages",
+        "/home/halgendy/Documents/programming/university/NULunabotics/Software/ROS2/install/sensors/lib/python3.12/site-packages",
+        "/home/halgendy/Documents/programming/university/NULunabotics/Software/ROS2/install/lunabotics_interfaces/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/halgendy/Documents/programming/university/NULunabotics/Software/ROS2/install/physical_robot/lib/python3.12/site-packages",
+        "/home/halgendy/Documents/programming/university/NULunabotics/Software/ROS2/install/navigation/lib/python3.12/site-packages",
+        "/home/halgendy/Documents/programming/university/NULunabotics/Software/ROS2/install/sensors/lib/python3.12/site-packages",
+        "/home/halgendy/Documents/programming/university/NULunabotics/Software/ROS2/install/lunabotics_interfaces/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ]
+}

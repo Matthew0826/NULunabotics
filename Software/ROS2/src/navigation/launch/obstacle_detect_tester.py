@@ -17,20 +17,28 @@ def generate_launch_description():
         'launch',
         'ld19.launch.py'
     )
+    website_launch_path = os.path.join(
+        get_package_share_directory('website'),
+        'launch',
+        'nodejs.launch.py'
+    )
     return LaunchDescription([
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(ld19_launch_path)
         ),
-        # Node(
-        #     package='navigation',
-        #     executable='obstacle_detector',
-        #     output='screen'
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(website_launch_path),
         # ),
-        # Node(
-        #     package='sensors',
-        #     executable='mock_positioning',
-        #     output='screen'
-        # ),
+        Node(
+            package='navigation',
+            executable='obstacle_detector',
+            output='screen'
+        ),
+        Node(
+            package='sensors',
+            executable='mock_positioning',
+            output='screen'
+        ),
         Node(
             package='sensors',
             executable='lidar_forwarder',

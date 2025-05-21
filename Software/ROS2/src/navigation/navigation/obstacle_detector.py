@@ -55,27 +55,31 @@ class ObstacleDetector(Node):
             self.acceleration_callback,
             10)
         self.obstacle_publisher = self.create_publisher(Obstacle, 'navigation/obstacles', 10)
-        self.robot_position = None
-        self.robot_orientation = None
+        self.robot_position = (448, 100)
+        self.robot_orientation = 0.0
         self.acceleration = (0, 0)
         self.average = MovingAverage(10)
         self.point_processor = PointProcessor(self.get_logger())
         self.feature_detector = FeatureDetector(self.get_logger())
         # self.long_term_average = MovingAverage(200)
         
-    def publish_obstacle(self, x, y, radius):
-        if self.robot_position is None or self.robot_orientation is None:
-            return
+    def publish_obstacle(self, x, y, radius, is_rock):
         obstacle = Obstacle()
         position = Point()
+        relative_position = Point()
+        relative_position.x = x
+        relative_position.y = y
         # adjust x and y based on robot orientation
-        # x, y = rotate_vector_2d(np.array([x + ROBOT_LIDAR_OFFSET[0], y + ROBOT_LIDAR_OFFSET[1]]), self.robot_orientation)
-        # world_x = self.robot_position[0] + x
-        # world_y = self.robot_position[1] + y
-        position.x = x#world_x
-        position.y = y#world_y
+        if self.robot_position is not None and self.robot_orientation is not None:
+            x, y = rotate_vector_2d(np.array([x + ROBOT_LIDAR_OFFSET[0], y + ROBOT_LIDAR_OFFSET[1]]), self.robot_orientation + 90.0)
+            x = self.robot_position[0] + x
+            y = self.robot_position[1] + y
+        position.x = float(x)
+        position.y = float(y)
         obstacle.position = position
-        obstacle.radius = radius    
+        obstacle.radius = float(radius)
+        obstacle.is_rock = is_rock
+        obstacle.relative_position = relative_position
         self.obstacle_publisher.publish(obstacle)
     
     def is_robot_moving(self):
@@ -95,14 +99,14 @@ class ObstacleDetector(Node):
         if not self.average.is_full():
             return
         # calculate average
-        average_points = self.average.get_average()
+        average_points = self.average.get_average_points()
         # take out outliers
         points = self.point_processor.preprocess(np.array(average_points))
         # use curvature to find features (rocks or craters)
         features = self.feature_detector.detect_features(points)
         for feature in features:
             self.publish_obstacle(*feature)
-        self.recent_average.clear()
+        self.average.clear()
     
     def position_callback(self, msg):
         self.robot_position = (msg.x, msg.y)
