@@ -1,3 +1,5 @@
+"use client";
+
 import {createContext, Dispatch, ReactNode, SetStateAction, useContext, useEffect, useRef, useState} from "react";
 import {tempStartingData} from "@/app/lib/temp-graph-info";
 import {Message, useWebSocketContext} from "@/app/lib/web-socket-context";
@@ -28,11 +30,11 @@ const RobotContext = createContext<RobotContextType>({
     setRightWheelSpeed: () => { },
     excavatorPosition: 0,
     setExcavatorPosition: () => { },
-    lidarPoints: Point,
+    lidarPoints: [],
     setLidarPoints: () => {},
     lidarOrigin: {
         x: -0.5, y: 0.5, z: 0.75,
-        roll:0, pitch:Math.PI/4, yaw:Math.PI
+        roll:0, pitch:Math.PI/4, yaw:0
     },
 });
 
@@ -48,7 +50,7 @@ export default function RobotContextProvider({ children }: { children: ReactNode
 
     const lidarOrigin: Pos3D = {
         x: 0.3, y: 0.25, z: -0.5,
-        roll:0, pitch:-Math.PI/6, yaw:3*Math.PI/2
+        roll:0, pitch:-Math.PI/6, yaw:-Math.PI/2
     };
 
     const { messages } = useWebSocketContext();

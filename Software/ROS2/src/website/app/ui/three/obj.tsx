@@ -1,10 +1,10 @@
 // ObjModelAnimator.tsx
-import { useEffect, useRef, useState } from 'react';
+import {useEffect, useRef, useState} from 'react';
 import * as THREE from 'three';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
-import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { useGamepadManagerContext } from "@/app/ui/dashboard/gamepad-state-provider";
+import {OBJLoader} from 'three/examples/jsm/loaders/OBJLoader.js';
+import {MTLLoader} from 'three/examples/jsm/loaders/MTLLoader.js';
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
+import {useGamepadManagerContext} from "@/app/ui/dashboard/gamepad-state-provider";
 import {Box3, Group, Object3DEventMap} from "three";
 import {useRobotContext} from "@/app/lib/robot-context";
 
@@ -28,30 +28,25 @@ interface ObjModelAnimatorProps {
     }
 }
 
-interface ModelPart {
-    name: string;
-    object: THREE.Object3D;
-}
-
 const ObjModelAnimator = ({
-    baseFilename,
-    wheelFilename,
-    excavatorFilename,
-    backgroundColor = '#ffffff',
-    transparent = true,
-    width = '100%',
-    height = '100%',
-    enableControls = true,
-    controlsConfig = {
-        enableZoom: true,
-        enablePan: true,
-        autoRotate: false,
-        autoRotateSpeed: 1.0,
-        dampingFactor: 0.05,
-        maxPolarAngle: Math.PI,
-        minPolarAngle: 0
-    }
-}: ObjModelAnimatorProps) => {
+                              baseFilename,
+                              wheelFilename,
+                              excavatorFilename,
+                              backgroundColor = '#ffffff',
+                              transparent = true,
+                              width = '100%',
+                              height = '100%',
+                              enableControls = true,
+                              controlsConfig = {
+                                  enableZoom: true,
+                                  enablePan: true,
+                                  autoRotate: false,
+                                  autoRotateSpeed: 1.0,
+                                  dampingFactor: 0.05,
+                                  maxPolarAngle: Math.PI,
+                                  minPolarAngle: 0
+                              }
+                          }: ObjModelAnimatorProps) => {
     const mountRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     // const [modelParts, setModelParts] = useState<ModelPart[]>([]);
@@ -61,7 +56,7 @@ const ObjModelAnimator = ({
 
     const MODEL_SCALE = 0.2;
 
-    const { leftWheelSpeed, rightWheelSpeed, excavatorPosition, lidarPoints, lidarOrigin } = useRobotContext();
+    const {leftWheelSpeed, rightWheelSpeed, excavatorPosition, lidarPoints, lidarOrigin} = useRobotContext();
 
     // Scene references stored for access in animation functions
     const sceneRef = useRef<{
@@ -222,7 +217,7 @@ const ObjModelAnimator = ({
         // Origin sphere
         const originMesh = new THREE.Mesh(
             new THREE.CylinderGeometry(0.05, 0.05, 0.02, 16, 3),
-            new THREE.MeshStandardMaterial({ color: 0xff0000 })
+            new THREE.MeshStandardMaterial({color: 0xff0000})
         );
         originMesh.position.set(lidarOrigin.x, lidarOrigin.y, lidarOrigin.z);
         originMesh.rotation.set(lidarOrigin.pitch, lidarOrigin.yaw, lidarOrigin.roll);
@@ -230,23 +225,6 @@ const ObjModelAnimator = ({
 
         // Clear existing points if re-rendering
         const lidarPointGroup = new THREE.Group();
-
-        // // Convert LIDAR points to 3D
-        // lidarPoints.forEach(({ distance, angle, weight }) => {
-        //     const totalYaw = lidarOrigin.yaw + angle;
-        //     const pitch = lidarOrigin.pitch;
-        //
-        //     const x = lidarOrigin.x + distance * Math.cos(pitch) * Math.cos(totalYaw) * MODEL_SCALE;
-        //     const y = lidarOrigin.y + distance * Math.sin(pitch) * MODEL_SCALE;
-        //     const z = lidarOrigin.z + distance * Math.cos(pitch) * Math.sin(totalYaw) * MODEL_SCALE;
-        //
-        //     const pointMesh = new THREE.Mesh(
-        //         new THREE.SphereGeometry(0.005, 8, 8),
-        //         new THREE.MeshStandardMaterial({ color: 0x00ff00 })
-        //     );
-        //     pointMesh.position.set(x, y, z);
-        //     lidarPointGroup.add(pointMesh);
-        // });
 
         scene.add(lidarPointGroup);
 
@@ -341,7 +319,7 @@ const ObjModelAnimator = ({
 
                 // Rotate the excavator model
                 if (sceneRef.current.excavatorModel && excavatorPosition) {
-                    sceneRef.current.excavatorModel.rotation.x = excavatorPosition * -30/180 * Math.PI; // About 30 degrees moves it from fully up to down.
+                    sceneRef.current.excavatorModel.rotation.x = excavatorPosition * -30 / 180 * Math.PI; // About 30 degrees moves it from fully up to down.
                 }
             }
 
@@ -381,20 +359,31 @@ const ObjModelAnimator = ({
 
         const group = new THREE.Group();
 
-        // LIDAR points
-        lidarPoints.forEach(({ distance, angle, weight }) => {
-            const totalYaw = lidarOrigin.yaw + angle;
-            const pitch = lidarOrigin.pitch;
+        const euler = new THREE.Euler(lidarOrigin.pitch, lidarOrigin.yaw, 0, 'XYZ');
 
-            const x = lidarOrigin.x + distance * Math.cos(pitch) * Math.cos(totalYaw) * MODEL_SCALE;
-            const y = lidarOrigin.y + distance * Math.sin(pitch) * MODEL_SCALE;
-            const z = lidarOrigin.z + distance * Math.cos(pitch) * Math.sin(totalYaw) * MODEL_SCALE;
+        lidarPoints.forEach(({distance, angle}) => {
+            // Step 1: Direction in local XZ plane
+            const localDir = new THREE.Vector3(
+                Math.sin(angle), // right
+                0,               // up/down stays zero in local plane
+                Math.cos(angle)  // forward
+            );
+
+            // Step 2: Rotate into world space
+            const worldDir = localDir.clone().applyEuler(euler);
+
+            // Step 3: Scale and offset from origin
+            const worldPoint = worldDir.multiplyScalar(distance * MODEL_SCALE).add(new THREE.Vector3(
+                lidarOrigin.x, lidarOrigin.y, lidarOrigin.z
+            ));
+
+            const colorDistance = Math.round(Math.min(Math.max(1, distance / 10 * 255), 255));
 
             const pointMesh = new THREE.Mesh(
                 new THREE.SphereGeometry(0.005, 8, 8),
-                new THREE.MeshStandardMaterial({ color: 0x00ff00 })
+                new THREE.MeshStandardMaterial({color: `#${(255 - colorDistance).toString(16)}${colorDistance.toString(16)}00`})
             );
-            pointMesh.position.set(x, y, z);
+            pointMesh.position.copy(worldPoint);
             group.add(pointMesh);
         });
 
@@ -404,8 +393,8 @@ const ObjModelAnimator = ({
 
 
     return (
-        <div ref={containerRef} style={{ width, height, position: 'relative' }}>
-            <div ref={mountRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
+        <div ref={containerRef} style={{width, height, position: 'relative'}}>
+            <div ref={mountRef} style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%'}}/>
             {isLoading && (
                 <div style={{
                     position: 'absolute',
