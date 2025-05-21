@@ -1,4 +1,5 @@
-import { GamepadState } from "../ui/dashboard/gamepad-state-provider";
+import {GamepadState} from "@/app/contexts/gamepad-context";
+import React from "react";
 
 function setupGamePad() {
     window.addEventListener("gamepadconnected", (event) => {

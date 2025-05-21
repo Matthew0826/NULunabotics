@@ -1,4 +1,4 @@
-import { useState } from "react";
+import {ReactNode, useState} from "react";
 
 export default function Panel({
     children,
@@ -6,7 +6,7 @@ export default function Panel({
     canHide = true,
     hiddenByDefault = false
 }: {
-    children: React.ReactNode;
+    children: ReactNode;
     title: string;
     canHide?: boolean;
     hiddenByDefault?: boolean;
@@ -19,7 +19,7 @@ export default function Panel({
         <div className="flex-col h-full items-center rounded-xl p-6 gap-x-4 bg-black-900/50 border border-black-800 bg-slate-100">
             {(title || canHide) && <div className="flex flex-row items-center gap-4 justify-center w-full">
                 {title && (
-                    <h1 className="text-2xl font-bold text-gray-800 text-3xl text-center">
+                    <h1 className="font-bold text-gray-800 text-3xl text-center">
                         {title}
                     </h1>
                 )}

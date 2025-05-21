@@ -1,6 +1,6 @@
-import { useWebSocketContext } from "@/app/lib/web-socket-context";
-import PercentViewer from "./percent-viewer";
+import PercentViewer from "./components/percent-viewer";
 import { useEffect, useState } from "react";
+import {useWebSocketContext} from "@/app/contexts/web-socket-context";
 
 export default function ExcavatorVisual() {
     const { messages, sendToServer } = useWebSocketContext();

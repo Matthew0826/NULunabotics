@@ -1,5 +1,5 @@
-import { MAP_HEIGHT, MAP_WIDTH, Rect } from "./map";
-
+import { MAP_HEIGHT, MAP_WIDTH } from "./map";
+import {Rect} from "@/app/types/robot";
 
 export default function Robot({
     x,

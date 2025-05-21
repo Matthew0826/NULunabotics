@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
-import { useGamepadManagerContext } from "../ui/dashboard/gamepad-state-provider";
-import { useWebSocketContext } from "./web-socket-context";
+import {useWebSocketContext} from "@/app/contexts/web-socket-context";
+import {useGamepadManagerContext} from "@/app/contexts/gamepad-context";
 
 const defaultsNormalized = {
     x: 0,
@@ -17,7 +17,7 @@ function statesAreEqual(a: any, b: any): boolean {
 }
 
 export function useKeyboardController(): [number, Dispatch<SetStateAction<number>>] {
-    const { messages, sendToServer } = useWebSocketContext();
+    const { sendToServer } = useWebSocketContext();
     const { state, setState } = useGamepadManagerContext();
     const [speed, setSpeed] = useState(0.5);
     const [flipped, setFlipped] = useState(false);

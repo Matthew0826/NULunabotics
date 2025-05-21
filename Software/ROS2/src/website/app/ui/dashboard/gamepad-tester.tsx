@@ -1,10 +1,10 @@
 "use client";
 
-import DirectionalDisplay from "./directional-display";
-import { useGamepadManagerContext } from "./gamepad-state-provider";
+import DirectionalDisplay from "@/app/ui/dashboard/components/directional-display";
+import {useGamepadManagerContext} from "@/app/contexts/gamepad-context";
 
 export default function GamepadTester() {
-    const { state, setState, speed, setSpeed } = useGamepadManagerContext();
+    const { state } = useGamepadManagerContext();
     return (
         <>
             <DirectionalDisplay

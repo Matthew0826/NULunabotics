@@ -1,16 +1,15 @@
-import { useWebSocketContext } from "@/app/lib/web-socket-context";
-import React, { useEffect } from "react";
+import React from "react";
 import { MAP_HEIGHT, MAP_WIDTH } from "./map";
-
-export type Point = [number, number];
+import {useWebSocketContext} from "@/app/contexts/web-socket-context";
+import {MapPoint} from "@/app/types/map-objects";
 
 // This is really badly named sorry
 function pointAwayFromPoint(
-    point: Point,
-    otherPoint: Point,
+    point: MapPoint,
+    otherPoint: MapPoint,
     distance: number,
     angleModifier: number
-): Point {
+): MapPoint {
     const [x, y] = point;
     const [otherX, otherY] = otherPoint;
 
@@ -32,7 +31,7 @@ function pointAwayFromPoint(
  *  https://www.nan.fyi/svg-paths/bezier-curves
  *  */
 function pointsToPathWithQuadraticCurves(
-    path: Point[],
+    path: MapPoint[],
     radius: number,
     drawArrow: boolean = true
 ): string {
@@ -98,16 +97,16 @@ function pointsToPathWithQuadraticCurves(
 /**
  * This component represents the path the robot intends to take through the map.
  */
-export default function RobotPath({ path, odometryPath, robot }: { path?: Point[], odometryPath: Point[], robot: any }) {
+export default function RobotPath({ path, odometryPath, robot }: { path?: MapPoint[], odometryPath: MapPoint[], robot: any }) {
     const { messages, sendToServer } = useWebSocketContext();
     const pathRef = React.useRef<HTMLDivElement>(null);
-    const [previousClickPosition, setPreviousClickPosition] = React.useState<Point | null>(null);
+    const [previousClickPosition, setPreviousClickPosition] = React.useState<MapPoint | null>(null);
     const handlePathClick = (e: React.MouseEvent) => {
         const rect = pathRef.current?.getBoundingClientRect();
         if (!rect) return;
         const x = ((e.clientX - rect.left) / rect.width) * MAP_WIDTH * 100;
         const y = ((e.clientY - rect.top) / rect.height) * MAP_HEIGHT * 100;
-        const newClickPosition: Point = [Math.floor(x), Math.floor(y)];
+        const newClickPosition: MapPoint = [Math.floor(x), Math.floor(y)];
         // check if click is left or right
         if (e.button === 2) { // right click
             // send to server mock obstacle

@@ -1,5 +1,6 @@
 import {Vector3} from "three";
 
+export type MapPoint = [number, number];
 
 export type GlobalLidarPoint = {
     globPos: Vector3;

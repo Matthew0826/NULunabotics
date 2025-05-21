@@ -1,17 +1,13 @@
 "use client";
 
 import {
-    use,
-    useCallback,
-    useContext,
     useEffect,
-    useRef,
     useState,
 } from "react";
-import Graph from "./graph";
+import Graph from "./components/graph";
 import { Dataset } from "@/app/lib/utils";
-import { Message, useWebSocketContext } from "@/app/lib/web-socket-context";
-import BatteryIndicator from "./battery-indicator";
+import {ROSSocketMessage} from "@/app/types/sockets";
+import {useWebSocketContext} from "@/app/contexts/web-socket-context";
 
 export type GraphInfo = {
     name: string;
@@ -27,7 +23,7 @@ export default function WebSocketGraph({
 }: {
     graphInfo: GraphInfo;
 }) {
-    const { messages, sendToServer } = useWebSocketContext();
+    const { messages } = useWebSocketContext();
 
     const [graph, setGraph] = useState<GraphInfo>(graphInfo);
     const [timeCounter, setTimeCounter] = useState(0);
@@ -37,11 +33,11 @@ export default function WebSocketGraph({
     useEffect(() => {
         if (messages.length == 0) return;
         const powerMessages = [...new Set(messages
-            .filter((message: Message) => message.type === "battery")
-            .map((message: Message) => message.message)
+            .filter((message: ROSSocketMessage) => message.type === "battery")
+            .map((message) => message.message)
             .flat())];
-        const currents = powerMessages.map((message: any) => message.current);
-        const voltages = powerMessages.map((message: any) => message.voltage);
+        const currents = powerMessages.map((message) => message.current);
+        const voltages = powerMessages.map((message) => message.voltage);
         const percent = powerMessages.length != 0 ? powerMessages[powerMessages.length - 1].percentage : 0;
 
         const newGraph = { ...graph };
@@ -49,7 +45,6 @@ export default function WebSocketGraph({
         newGraph.dataSets["voltage"].data = voltages;
         setGraph(newGraph);
         setBatteryPercent(percent);
-        // setTimeCounter((prev) => prev + 1);
     }, [messages]);
 
     return (

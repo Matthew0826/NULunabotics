@@ -1,6 +1,6 @@
 "use client";
-import { useWebSocketContext } from "@/app/lib/web-socket-context";
 import * as React from "react";
+import {useWebSocketContext} from "@/app/contexts/web-socket-context";
 
 type TimerProps = {
     startTime: number; // Starting time in seconds
@@ -11,7 +11,7 @@ function Timer({ startTime }: TimerProps) {
     const [isRunning, setIsRunning] = React.useState<boolean>(false);
     const intervalRef = React.useRef<NodeJS.Timeout | null>(null); // To store the interval ID
 
-    const { messages, sendToServer } = useWebSocketContext();
+    const { sendToServer } = useWebSocketContext();
 
     // Start the timer
     const startTimer = () => {

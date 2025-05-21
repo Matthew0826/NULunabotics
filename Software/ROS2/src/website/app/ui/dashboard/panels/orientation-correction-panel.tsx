@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import Slider from "./slider";
-import { useWebSocketContext } from "@/app/lib/web-socket-context";
+import Slider from "../components/slider";
+import {useWebSocketContext} from "@/app/contexts/web-socket-context";
 
-export default function OrientationCorrection() {
+export default function OrientationCorrectionPanel() {
     const [orientationCorrection, setOrientationCorrection] = useState(0.0);
-    const { messages, sendToServer } = useWebSocketContext();
+    const { sendToServer } = useWebSocketContext();
+
     // Send to server when the orientation correction changes
     useMemo(() => {
         // Send the orientation correction to the server

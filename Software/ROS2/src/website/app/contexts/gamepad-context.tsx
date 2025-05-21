@@ -1,9 +1,9 @@
 "use client";
 
 import { useKeyboardController } from "@/app/lib/keyboard-controller";
-import { gamepadLoop, normalizedVectorToPixels } from "@/app/lib/utils";
-import { useWebSocketContext } from "@/app/lib/web-socket-context";
-import { useContext, useState } from "react";
+import { gamepadLoop } from "@/app/lib/utils";
+import { useWebSocketContext } from "@/app/contexts/web-socket-context";
+import {ReactNode, useContext, useState} from "react";
 import { createContext } from "react";
 import { useEffect } from "react";
 
@@ -42,12 +42,12 @@ const GamepadManagerContext = createContext<GamepadManagerContextType>({
 
 export const useGamepadManagerContext = () => useContext(GamepadManagerContext);
 
-export default function GamepadStateProvider({
+export default function GamepadContext({
     children,
 }: {
-    children: React.ReactNode;
+    children: ReactNode;
 }) {
-    const { messages, sendToServer } = useWebSocketContext();
+    const { sendToServer } = useWebSocketContext();
     const [state, setState] = useState<GamepadState>(defaults);
     const [speed, setSpeed] = useKeyboardController();
 

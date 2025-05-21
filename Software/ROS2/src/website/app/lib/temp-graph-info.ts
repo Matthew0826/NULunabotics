@@ -1,4 +1,4 @@
-import { Message } from "./web-socket-context";
+import {ROSSocketMessage} from "@/app/types/sockets";
 
 export const tempGraphPower = {
     name: "Power",
@@ -33,7 +33,7 @@ const getRock = (i: number) => {
     return obstacle;
 }
 
-export const tempStartingData: Message[] = [
+export const tempStartingData: ROSSocketMessage[] = [
     // {
     //     type: "lidar",
     //     message: [

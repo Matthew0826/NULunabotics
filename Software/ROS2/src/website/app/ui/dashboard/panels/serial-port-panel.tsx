@@ -1,6 +1,6 @@
-import { useWebSocketContext } from "@/app/lib/web-socket-context";
-import SerialPort from "./serial-port";
+import SerialPort from "../components/serial-port";
 import { useEffect, useState } from "react";
+import {useWebSocketContext} from "@/app/contexts/web-socket-context";
 
 type SerialPortType = {
     name: string;
@@ -8,15 +8,15 @@ type SerialPortType = {
     topics: string[];
 };
 
-export default function SerialPortDisplay() {
+export default function SerialPortPanel() {
     const { messages, sendToServer } = useWebSocketContext();
     const [serialPorts, setSerialPorts] = useState<SerialPortType[]>([]);
     useEffect(() => {
         if (messages.length == 0) return;
         const portMessage = messages[messages.length - 1];
         if (portMessage.type === "serial_port_state") {
-            console.log("Serial port state: ", portMessage?.message);
-            setSerialPorts(portMessage?.message?.states || []);
+            console.log("Serial port state: ", portMessage.message);
+            setSerialPorts(portMessage.message.states || []);
         }
     }, [messages]);
     const handleUploadCode = (port: string) => {

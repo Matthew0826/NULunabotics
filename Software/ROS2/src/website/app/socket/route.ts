@@ -5,6 +5,7 @@ import WebSocket, { WebSocketServer } from "ws";
 import { lidarPoints, publishCodeUpload, publishConfig, publishMockObstacle, publishSimReset, publishMotorsToROS2, publishOrientationCorrection, sendPathfindingRequest, sendPlanAction, startLoopingAction, stopLoopingAction } from "../lib/ros2";
 import { sendToClient, sockets } from "../lib/sockets";
 import { getConfigFromProfile } from "../lib/config-manager";
+import {ROSSocketMessage} from "@/app/types/sockets";
 
 export function GET() {
     const headers = new Headers();
@@ -29,7 +30,7 @@ export function SOCKET(
         const messageString = message.toString();
         // console.log("received: ", messageString);
         try {
-            const messageJson = JSON.parse(messageString);
+            const messageJson = JSON.parse(messageString) as ROSSocketMessage;
             if (messageJson.type === "sendPathfindingRequest") {
                 const point1 = messageJson.message.point1;
                 const point2 = messageJson.message.point2;
@@ -55,7 +56,7 @@ export function SOCKET(
                 // based on the name of profile, returns information for that profile
                 sendToClient("loadConfigProfile", {
                     profile: messageJson.message,
-                    config: getConfigFromProfile(messageJson.message)
+                    config: getConfigFromProfile(messageJson.message.profile)
                 });
             } else if (messageJson.type === "saveConfigProfile") {
                 publishConfig(messageJson.message);

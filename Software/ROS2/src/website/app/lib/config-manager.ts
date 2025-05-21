@@ -1,9 +1,9 @@
 import path from "path";
 import fs from "fs";
-import { ConfigType, Profiles } from "../ui/dashboard/config-panel";
 import { warn } from "console";
+import {ConfigType, Profiles} from "@/app/types/config";
 
-export function setConfigFromProfile(config: ConfigType | null, profileName: string) {
+export function setConfigFromProfile(config: ConfigType[] | null, profileName: string) {
     // Ensure not null!
     if (config == null) {
         warn("Config is null, cannot save profile");
@@ -36,18 +36,17 @@ export function setConfigFromProfile(config: ConfigType | null, profileName: str
     }
 }
 
-// create a zeroed config type
-function createZeroedConfig(): ConfigType {
-    return {
-        name: ""
-    }
-}
+
 
 // Create a zeroed version of the config (if exists then zero the existing values)
 // Use default as template to generate zeroed version?
-function initConfigProfile(profileName: string): ConfigType {
+function initConfigProfile(profileName: string): ConfigType[] {
     // make the zeroed version of the config
-    const zeroedConfig: ConfigType = createZeroedConfig();
+    // create a zeroed config type
+    const zeroedConfig: ConfigType[] = [{
+        node: "zeroed_node",
+        categories: []
+    }]
 
     // set this zeroed config to the profile
     setConfigFromProfile(zeroedConfig, profileName);
@@ -57,7 +56,7 @@ function initConfigProfile(profileName: string): ConfigType {
     return zeroedConfig;
 }
 
-export function getConfigFromProfile(profileName: string): ConfigType {
+export function getConfigFromProfile(profileName: string): ConfigType[] {
     const configPath = path.join(process.cwd(), "public", "config.json");
 
     let profiles: Profiles = {};

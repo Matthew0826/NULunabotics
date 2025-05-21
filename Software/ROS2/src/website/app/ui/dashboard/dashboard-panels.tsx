@@ -2,18 +2,17 @@
 
 import { tempGraphPower } from "@/app/lib/temp-graph-info";
 import Map from "../map/map";
-import Panel from "./panel";
+import Panel from "./panels/panel";
 import WebSocketGraph from "./web-socket-graph";
-import Timer from "./timer";
-import LidarVisual from "./lidar-visual";
-import Slider from "./slider";
-import { useGamepadManagerContext } from "./gamepad-state-provider";
-import SerialPortDisplay from "./serial-port-display";
-import ConfigPanel from "./config-panel";
+import Timer from "./components/timer";
+import Slider from "./components/slider";
+import SerialPortPanel from "./panels/serial-port-panel";
+import ConfigPanel from "./panels/config-panel";
 import ExcavatorVisual from "./excavator_temp_visual";
-import OrientationCorrection from "./orientation-correction";
-import ControlsReminder from "./controls-reminder";
+import OrientationCorrectionPanel from "./panels/orientation-correction-panel";
+import ControlsReminder from "./components/controls-reminder";
 import Render3DRobotModel from "@/app/ui/three/render-robot";
+import {useGamepadManagerContext} from "@/app/contexts/gamepad-context";
 
 export default function DashboardPanels() {
     const mapPanel = (
@@ -40,7 +39,7 @@ export default function DashboardPanels() {
                     <WebSocketGraph graphInfo={tempGraphPower} />
                 </Panel>
                 <Panel title="Orientation Correction">
-                    <OrientationCorrection />
+                    <OrientationCorrectionPanel />
                 </Panel>
                 <Panel title="Wheel Speed" hiddenByDefault={true}>
                     <Slider labels={[0.0, 0.5, 1.0]} value={speed} setValue={setSpeed} />
@@ -48,11 +47,8 @@ export default function DashboardPanels() {
                 <Panel title="Config" hiddenByDefault={true}>
                     <ConfigPanel />
                 </Panel>
-                <Panel title="LiDAR" hiddenByDefault={true}>
-                    <LidarVisual />
-                </Panel>
                 <Panel title="Serial Ports" hiddenByDefault={true}>
-                    <SerialPortDisplay />
+                    <SerialPortPanel />
                 </Panel>
                 <Panel title="Controls" hiddenByDefault={true}>
                     <ControlsReminder />

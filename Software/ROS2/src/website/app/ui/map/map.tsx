@@ -1,9 +1,10 @@
-import { Message, useWebSocketContext } from "@/app/lib/web-socket-context";
 import Obstacle from "./obstacle";
-import RobotPath, { Point } from "./robot-path";
+import RobotPath from "./robot-path";
 import { useEffect, useRef, useState } from "react";
 import Robot from "./robot";
-import {ObstacleType} from "@/app/types/map-objects";
+import {useRobotContext} from "@/app/contexts/robot-context";
+import {useWebSocketContext} from "@/app/contexts/web-socket-context";
+import {MapPoint} from "@/app/types/map-objects";
 
 export const MAP_WIDTH = 5.48; // meters
 export const MAP_OBSTACLES_ZONE_HEIGHT = 2.44; // meters
@@ -14,10 +15,10 @@ export const COLUMN_WIDTH = 0.8; // meters
 // Note: all obstacles and paths are in centimeters
 export default function Map() {
     const { messages, sendToServer } = useWebSocketContext();
-    const [pathData, setPathData] = useState<Point[]>([]);
-    const [odometryPathData, setOdometryPathData] = useState<Point[]>([]);
-    const [obstacles, setObstacles] = useState<ObstacleType[]>([]);
-    const [robot, setRobot] = useState({ x: 448, y: 100, width: 71, height: 98, rotation: 0, posConfidenceRect: { x1: 0, y1: 0, x2: 0, y2: 0 } });
+    const [pathData, setPathData] = useState<MapPoint[]>([]);
+    const [odometryPathData, setOdometryPathData] = useState<MapPoint[]>([]);
+
+    const { robot, obstacles } = useRobotContext();
 
     useEffect(() => {
         if (messages.length == 0) {
@@ -28,41 +29,15 @@ export default function Map() {
         }
         const lastMessage = messages[messages.length - 1];
         if (lastMessage.type === "path") {
-            const data = (lastMessage?.message || []).map((point: any) => ([point.x, point.y]));
+            const data = (lastMessage?.message || []).map((point) => ([point.x, point.y] as MapPoint));
             // console.log("Path data", data);
             setPathData(data);
         } else if (lastMessage.type === "odometry_path") {
-            const data = (lastMessage?.message || []).map((point: any) => ([point.x, point.y]));
+            const data = (lastMessage?.message || []).map((point) => ([point.x, point.y] as MapPoint));
             // console.log("Odometry path data", data);
             setOdometryPathData(data);
-        } else if (lastMessage.type === "position") {
-            const data = lastMessage?.message || {};
-            setRobot(prev => ({ ...prev, x: data.x, y: data.y }));
-        } else if (lastMessage.type === "orientation") {
-            const data = lastMessage?.message || {};
-            setRobot(prev => ({ ...prev, rotation: 360.0 - data }));
-        } else if (lastMessage.type === "position_confidence") {
-            const data = lastMessage?.message || {};
-            setRobot(prev => ({
-                ...prev,
-                posConfidenceRect: {
-                    x1: data.x1,
-                    y1: data.y1,
-                    x2: data.x2,
-                    y2: data.y2,
-                }
-            }));
         }
 
-        const obstaclesMessages = [...new Set(messages
-            .filter((message: Message) => message.type === "obstacles")
-            .map((message: Message) => message.message)
-            .flat()
-            .map((newObstacle: any) => {
-                return { x: newObstacle.position.x, y: newObstacle.position.y, radius: newObstacle.radius, isHole: !newObstacle.is_rock, relativeX: newObstacle.relative_position.x, relativeY: newObstacle.relative_position.y };
-            }))];
-
-        setObstacles(obstaclesMessages);
     }, [messages]);
 
     // used to focus the map div when the page loads

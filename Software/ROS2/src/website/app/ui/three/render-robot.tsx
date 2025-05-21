@@ -5,8 +5,8 @@ import {OBJLoader} from 'three/examples/jsm/loaders/OBJLoader.js';
 import {MTLLoader} from 'three/examples/jsm/loaders/MTLLoader.js';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import {Group} from "three";
-import {useRobotContext} from "@/app/lib/robot-context";
-import {lidarRelativeToRelative3D} from "@/app/utils/lidar-calculations";
+import {ObstacleType} from "@/app/types/map-objects";
+import {useRobotContext} from "@/app/contexts/robot-context";
 
 interface Render3DRobotModelProps {
     baseFilename: string;
@@ -402,14 +402,14 @@ const Render3DRobotModel = ({
 
         const group = new THREE.Group();
 
-        obstacles.forEach((obstacle) => {
+        obstacles.forEach((obstacle: ObstacleType) => {
             const color = obstacle.isHole ? 0x00ff00 : 0xff0000;
 
             const worldPoint = new THREE.Vector3(obstacle.x, 0, obstacle.y);
             worldPoint.sub(new THREE.Vector3(robot.x, 0, robot.y));
 
             const pointMesh = new THREE.Mesh(
-                new THREE.SphereGeometry(obstacle / 2.5 / 10, 8, 8),
+                new THREE.SphereGeometry(obstacle.radius / 2.5 / 10, 8, 8),
                 new THREE.MeshStandardMaterial({color: color})
             );
             pointMesh.position.copy(worldPoint);

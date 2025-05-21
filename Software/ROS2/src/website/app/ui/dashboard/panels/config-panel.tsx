@@ -1,33 +1,7 @@
 import { useEffect, useState } from "react";
-import config from "public/config.json";
-import Config from "./config";
-import { useWebSocketContext } from "@/app/lib/web-socket-context";
-
-// type ConfigType = {
-//     node: string;
-//     categories: {
-//         category: string;
-//         settings: {
-//             setting: string;
-//             value: string | number | boolean;
-//         }[];
-//     }[];
-// }[];
-
-type ConfigType = {
-    node: string;
-    categories: {
-        category: string;
-        settings: {
-            setting: string;
-            value: string;
-        }[];
-    }[];
-}[];
-
-type Profiles = {
-    [key: string]: ConfigType;
-};
+import {ConfigType, Profiles} from "@/app/types/config";
+import {useWebSocketContext} from "@/app/contexts/web-socket-context";
+import Config from "@/app/ui/dashboard/components/config";
 
 export default function ConfigPanel() {
     // const [configState, setConfig] = useState<ConfigType | null>(null);
@@ -52,9 +26,9 @@ export default function ConfigPanel() {
             setProfileState(newProfile.profile);
             setLoadedConfigState((prevConfig) => {
                 if (prevConfig) {
-                    return { ...prevConfig, [newProfile]: newProfile.config };
+                    return { ...prevConfig, [newProfile.profile]: newProfile.config };
                 } else {
-                    return { [newProfile]: newProfile.config };
+                    return { [newProfile.profile]: newProfile.config };
                 }
             });
         }

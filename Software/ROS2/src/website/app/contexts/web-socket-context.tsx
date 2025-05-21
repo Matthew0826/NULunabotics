@@ -3,28 +3,24 @@
 "use client";
 
 import {
-    createContext,
+    createContext, ReactNode,
     useContext,
     useEffect,
     useRef,
     useState,
 } from "react";
-import { tempStartingData } from "./temp-graph-info";
+import {ROSSocketMessage} from "@/app/types/sockets";
+import {tempStartingData} from "@/app/lib/temp-graph-info";
 
-export type WebSocketMessages = {
-    messages: Message[];
+type WebSocketContextType = {
+    messages: ROSSocketMessage[];
     sendToServer: (messageType: string, message: any) => void;
 };
 
-const WebSocketContext = createContext<WebSocketMessages>({
+const WebSocketContext = createContext<WebSocketContextType>({
     messages: [],
     sendToServer: () => { },
 });
-
-export type Message = {
-    type: string;
-    message: any;
-};
 
 export const useWebSocketContext = () => useContext(WebSocketContext);
 
@@ -33,7 +29,7 @@ export const useWebSocketContext = () => useContext(WebSocketContext);
 export default function WebSocketProvider({
     children,
 }: {
-    children: React.ReactNode;
+    children: ReactNode;
 }) {
     const socketRef = useRef<WebSocket | null>(null);
     useEffect(() => {
@@ -48,7 +44,7 @@ export default function WebSocketProvider({
         };
     }, []);
 
-    const [messages, setMessages] = useState<Message[]>(
+    const [messages, setMessages] = useState<ROSSocketMessage[]>(
         tempStartingData
     );
     const messageBuffer = useRef<any[]>([]);
@@ -60,7 +56,7 @@ export default function WebSocketProvider({
                 typeof event.data === "string"
                     ? event.data
                     : await event.data.text();
-            const message = JSON.parse(payload);
+            const message = JSON.parse(payload) as ROSSocketMessage;
             // messageBuffer.current.push(message);
             if (message.type === "obstacles") {
                 setMessages((prev) => [...prev, message]);

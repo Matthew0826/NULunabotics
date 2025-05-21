@@ -1,11 +1,12 @@
 "use client";
 
 import {createContext, ReactNode, useContext, useEffect, useState} from "react";
-import {Message, useWebSocketContext} from "@/app/lib/web-socket-context";
 import {RelativeLidarPoint, ObstacleType, GlobalLidarPoint} from "@/app/types/map-objects";
 import {Vector3} from "three";
 import {RelativeLidarOrigin, RobotContextType, RobotPosition} from "@/app/types/robot";
 import {lidarRelativeToRelative3D} from "@/app/utils/lidar-calculations";
+import {ROSSocketMessage} from "@/app/types/sockets";
+import {useWebSocketContext} from "@/app/contexts/web-socket-context";
 
 
 const RobotContext = createContext<RobotContextType>({
@@ -15,6 +16,8 @@ const RobotContext = createContext<RobotContextType>({
     setRightWheelSpeed: () => { },
     excavatorPosition: 0,
     setExcavatorPosition: () => { },
+    lidarRelativePoints: [],
+    setLidarRelativePoints: () => { },
     lidarPoints: [],
     setLidarPoints: () => {},
     lidarOrigin: {
@@ -27,6 +30,8 @@ const RobotContext = createContext<RobotContextType>({
     robot: {
         x: 0,
         y: 0,
+        width: 0,
+        height: 0,
         rotation: 0,
         posConfidenceRect: {
             x1: 0,
@@ -46,10 +51,13 @@ export default function RobotContextProvider({ children }: { children: ReactNode
     const [rightWheelSpeed, setRightWheelSpeed] = useState<number>(0);
     const [excavatorPosition, setExcavatorPosition] = useState<number>(0);
     const [lidarData, setLidarData] = useState<GlobalLidarPoint[][]>([]);
+    const [lidarRelativePoints, setLidarRelativePoints] = useState<RelativeLidarPoint[]>([]);
     const [obstacles, setObstacles] = useState<ObstacleType[]>([]);
     const [robot, setRobot] = useState<RobotPosition>({
         x: 0,
         y: 0,
+        width: 1,
+        height: 1,
         rotation: 0,
         posConfidenceRect: {
             x1: 0,
@@ -138,6 +146,7 @@ export default function RobotContextProvider({ children }: { children: ReactNode
         } else if (lastMessage.type === "lidar") {
             const relPoints: RelativeLidarPoint[] = lastMessage?.message || [];
 
+            setLidarRelativePoints(relPoints);
             const globPoints = relPoints.map((point) => {
                 const relPos = lidarRelativeToRelative3D(
                     point.distance,
@@ -156,7 +165,7 @@ export default function RobotContextProvider({ children }: { children: ReactNode
             const data = lastMessage?.message || {};
             setRobot(prev => ({ ...prev, x: data.x, y: data.y }));
         } else if (lastMessage.type === "orientation") {
-            const data = lastMessage?.message || {};
+            const data = lastMessage?.message || 0;
             setRobot(prev => ({ ...prev, rotation: 360.0 - data }));
         } else if (lastMessage.type === "position_confidence") {
             const data = lastMessage?.message || {};
@@ -172,8 +181,8 @@ export default function RobotContextProvider({ children }: { children: ReactNode
         }
 
         const obstaclesMessages = [...new Set(messages
-            .filter((message: Message) => message.type === "obstacles")
-            .map((message: Message) => message.message)
+            .filter((message: ROSSocketMessage) => message.type === "obstacles")
+            .map((message) => message.message)
             .flat()
             .map((newObstacle: any) => {
                 return { x: newObstacle.position.x, y: newObstacle.position.y, radius: newObstacle.radius, isHole: !newObstacle.is_rock, relativeX: newObstacle.relative_position.x, relativeY: newObstacle.relative_position.y };
@@ -192,6 +201,8 @@ export default function RobotContextProvider({ children }: { children: ReactNode
             setExcavatorPosition,
             lidarPoints: lidarData,
             setLidarPoints: setLidarData,
+            lidarRelativePoints,
+            setLidarRelativePoints,
             lidarOrigin,
             obstacles,
             setObstacles,

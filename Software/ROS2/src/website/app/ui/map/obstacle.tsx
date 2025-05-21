@@ -1,5 +1,3 @@
-import { MAP_HEIGHT, MAP_WIDTH } from "./map";
-
 /**
  * This component represents where the robot thinks an obstacle is on the map.
  * x, y, and radius should all be in meters relative to the bottom left hand corner.
