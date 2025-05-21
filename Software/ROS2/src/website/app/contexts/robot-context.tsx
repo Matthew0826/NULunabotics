@@ -1,12 +1,12 @@
 "use client";
 
-import {createContext, ReactNode, useContext, useEffect, useState} from "react";
-import {RelativeLidarPoint, ObstacleType, GlobalLidarPoint} from "@/app/types/map-objects";
-import {Vector3} from "three";
-import {RelativeLidarOrigin, RobotContextType, RobotPosition} from "@/app/types/robot";
-import {lidarRelativeToRelative3D} from "@/app/utils/lidar-calculations";
-import {ROSSocketMessage} from "@/app/types/sockets";
-import {useWebSocketContext} from "@/app/contexts/web-socket-context";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { RelativeLidarPoint, ObstacleType, GlobalLidarPoint } from "@/app/types/map-objects";
+import { Vector3 } from "three";
+import { RelativeLidarOrigin, RobotContextType, RobotPosition } from "@/app/types/robot";
+import { lidarRelativeToRelative3D } from "@/app/utils/lidar-calculations";
+import { ROSSocketMessage } from "@/app/types/sockets";
+import { useWebSocketContext } from "@/app/contexts/web-socket-context";
 
 
 const RobotContext = createContext<RobotContextType>({
@@ -19,7 +19,7 @@ const RobotContext = createContext<RobotContextType>({
     lidarRelativePoints: [],
     setLidarRelativePoints: () => { },
     lidarPoints: [],
-    setLidarPoints: () => {},
+    setLidarPoints: () => { },
     lidarOrigin: {
         yawOffset: 0,
         pitch: Math.PI / 4,
@@ -54,10 +54,10 @@ export default function RobotContextProvider({ children }: { children: ReactNode
     const [lidarRelativePoints, setLidarRelativePoints] = useState<RelativeLidarPoint[]>([]);
     const [obstacles, setObstacles] = useState<ObstacleType[]>([]);
     const [robot, setRobot] = useState<RobotPosition>({
-        x: 0,
-        y: 0,
-        width: 1,
-        height: 1,
+        x: 448,
+        y: 100,
+        width: 68,
+        height: 98,
         rotation: 0,
         posConfidenceRect: {
             x1: 0,
@@ -97,7 +97,7 @@ export default function RobotContextProvider({ children }: { children: ReactNode
                 const relPoints: RelativeLidarPoint[] = lines.map(line => {
                     const [x, y] = line.split(",").map(Number);
                     return {
-                        distance: Math.sqrt(x * x + y * y)/2.5/6/5, // scale down the distance from error in the data
+                        distance: Math.sqrt(x * x + y * y) / 2.5 / 6 / 5, // scale down the distance from error in the data
                         angle: Math.atan2(y, x),
                         weight: 255,
                     };

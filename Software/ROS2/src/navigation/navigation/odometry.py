@@ -133,42 +133,58 @@ class Odometry(Node):
         """Called when a PID tuning request is received."""
         # get the PID controller
         pid = None
+        tuner = PIDTuner(logger=self.get_logger())
         match request.pid:
             case "orientation_pid":
                 pid = self.orientation_pid
+                result = await tuner.tune_pid(
+                    robot=self,
+                    pid_controller=pid,
+                    feedback_function=lambda robot: robot.orientation,
+                    start_point=0.0,
+                    end_point=90.0,
+                    error_function=self.get_degrees_error,
+                    movement_function=self.to_orient,
+                    method=request.strategy,
+                    plot_results=False
+                )
             case "linear_drive_pid":
                 pid = self.linear_drive_pid
+                start = Point()
+                start.x = 448.0
+                start.y = 100.0
+                end = Point()
+                end.x = 348.0
+                end.y = 100.0
+                result = await tuner.tune_pid(
+                    robot=self,
+                    pid_controller=pid,
+                    feedback_function=lambda robot: distance(start, robot.position),
+                    start_point=0.0,
+                    end_point=distance(start, end),
+                    error_function=lambda curr, dest: self.get_distance_error(start, self.position) if dest == 0.0 else self.get_distance_error(end, self.position),
+                    movement_function=lambda dest: self.to_position_until_success(start) if dest == 0.0 else self.to_position_until_success(end),
+                    method=request.strategy,
+                    plot_results=False
+                )
             case "angular_drive_pid":
                 pid = self.angular_drive_pid
             case "bin_actuator_pid":
                 pid = self.bin_actuator_pid
             case "excavator_lifter_pid":
                 pid = self.excavator_lifter_pid
+        self.get_logger().info(f"tuning {request.pid} with {request.strategy}")
 
         if pid is None:
-            response.success = False
+            # response.success = False
             return response
-        
-        tuner = PIDTuner(logger=self.get_logger().info)
-        # tune the PID controller
-        result = await tuner.tune_pid(
-            robot=self,
-            pid=pid,
-            get_current_value=lambda robot: robot.orientation,
-            start_destination=0.0,
-            end_destination=90.0,
-            error_calculator=self.get_degrees_error,
-            move_function=self.to_orient,
-            method=request.strategy,
-            plot_results=False
-        )
         
         # set the PID controller values in response
         response.kp = pid.Kp
         response.ki = pid.Ki
         response.kd = pid.Kd
 
-        response.success = True
+        # response.success = True
         return response
 
     # when the config is received for tuning pid loop
@@ -491,7 +507,7 @@ class Odometry(Node):
         # self.get_logger().info(f"rotated to {int(self.orientation)} degrees. (wanted {int(final_orientation)})")
 
     async def to_position(self, destination: Point, go_reverse: bool = False):
-        """Drives to a given destination with PID control."""
+        """Drives to a given destination with PID control. Returns true if successful."""
         start_time = self.get_clock().now()
         # calculate orientation to face position
         # self.get_logger().info(f"want to go to position {destination.x}, {destination.y}")
@@ -503,8 +519,8 @@ class Odometry(Node):
             deg_offset = 180.0
 
         # return early if already at the position
-        error = distance(self.position, destination)
-        if error < self.dist_tolerance: return
+        initial_error = distance(self.position, destination)
+        if initial_error < self.dist_tolerance: return True
         
         await self.face_position(destination, deg_offset)
         after_orientation_time = self.get_clock().now()
@@ -512,7 +528,6 @@ class Odometry(Node):
         # reset the PID controllers
         self.linear_drive_pid.reset()
         self.angular_drive_pid.reset()
-        
         
         while True:
             # find error
@@ -526,6 +541,9 @@ class Odometry(Node):
 
             # check if completed
             if error < self.dist_tolerance: break
+            # check if something has gone horribly wrong
+            if error > initial_error * 1.5:
+                return False
             # update pid
             now = self.get_clock().now()
             forward_power = self.linear_drive_pid.update(error, now)
@@ -541,8 +559,7 @@ class Odometry(Node):
             await self.drive(left_power, right_power, seconds=0.2)
             await self.yield_once()
             
-            if self.was_cancelled: return
-
+            if self.was_cancelled: return False
 
         self.set_motor_power(0.0, 0.0)
         # self.get_logger().info(f"drove to {int(self.position.x)}, {int(self.position.y)} (wanted {int(destination.x)}, {int(destination.y)})")
@@ -553,7 +570,13 @@ class Odometry(Node):
         # calculate time taken to orient
         orientation_time = (after_orientation_time - start_time).nanoseconds // 1_000_000
         # self.get_logger().info(f"took {orientation_time} milliseconds to orient")
-
+        return True
+    
+    async def to_position_until_success(self, desination: Point, go_reverse: bool = False):
+        success = False
+        while not success:
+            success = await self.to_position(desination, go_reverse)
+    
     # orient the rover to face a position
     async def face_position(self, destination: Point, deg_offset: float = 0.0):
         """Rotates to face a given position."""
@@ -583,7 +606,7 @@ class Odometry(Node):
         # loop through each point and go there on the path
         # we enumerate to keep track of iterations
         for i, point in enumerate(points):
-            await self.to_position(point, go_reverse)
+            await self.to_position_until_success(point, go_reverse)
 
             # publish progress traveling the path
             # e.g. 1 / 2 meaning 1 point reached out of 2 so far
@@ -650,21 +673,6 @@ def positive_angle(angle: float):
 def main(args=None):
     rclpy.init(args=args)
     odometry = Odometry()
-    # start_point = Point()
-    # start_point.x = 100.1
-    # start_point.y = 300.1
-    # end_point = Point()
-    # end_point.x = 200.1
-    # end_point.y = 400.1
-    # asyncio.run(tuner.tune_pid(
-    #     odometry,
-    #     odometry.linear_drive_pid,
-    #     lambda robot: robot.position,
-    #     start_point,
-    #     end_point,
-    #     odometry.get_distance_error,
-    #     odometry.to_position,
-    # ))
     spin_nodes(odometry, is_async=True, threads=4)
     
 
