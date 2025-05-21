@@ -1,6 +1,5 @@
 import {Dispatch, SetStateAction} from "react";
-import {ObstacleType} from "@/app/ui/map/map";
-import {GlobalLidarPoint, RelativeLidarPoint} from "@/app/types/map-objects";
+import {GlobalLidarPoint, ObstacleType} from "@/app/types/map-objects";
 import * as THREE from 'three';
 
 export type RobotContextType = {
