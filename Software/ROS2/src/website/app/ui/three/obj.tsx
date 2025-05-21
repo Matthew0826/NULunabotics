@@ -5,7 +5,7 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { useGamepadManagerContext } from "@/app/ui/dashboard/gamepad-state-provider";
-import { Group, Object3DEventMap } from "three";
+import {Box3, Group, Object3DEventMap} from "three";
 import {useRobotContext} from "@/app/lib/robot-context";
 
 interface ObjModelAnimatorProps {
@@ -59,7 +59,9 @@ const ObjModelAnimator = ({
     const [error, setError] = useState<string | null>(null);
     const [cameraPosition, setCameraPosition] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 5));
 
-    const { leftWheelSpeed, rightWheelSpeed, excavatorPosition } = useRobotContext();
+    const MODEL_SCALE = 0.2;
+
+    const { leftWheelSpeed, rightWheelSpeed, excavatorPosition, lidarPoints, lidarOrigin } = useRobotContext();
 
     // Scene references stored for access in animation functions
     const sceneRef = useRef<{
@@ -69,6 +71,7 @@ const ObjModelAnimator = ({
         baseModel: THREE.Group | null;
         wheelModels: THREE.Group[] | null;
         excavatorModel: THREE.Group | null;
+        lidarPointsMesh: THREE.Group | null;
         controls: OrbitControls | null;
         animating: boolean;
     }>({
@@ -78,6 +81,7 @@ const ObjModelAnimator = ({
         baseModel: null,
         wheelModels: null,
         excavatorModel: null,
+        lidarPointsMesh: null,
         controls: null,
         animating: false
     });
@@ -116,6 +120,15 @@ const ObjModelAnimator = ({
         });
         renderer.setSize(containerWidth, containerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
+
+        // Ensure only one canvas exists
+        const existingCanvas = mountRef.current.querySelector('canvas');
+        if (existingCanvas) {
+            mountRef.current.removeChild(existingCanvas);
+        }
+        mountRef.current.appendChild(renderer.domElement);
+
+
         mountRef.current.appendChild(renderer.domElement);
         sceneRef.current.renderer = renderer;
 
@@ -192,7 +205,6 @@ const ObjModelAnimator = ({
             );
         };
 
-        const MODEL_SCALE = 0.2;
         loadModel(baseFilename, (object: Group) => {
             sceneRef.current.baseModel = object;
 
@@ -201,11 +213,42 @@ const ObjModelAnimator = ({
         });
 
         loadModel(excavatorFilename, (object: Group) => {
-            sceneRef.current.baseModel = object;
+            sceneRef.current.excavatorModel = object;
 
             object.scale.multiplyScalar(MODEL_SCALE);
             scene.add(object);
         });
+
+        // Origin sphere
+        const originMesh = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.05, 0.05, 0.02, 16, 3),
+            new THREE.MeshStandardMaterial({ color: 0xff0000 })
+        );
+        originMesh.position.set(lidarOrigin.x, lidarOrigin.y, lidarOrigin.z);
+        originMesh.rotation.set(lidarOrigin.pitch, lidarOrigin.yaw, lidarOrigin.roll);
+        scene.add(originMesh);
+
+        // Clear existing points if re-rendering
+        const lidarPointGroup = new THREE.Group();
+
+        // // Convert LIDAR points to 3D
+        // lidarPoints.forEach(({ distance, angle, weight }) => {
+        //     const totalYaw = lidarOrigin.yaw + angle;
+        //     const pitch = lidarOrigin.pitch;
+        //
+        //     const x = lidarOrigin.x + distance * Math.cos(pitch) * Math.cos(totalYaw) * MODEL_SCALE;
+        //     const y = lidarOrigin.y + distance * Math.sin(pitch) * MODEL_SCALE;
+        //     const z = lidarOrigin.z + distance * Math.cos(pitch) * Math.sin(totalYaw) * MODEL_SCALE;
+        //
+        //     const pointMesh = new THREE.Mesh(
+        //         new THREE.SphereGeometry(0.005, 8, 8),
+        //         new THREE.MeshStandardMaterial({ color: 0x00ff00 })
+        //     );
+        //     pointMesh.position.set(x, y, z);
+        //     lidarPointGroup.add(pointMesh);
+        // });
+
+        scene.add(lidarPointGroup);
 
         const WHEEL_OFFSET_X = 1.72188;  // In meters from blend file
         const WHEEL_OFFSET_Z = 2.27074;  // In meters from blend file
@@ -297,8 +340,8 @@ const ObjModelAnimator = ({
                 });
 
                 // Rotate the excavator model
-                if (sceneRef.current.excavatorModel) {
-                    sceneRef.current.excavatorModel.rotation.y = excavatorPosition * 28/180 * Math.PI; // About 18 degrees moves it from fully up to down.
+                if (sceneRef.current.excavatorModel && excavatorPosition) {
+                    sceneRef.current.excavatorModel.rotation.x = excavatorPosition * -30/180 * Math.PI; // About 30 degrees moves it from fully up to down.
                 }
             }
 
@@ -327,6 +370,38 @@ const ObjModelAnimator = ({
             }
         };
     }, [baseFilename, backgroundColor, transparent, enableControls, controlsConfig]);
+
+    useEffect(() => {
+        if (!sceneRef.current.scene) return;
+
+        // Remove previous group
+        if (sceneRef.current.lidarPointsMesh) {
+            sceneRef.current.scene.remove(sceneRef.current.lidarPointsMesh);
+        }
+
+        const group = new THREE.Group();
+
+        // LIDAR points
+        lidarPoints.forEach(({ distance, angle, weight }) => {
+            const totalYaw = lidarOrigin.yaw + angle;
+            const pitch = lidarOrigin.pitch;
+
+            const x = lidarOrigin.x + distance * Math.cos(pitch) * Math.cos(totalYaw) * MODEL_SCALE;
+            const y = lidarOrigin.y + distance * Math.sin(pitch) * MODEL_SCALE;
+            const z = lidarOrigin.z + distance * Math.cos(pitch) * Math.sin(totalYaw) * MODEL_SCALE;
+
+            const pointMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.005, 8, 8),
+                new THREE.MeshStandardMaterial({ color: 0x00ff00 })
+            );
+            pointMesh.position.set(x, y, z);
+            group.add(pointMesh);
+        });
+
+        sceneRef.current.scene.add(group);
+        sceneRef.current.lidarPointsMesh = group;
+    }, [lidarPoints, lidarOrigin]);
+
 
     return (
         <div ref={containerRef} style={{ width, height, position: 'relative' }}>
