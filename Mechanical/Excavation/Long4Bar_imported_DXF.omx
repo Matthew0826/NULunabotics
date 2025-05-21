@@ -1,0 +1,61 @@
+// Slash Slash marks (//) represent remarks that are ignored by the computer
+// if the slashes are the first characters in the line
+// For additional information about .OMX files, consult the OMAX Interactive Reference.
+// The line below identifies this file as a .OMX file.  Do not modify it, or the file will not open.
+This is an OMAX (.OMX) file.  Do not modify the first 2 lines of this file. For information on this file format contact softwareengineering@omax.com or visit http://www.omax.com.
+2
+// Above is a flag that indicates the kind of data this file contains "2" means tool path data.
+// Below is the version of this file format. Do not modify it, unless you are confident you know what you are doing.
+2
+// Below is the date that this file was first created, in units of "days since 1900".
+45794.7477726042
+// The following fields are reserved for future use.  Do not delete or modify them.
+[Reserved]
+[Reserved]
+[Reserved]
+[Reserved]
+[Reserved]
+[Reserved]
+// Insert any comments here.  These may be displayed in some dialogs to the user,
+// Such as the dialog for the parametric shape library.
+[COMMENT]
+Created with OMAX LAYOUT for Windows. (www.omax.com) 5/17/2025
+[END]
+// [MACROS]
+// Insert constant or macro definitions here
+// (typically these are used when making a parametric file.)
+// Format is:
+// ConstantName=Value
+// or:
+// MacroName=Macro Definition
+// For example:
+// MyConstant=123.456
+// MyFunction=Sin(PrevX/27)*27
+// [END]
+// [VARIABLES]
+// Insert variable declarations here if making a parametric file or other algorithmically generated file.
+// The format for variables to expose to the user as part of the UI is:
+//   Variable Name, Min Value, Max Value, Default Value, LengthFlag (True or False), Optional Description
+// The format for variables to use internally (hidden from user) use the key-word "Private" in front, and is:
+//   Private Variable Name, Optional Initial value
+//   (If initial value is not specified, then it is assumed to be "0".)
+// [END]
+// Tool path data is below.
+// Items marked with "R" are reserved for future use
+// 
+//    X,               Y,              Z,              TiltAngleStart, TiltAngleEnd,   Bow,          Q, OffsetSide, Reserved, TiltLagStart, TiltLagEnd, (..More Reserved items...), XType, XData, [END]
+[0],   1.0000000000,   1.5884183196,   0.0000000000,   0.0000000000,   0.0000000000,   0.0000000000, 0, 0,          R,        R,              R,            0,              0,             0,[END]
+[0],   1.0000000000,   2.5884183196,   0.0000000000,   0.0000000000,   0.0000000000,   0.0000000000, 0, 0,          R,        R,              R,            0,              0,             0,[END]
+[0],   1.2558945237,   2.3572005902,   0.0000000000,   0.0000000000,   0.0000000000,   0.0000000000, 9, 1,          R,        R,              R,            0,              0,             0,[END]
+[0],   1.2093707965,   2.2686819887,   0.0000000000,   0.0000000000,   0.0000000000,   0.5786633810, 3, 1,          R,        R,              R,            0,              0,             0,[END]
+[0],   1.3307086614,   2.3384183196,   0.0000000000,   0.0000000000,   0.0000000000,   1.0000000000, 3, 1,          R,        R,              R,            0,              0,             0,[END]
+[0],   1.1692913386,   2.3384183196,   0.0000000000,   0.0000000000,   0.0000000000,   0.2668945286, 3, 1,          R,        R,              R,            0,              0,             0,[END]
+[0],   1.2093707965,   2.2686819887,   0.0000000000,   0.0000000000,   0.0000000000,   0.0000000000, 9, 1,          R,        R,              R,            0,              0,             0,[END]
+[0],   1.2364015939,   2.3107454644,   0.0000000000,   0.0000000000,   0.0000000000,   0.0000000000, 0, 0,          R,        R,              R,            0,              0,             0,[END]
+[0],   1.7602623872,   1.8552172037,   0.0000000000,   0.0000000000,   0.0000000000,   0.0000000000, 9, 1,          R,        R,              R,            0,              0,             0,[END]
+[0],   1.6937099643,   1.7805795791,   0.0000000000,   0.0000000000,   0.0000000000,   0.6632829642, 3, 1,          R,        R,              R,            0,              0,             0,[END]
+[0],   1.8307086614,   1.8384183196,   0.0000000000,   0.0000000000,   0.0000000000,   1.0000000000, 3, 1,          R,        R,              R,            0,              0,             0,[END]
+[0],   1.6692913386,   1.8384183196,   0.0000000000,   0.0000000000,   0.0000000000,   0.2024412220, 3, 1,          R,        R,              R,            0,              0,             0,[END]
+[0],   1.6937099643,   1.7805795791,   0.0000000000,   0.0000000000,   0.0000000000,   0.0000000000, 9, 1,          R,        R,              R,            0,              0,             0,[END]
+[0],   1.7301120985,   1.8148561691,   0.0000000000,   0.0000000000,   0.0000000000,   0.0000000000, 0, 0,          R,        R,              R,            0,              0,             0,[END]
+[0],   2.3215412591,   1.6071802228,   0.0000000000,   0.0000000000,   0.0000000000,   0.0000000000, 0, 0,          R,        R,              R,            0,              0,             0,[END]
