@@ -121,8 +121,8 @@ export default function RobotContextProvider({ children }: { children: ReactNode
             setLeftWheelSpeed(0);
             setRightWheelSpeed(0);
             setExcavatorPosition(0);
-            // setLidarData(mockData());
-            void loadMockData();
+            setLidarData([]);
+            // void loadMockData();
             setObstacles([]);
             return;
         }
