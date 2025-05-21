@@ -3,8 +3,7 @@ import { Message, useWebSocketContext } from "@/app/lib/web-socket-context";
 import Image from "next/image";
 import { JSX, useEffect } from "react";
 import { useState } from "react";
-import { MAP_HEIGHT, ObstacleType } from "../map/map";
-import Obstacle from "../map/obstacle";
+import {ObstacleType} from "@/app/types/map-objects";
 
 function interpolateColor(color1: number[], color2: number[], factor: number) {
     const result = color1.slice();
@@ -44,6 +43,7 @@ export default function LidarVisual() {
             }))].slice(-5);
         setObstacles(obstaclesMessages);
     }, [messages]);
+
     const getMaxDistance = () => {
         return 200; //Math.max(...lidarData.map((point) => point.distance));
     };

@@ -26,9 +26,9 @@ export default function RootLayout({
             </head>
             <body className="bg-zinc-800">
                 <WebSocketProvider>
-                    {/* <RobotContextProvider> */}
+                     <RobotContextProvider>
                     <GamepadStateProvider>{children}</GamepadStateProvider>
-                    {/* </RobotContextProvider> */}
+                     </RobotContextProvider>
                 </WebSocketProvider>
             </body>
         </html>

@@ -1,14 +1,14 @@
-// ObjModelAnimator.tsx
+// Render3DRobotModel.tsx
 import {useEffect, useRef, useState} from 'react';
 import * as THREE from 'three';
 import {OBJLoader} from 'three/examples/jsm/loaders/OBJLoader.js';
 import {MTLLoader} from 'three/examples/jsm/loaders/MTLLoader.js';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
-import {useGamepadManagerContext} from "@/app/ui/dashboard/gamepad-state-provider";
-import {Box3, Group, Object3DEventMap} from "three";
+import {Group} from "three";
 import {useRobotContext} from "@/app/lib/robot-context";
+import {lidarRelativeToRelative3D} from "@/app/utils/lidar-calculations";
 
-interface ObjModelAnimatorProps {
+interface Render3DRobotModelProps {
     baseFilename: string;
     wheelFilename: string;
     excavatorFilename: string;
@@ -28,35 +28,42 @@ interface ObjModelAnimatorProps {
     }
 }
 
-const ObjModelAnimator = ({
-                              baseFilename,
-                              wheelFilename,
-                              excavatorFilename,
-                              backgroundColor = '#ffffff',
-                              transparent = true,
-                              width = '100%',
-                              height = '100%',
-                              enableControls = true,
-                              controlsConfig = {
-                                  enableZoom: true,
-                                  enablePan: true,
-                                  autoRotate: false,
-                                  autoRotateSpeed: 1.0,
-                                  dampingFactor: 0.05,
-                                  maxPolarAngle: Math.PI,
-                                  minPolarAngle: 0
-                              }
-                          }: ObjModelAnimatorProps) => {
+const Render3DRobotModel = ({
+                                baseFilename,
+                                wheelFilename,
+                                excavatorFilename,
+                                backgroundColor = '#ffffff',
+                                transparent = true,
+                                width = '100%',
+                                height = '100%',
+                                enableControls = true,
+                                controlsConfig = {
+                                    enableZoom: true,
+                                    enablePan: true,
+                                    autoRotate: false,
+                                    autoRotateSpeed: 1.0,
+                                    dampingFactor: 0.05,
+                                    maxPolarAngle: Math.PI,
+                                    minPolarAngle: 0
+                                }
+                            }: Render3DRobotModelProps) => {
     const mountRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    // const [modelParts, setModelParts] = useState<ModelPart[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [cameraPosition, setCameraPosition] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 5));
 
-    const MODEL_SCALE = 0.2;
+    const MODEL_SCALE = 1;
 
-    const {leftWheelSpeed, rightWheelSpeed, excavatorPosition, lidarPoints, lidarOrigin} = useRobotContext();
+    const {
+        leftWheelSpeed,
+        rightWheelSpeed,
+        excavatorPosition,
+        lidarPoints,
+        lidarOrigin,
+        obstacles,
+        robot
+    } = useRobotContext();
 
     // Scene references stored for access in animation functions
     const sceneRef = useRef<{
@@ -67,6 +74,7 @@ const ObjModelAnimator = ({
         wheelModels: THREE.Group[] | null;
         excavatorModel: THREE.Group | null;
         lidarPointsMesh: THREE.Group | null;
+        obstaclesMesh: THREE.Group | null;
         controls: OrbitControls | null;
         animating: boolean;
     }>({
@@ -77,6 +85,7 @@ const ObjModelAnimator = ({
         wheelModels: null,
         excavatorModel: null,
         lidarPointsMesh: null,
+        obstaclesMesh: null,
         controls: null,
         animating: false
     });
@@ -105,7 +114,7 @@ const ObjModelAnimator = ({
             0.1,
             1000
         );
-        camera.position.z = 3;
+        camera.position.z = 10;
         sceneRef.current.camera = camera;
 
         // Renderer setup
@@ -216,17 +225,21 @@ const ObjModelAnimator = ({
 
         // Origin sphere
         const originMesh = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.05, 0.05, 0.02, 16, 3),
+            new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16, 3),
             new THREE.MeshStandardMaterial({color: 0xff0000})
         );
-        originMesh.position.set(lidarOrigin.x, lidarOrigin.y, lidarOrigin.z);
-        originMesh.rotation.set(lidarOrigin.pitch, lidarOrigin.yaw, lidarOrigin.roll);
+        originMesh.position.set(lidarOrigin.relPos.x, lidarOrigin.relPos.y, lidarOrigin.relPos.z);
+        originMesh.rotation.set(lidarOrigin.pitch, lidarOrigin.yawOffset, 0);
         scene.add(originMesh);
 
         // Clear existing points if re-rendering
         const lidarPointGroup = new THREE.Group();
-
         scene.add(lidarPointGroup);
+
+        // Clear existing points if re-rendering
+        const obstaclesMesh = new THREE.Group();
+        scene.add(obstaclesMesh);
+
 
         const WHEEL_OFFSET_X = 1.72188;  // In meters from blend file
         const WHEEL_OFFSET_Z = 2.27074;  // In meters from blend file
@@ -234,12 +247,6 @@ const ObjModelAnimator = ({
         const WHEEL_OFFSET_Y = -1.1233; // In meters from blend file
         // Y and z are swapped to match the model's orientation in the scene
 
-        // const wheelPositions = [
-        //     [0, 0],
-        //     [-2, 2],
-        //     [-2, 0],
-        //     [0, 2]
-        // ];
         const wheelPositions = [
             [1, 1],
             [-1, 1],
@@ -359,29 +366,51 @@ const ObjModelAnimator = ({
 
         const group = new THREE.Group();
 
-        const euler = new THREE.Euler(lidarOrigin.pitch, lidarOrigin.yaw, 0, 'XYZ');
+        console.log("Lidar points", lidarPoints);
+        lidarPoints.forEach(groupOfPoints => {
+            groupOfPoints.forEach((point, index) => {
+                const distance = 10;
 
-        lidarPoints.forEach(({distance, angle}) => {
-            // Step 1: Direction in local XZ plane
-            const localDir = new THREE.Vector3(
-                Math.sin(angle), // right
-                0,               // up/down stays zero in local plane
-                Math.cos(angle)  // forward
-            );
+                const colorDistance = Math.round(Math.min(Math.max(1, distance / 10 * 255), 255));
+                const color = `#${(255 - colorDistance).toString(16).padStart(2, '0')}${colorDistance.toString(16).padStart(2, '0')}00`;
 
-            // Step 2: Rotate into world space
-            const worldDir = localDir.clone().applyEuler(euler);
+                const worldPoint = point.globPos
+                worldPoint.sub(new THREE.Vector3(robot.x, 0, robot.y));
 
-            // Step 3: Scale and offset from origin
-            const worldPoint = worldDir.multiplyScalar(distance * MODEL_SCALE).add(new THREE.Vector3(
-                lidarOrigin.x, lidarOrigin.y, lidarOrigin.z
-            ));
+                const pointMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(index === 0 ? 0.03 : 0.015, 6, 6),
+                    new THREE.MeshStandardMaterial({color})
+                );
+                pointMesh.position.copy(worldPoint.multiplyScalar(MODEL_SCALE));
+                group.add(pointMesh);
+            });
+        });
 
-            const colorDistance = Math.round(Math.min(Math.max(1, distance / 10 * 255), 255));
+
+        sceneRef.current.scene.add(group);
+        sceneRef.current.lidarPointsMesh = group;
+    }, [lidarPoints, lidarOrigin]);
+
+
+    useEffect(() => {
+        if (!sceneRef.current.scene) return;
+
+        // Remove previous group
+        if (sceneRef.current.obstaclesMesh) {
+            sceneRef.current.scene.remove(sceneRef.current.obstaclesMesh);
+        }
+
+        const group = new THREE.Group();
+
+        obstacles.forEach((obstacle) => {
+            const color = obstacle.isHole ? 0x00ff00 : 0xff0000;
+
+            const worldPoint = new THREE.Vector3(obstacle.x, 0, obstacle.y);
+            worldPoint.sub(new THREE.Vector3(robot.x, 0, robot.y));
 
             const pointMesh = new THREE.Mesh(
-                new THREE.SphereGeometry(0.005, 8, 8),
-                new THREE.MeshStandardMaterial({color: `#${(255 - colorDistance).toString(16)}${colorDistance.toString(16)}00`})
+                new THREE.SphereGeometry(obstacle / 2.5 / 10, 8, 8),
+                new THREE.MeshStandardMaterial({color: color})
             );
             pointMesh.position.copy(worldPoint);
             group.add(pointMesh);
@@ -421,4 +450,4 @@ const ObjModelAnimator = ({
     );
 };
 
-export default ObjModelAnimator;
+export default Render3DRobotModel;

@@ -3,27 +3,13 @@ import Obstacle from "./obstacle";
 import RobotPath, { Point } from "./robot-path";
 import { useEffect, useRef, useState } from "react";
 import Robot from "./robot";
+import {ObstacleType} from "@/app/types/map-objects";
 
 export const MAP_WIDTH = 5.48; // meters
 export const MAP_OBSTACLES_ZONE_HEIGHT = 2.44; // meters
 export const MAP_HEIGHT = 4.87; // meters
 export const COLUMN_WIDTH = 0.8; // meters
 
-export type ObstacleType = {
-    x: number;
-    y: number;
-    radius: number;
-    isHole: boolean;
-    relativeX: number;
-    relativeY: number;
-};
-
-export type Rect = {
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-}
 
 // Note: all obstacles and paths are in centimeters
 export default function Map() {
@@ -32,6 +18,7 @@ export default function Map() {
     const [odometryPathData, setOdometryPathData] = useState<Point[]>([]);
     const [obstacles, setObstacles] = useState<ObstacleType[]>([]);
     const [robot, setRobot] = useState({ x: 448, y: 100, width: 71, height: 98, rotation: 0, posConfidenceRect: { x1: 0, y1: 0, x2: 0, y2: 0 } });
+
     useEffect(() => {
         if (messages.length == 0) {
             // in the case of a reset, clear the path data

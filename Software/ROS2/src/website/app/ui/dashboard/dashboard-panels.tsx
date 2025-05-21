@@ -13,7 +13,7 @@ import ConfigPanel from "./config-panel";
 import ExcavatorVisual from "./excavator_temp_visual";
 import OrientationCorrection from "./orientation-correction";
 import ControlsReminder from "./controls-reminder";
-import ObjModelAnimator from "@/app/ui/three/obj";
+import Render3DRobotModel from "@/app/ui/three/render-robot";
 
 export default function DashboardPanels() {
     const mapPanel = (
@@ -57,8 +57,8 @@ export default function DashboardPanels() {
                 <Panel title="Controls" hiddenByDefault={true}>
                     <ControlsReminder />
                 </Panel>
-                {/* <Panel title="">
-                    <ObjModelAnimator
+                <Panel title="">
+                    <Render3DRobotModel
                         baseFilename="/models/lunabot_base"
                         wheelFilename="/models/lunabot_wheel"
                         excavatorFilename="/models/lunabot_excavator"
@@ -71,7 +71,7 @@ export default function DashboardPanels() {
                             maxPolarAngle: Math.PI * 0.75,  // Can't go below model
                             minPolarAngle: Math.PI * 0.25   // Can't go fully above model
                         }} />
-                </Panel> */}
+                </Panel>
             </div>
             <div className="w-[66vw] hidden xl:block flex-2">{mapPanel}</div>
         </div>
