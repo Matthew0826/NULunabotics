@@ -40,7 +40,7 @@ typedef struct {
 
 // UWB stands for Ultra-Wideband and it's how the beacons ("anchors") find the distance to this "tag" board that's sitting on the robot
 // Here's a link for reference on their "AT" protocol: https://reyax.com//upload/products_download/download_file/AT_Command_RYUW122.pdf
-SoftwareSerial uwbSerial(D6, D5);  // (RX, TX) NOTE: THEY ARE FLIPPED FROM THE ONES IN THE CIRCUIT!!
+SoftwareSerial uwbSerial(D5, D6);  // (RX, TX) NOTE: THEY ARE FLIPPED FROM THE ONES IN THE CIRCUIT!!
 
 // Tag beacon configuration
 const String TAG_ADDRESS = "TAG00010";   // This tag's address (8 bytes)

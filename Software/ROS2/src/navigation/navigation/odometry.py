@@ -14,6 +14,7 @@ from sensors.spin_node_helper import spin_nodes
 
 from navigation.pid import PIDController
 from navigation.pid_tuner import tune_pid
+from navigation.pid_tuner2 import PIDTuner
 
 
 from std_msgs.msg import Float32
@@ -421,17 +422,20 @@ class Odometry(Node):
         """Rotates to a given orientation with PID control."""
         # reset the PID controller
         self.orientation_pid.reset()
+        self.get_logger().info(f"want to rotate to {int(final_orientation)} degrees")
         
         while True:
             # find error for PID
             error = self.get_degrees_error(final_orientation)
             # check if completed
+            self.get_logger().info(f"tol: {self.deg_tolerance}, error: {error}")
             if abs(error) <= self.deg_tolerance: break
             # update PID
             power = self.orientation_pid.update(error, self.get_clock().now())
             # make sure theres at least a little power so the robot continues turning
             if abs(power) < 0.1:
                 power = 0.1 if power > 0 else -0.1
+            self.get_logger().info(f"power after: {power}, error: {error}")
             # drive the motors for a bit
             await self.drive(-power, power, seconds=0.2)
             await self.yield_once()
@@ -579,7 +583,14 @@ class Odometry(Node):
         correction = AccelerometerCorrection()
         correction.initial_angle = -orientation_error
         correction.should_reset = False
-        self.orientation_corrector.publish(correction)    
+        self.orientation_corrector.publish(correction)
+    
+    async def perform_orientation_test(self, what):
+        self.get_logger().info(f"Kp: {self.orientation_pid.Kp}, Kd: {self.orientation_pid.Kd}, Ki: {self.orientation_pid.Ki}")
+        await self.to_orient(0.0)
+        self.get_logger().info(f"orientation: {self.orientation}")
+        await self.to_orient(90.0)
+        self.get_logger().info(f"orientation: {self.orientation}")
 
 
 # should this be replaced with sigmoid function later?
@@ -595,22 +606,23 @@ def positive_angle(angle: float):
 def main(args=None):
     rclpy.init(args=args)
     odometry = Odometry()
-    # asyncio.run(tune_pid(
-    #     odometry,
-    #     odometry.orientation_pid,
-    #     lambda robot: robot.orientation,
-    #     0.0,
-    #     90.0,
-    #     odometry.get_degrees_error,
-    #     odometry.to_orient,
-    # ))
-    start_point = Point()
-    start_point.x = 100.1
-    start_point.y = 300.1
-    end_point = Point()
-    end_point.x = 200.1
-    end_point.y = 400.1
-    # asyncio.run(tune_pid(
+    tuner = PIDTuner(log=odometry.get_logger().info)
+    asyncio.run(tuner.tune_pid(
+        odometry,
+        odometry.orientation_pid,
+        lambda robot: robot.orientation,
+        0.0,
+        90.0,
+        odometry.get_degrees_error,
+        odometry.perform_orientation_test,
+    ))
+    # start_point = Point()
+    # start_point.x = 100.1
+    # start_point.y = 300.1
+    # end_point = Point()
+    # end_point.x = 200.1
+    # end_point.y = 400.1
+    # asyncio.run(tuner.tune_pid(
     #     odometry,
     #     odometry.linear_drive_pid,
     #     lambda robot: robot.position,

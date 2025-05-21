@@ -49,7 +49,7 @@ export default function WebSocketGraph({
         newGraph.dataSets["voltage"].data = voltages;
         setGraph(newGraph);
         setBatteryPercent(percent);
-        setTimeCounter((prev) => prev + 1);
+        // setTimeCounter((prev) => prev + 1);
     }, [messages]);
 
     return (

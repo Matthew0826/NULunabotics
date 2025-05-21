@@ -160,7 +160,7 @@ export async function sendPlanAction(start: any, should_excavate: boolean, shoul
     if (goalHandle.isSucceeded()) {
         console.log(`Goal succeeded in ${result.time_elapsed_millis} ms`);
     } else {
-        console.log(`Goal failed with status: ${result}`);
+        console.log(`Goal failed with status: ${goalHandle.status}`);
     }
     return result;
 }

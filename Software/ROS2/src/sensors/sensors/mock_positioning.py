@@ -1,6 +1,7 @@
 import rclpy
 import math
 from rclpy.node import Node
+from collections import deque
 
 from std_msgs.msg import Float32, Bool
 
@@ -49,10 +50,14 @@ class SpacialDataPublisher(Node):
         self.orientation_correction_sub = self.create_subscription(AccelerometerCorrection, '/sensors/accelerometer_correction', self.on_orientation_correction, 10)
         
         # keep track of positions
-        self.x = 100.0
-        self.y = 300.0
+        self.x = 448
+        self.y = 100.0
         self.orientation = float(random.randint(0, 360))
         self.initial_orientation = -self.orientation
+        
+        # to cause a delay in the simulation to mirror real kalman filter delay
+        self.position_history_length = 5
+        self.position_history = deque(maxlen=self.position_history_length)
         
         self.motor_power_left = 0.0
         self.motor_power_right = 0.0
@@ -126,7 +131,9 @@ class SpacialDataPublisher(Node):
         msg.x = float(self.x)
         msg.y = float(self.y)
         # publish mock position based on motor power
-        self.position_pub.publish(msg)
+        # but with a delay
+        self.position_history.append(msg)
+        self.position_pub.publish(self.position_history[0])
         
         msg = ExcavatorPotentiometer()
         msg.excavator_lifter_percent = float(self.actuator_percents[0])
