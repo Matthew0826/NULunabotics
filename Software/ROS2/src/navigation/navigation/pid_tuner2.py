@@ -3,7 +3,8 @@ import time
 import numpy as np
 from typing import Callable, Any, Tuple, List, Optional, Union
 import matplotlib.pyplot as plt
-from scipy import signal
+from collections import deque
+import logging
 
 class PIDTuner:
     """
@@ -14,24 +15,24 @@ class PIDTuner:
     """
     
     def __init__(self, 
-                 log: Callable = print,
                  settling_time_threshold: float = 0.02,
                  overshoot_threshold: float = 0.1,
                  steady_state_error_threshold: float = 0.01,
                  max_iterations: int = 20,
                  timeout: float = 30.0,
-                 sampling_rate: float = 0.05):
+                 sampling_rate: float = 0.05,
+                 logger=None):
         """
         Initialize the PID tuner with tuning parameters.
         
         Args:
-            log: Function to log messages (default is print)
             settling_time_threshold: Threshold for determining when the system has settled (as a fraction of setpoint)
             overshoot_threshold: Maximum allowed overshoot as a fraction of the step size
             steady_state_error_threshold: Acceptable steady state error as a fraction of the step size
             max_iterations: Maximum number of tuning iterations
             timeout: Maximum time in seconds for a single experiment
             sampling_rate: Time between measurements in seconds
+            logger: Optional logger for recording tuning information
         """
         self.settling_time_threshold = settling_time_threshold
         self.overshoot_threshold = overshoot_threshold
@@ -40,7 +41,7 @@ class PIDTuner:
         self.timeout = timeout
         self.sampling_rate = sampling_rate
         self.tuning_history = []
-        self.log = log  # Function to log messages (default is print)
+        self.logger = logger or logging.getLogger('pid_tuner')
         
     async def tune_pid(self, 
                        robot: Any,
@@ -49,7 +50,7 @@ class PIDTuner:
                        start_point: float,
                        end_point: float,
                        error_function: Callable[[float, float], float],
-                       reset_function: Callable[[Any, float], None],
+                       movement_function: Callable[[Any, float], None],
                        method: str = "ziegler_nichols",
                        plot_results: bool = True) -> Tuple[float, float, float]:
         """
@@ -62,55 +63,55 @@ class PIDTuner:
             start_point: Initial state for tuning
             end_point: Target state for tuning (setpoint)
             error_function: Function to calculate error between current and target state
-            reset_function: Async function to reset the robot to a specific position
+            movement_function: Async function to move the robot to a specific position/orientation
             method: Tuning method to use ("ziegler_nichols", "cohen_coon", or "manual")
             plot_results: Whether to plot the tuning results
             
         Returns:
-            Tuple of optimized (kp, ki, kd) gains
+            Tuple of optimized (Kp, Ki, Kd) gains
         """
         self.log(f"Starting PID tuning from {start_point} to {end_point}")
         
         # Save original PID values to restore if needed
-        original_kp = pid_controller.Kp
-        original_ki = pid_controller.Ki
-        original_kd = pid_controller.Kd
+        original_Kp = pid_controller.Kp
+        original_Ki = pid_controller.Ki
+        original_Kd = pid_controller.Kd
         
         try:
             # Reset to start position
-            await reset_function(start_point)
+            await movement_function(robot, start_point)
             await asyncio.sleep(1.0)  # Allow system to stabilize
             
             if method == "ziegler_nichols":
-                kp, ki, kd = await self._ziegler_nichols_tuning(
+                Kp, Ki, Kd = await self._ziegler_nichols_tuning(
                     robot, pid_controller, feedback_function, 
-                    start_point, end_point, error_function, reset_function
+                    start_point, end_point, error_function, movement_function
                 )
             elif method == "cohen_coon":
-                kp, ki, kd = await self._cohen_coon_tuning(
+                Kp, Ki, Kd = await self._cohen_coon_tuning(
                     robot, pid_controller, feedback_function, 
-                    start_point, end_point, error_function, reset_function
+                    start_point, end_point, error_function, movement_function
                 )
             else:  # Default to manual tuning
-                kp, ki, kd = await self._manual_tuning(
+                Kp, Ki, Kd = await self._manual_tuning(
                     robot, pid_controller, feedback_function, 
-                    start_point, end_point, error_function, reset_function
+                    start_point, end_point, error_function, movement_function
                 )
             
             # Apply the final tuned parameters
-            pid_controller.Kp = kp
-            pid_controller.Ki = ki
-            pid_controller.Kd = kd
+            pid_controller.Kp = Kp
+            pid_controller.Ki = Ki
+            pid_controller.Kd = Kd
             
             # Run a final test with the tuned parameters
             time_points, response = await self._run_step_test(
                 robot, pid_controller, feedback_function, 
-                start_point, end_point, error_function, reset_function
+                start_point, end_point, error_function, movement_function
             )
             
-            # Analyze and self.log final performance
+            # Analyze and print final performance
             metrics = self._analyze_step_response(time_points, response, start_point, end_point)
-            self.log(f"Final PID parameters: Kp={kp:.4f}, Ki={ki:.4f}, Kd={kd:.4f}")
+            self.log(f"Final PID parameters: Kp={Kp:.4f}, Ki={Ki:.4f}, Kd={Kd:.4f}")
             self.log(f"Performance metrics: ")
             self.log(f"  Rise time: {metrics['rise_time']:.2f}s")
             self.log(f"  Settling time: {metrics['settling_time']:.2f}s")
@@ -121,22 +122,22 @@ class PIDTuner:
                 self._plot_response(time_points, response, start_point, end_point)
                 
             self.tuning_history.append({
-                'kp': kp,
-                'ki': ki,
-                'kd': kd,
+                'Kp': Kp,
+                'Ki': Ki,
+                'Kd': Kd,
                 'metrics': metrics,
                 'time_points': time_points,
                 'response': response
             })
             
-            return kp, ki, kd
+            return Kp, Ki, Kd
             
         except Exception as e:
-            self.log(f"Error during tuning: {e}")
+            self.log(f"Error during tuning: {e}", level="error")
             # Restore original values on error
-            pid_controller.Kp = original_kp
-            pid_controller.Ki = original_ki
-            pid_controller.Kd = original_kd
+            pid_controller.Kp = original_Kp
+            pid_controller.Ki = original_Ki
+            pid_controller.Kd = original_Kd
             raise
     
     async def _ziegler_nichols_tuning(self, 
@@ -146,7 +147,7 @@ class PIDTuner:
                                      start_point: float,
                                      end_point: float,
                                      error_function: Callable[[float, float], float],
-                                     reset_function: Callable[[Any, float], None]) -> Tuple[float, float, float]:
+                                     movement_function: Callable[[Any, float], None]) -> Tuple[float, float, float]:
         """
         Implement Ziegler-Nichols tuning method.
         
@@ -171,12 +172,12 @@ class PIDTuner:
         
         for iteration in range(self.max_iterations):
             # Run step test with current parameters
-            await reset_function(start_point)
+            await movement_function(robot, start_point)
             await asyncio.sleep(1.0)
             
-            time_points, response = await self._run_step_test(
-                robot, pid_controller, feedback_function, 
-                start_point, end_point, error_function, reset_function
+            # Record the system response for analysis
+            time_points, response = await self._record_step_response(
+                robot, feedback_function, start_point, end_point, movement_function
             )
             
             # Check for sustained oscillations by analyzing the response
@@ -206,11 +207,11 @@ class PIDTuner:
             tu = oscillation_info.get('period', 1.0)  # Default to 1.0 if estimation fails
             
         # Calculate PID parameters using Ziegler-Nichols formulas
-        kp = 0.6 * ku
-        ki = 1.2 * ku / tu
-        kd = 0.075 * ku * tu
+        Kp = 0.6 * ku
+        Ki = 1.2 * ku / tu
+        Kd = 0.075 * ku * tu
         
-        return kp, ki, kd
+        return Kp, Ki, Kd
     
     async def _cohen_coon_tuning(self, 
                                robot: Any, 
@@ -219,7 +220,7 @@ class PIDTuner:
                                start_point: float,
                                end_point: float,
                                error_function: Callable[[float, float], float],
-                               reset_function: Callable[[Any, float], None]) -> Tuple[float, float, float]:
+                               movement_function: Callable[[Any, float], None]) -> Tuple[float, float, float]:
         """
         Implement Cohen-Coon tuning method based on process reaction curve.
         """
@@ -230,12 +231,12 @@ class PIDTuner:
         pid_controller.Ki = 0.0
         pid_controller.Kd = 0.0
         
-        await reset_function(start_point)
+        await movement_function(robot, start_point)
         await asyncio.sleep(1.0)
         
-        time_points, response = await self._run_step_test(
-            robot, pid_controller, feedback_function, 
-            start_point, end_point, error_function, reset_function
+        # Record the system response
+        time_points, response = await self._record_step_response(
+            robot, feedback_function, start_point, end_point, movement_function
         )
         
         # Process reaction curve analysis
@@ -256,19 +257,19 @@ class PIDTuner:
             # Calculate Cohen-Coon parameters
             r = t_delay / t_constant
             
-            kp = (1/K) * (1.35 + 0.25 * r) / (1 + 0.6 * r)
-            ki = kp / (t_constant * (0.54 + 0.33 * r))
-            kd = kp * t_constant * (0.5 * r) / (1 + 0.3 * r)
+            Kp = (1/K) * (1.35 + 0.25 * r) / (1 + 0.6 * r)
+            Ki = Kp / (t_constant * (0.54 + 0.33 * r))
+            Kd = Kp * t_constant * (0.5 * r) / (1 + 0.3 * r)
             
             self.log(f"Cohen-Coon analysis: K={K:.4f}, t_delay={t_delay:.4f}s, t_constant={t_constant:.4f}s")
             
-            return kp, ki, kd
+            return Kp, Ki, Kd
         
         except Exception as e:
-            self.log(f"Error in Cohen-Coon analysis: {e}. Falling back to manual tuning.")
+            self.log(f"Error in Cohen-Coon analysis: {e}. Falling back to manual tuning.", level="warning")
             return await self._manual_tuning(
                 robot, pid_controller, feedback_function, 
-                start_point, end_point, error_function, reset_function
+                start_point, end_point, error_function, movement_function
             )
     
     async def _manual_tuning(self, 
@@ -278,7 +279,7 @@ class PIDTuner:
                             start_point: float,
                             end_point: float,
                             error_function: Callable[[float, float], float],
-                            reset_function: Callable[[Any, float], None]) -> Tuple[float, float, float]:
+                            movement_function: Callable[[Any, float], None]) -> Tuple[float, float, float]:
         """
         Implement iterative manual tuning by adjusting PID parameters based on performance metrics.
         """
@@ -289,9 +290,9 @@ class PIDTuner:
         pid_controller.Ki = 0.0
         pid_controller.Kd = 0.1
         
-        best_kp = pid_controller.Kp
-        best_ki = pid_controller.Ki
-        best_kd = pid_controller.Kd
+        best_Kp = pid_controller.Kp
+        best_Ki = pid_controller.Ki
+        best_Kd = pid_controller.Kd
         best_score = float('inf')
         
         # Step size for parameter adjustments
@@ -301,12 +302,12 @@ class PIDTuner:
         
         for iteration in range(self.max_iterations):
             # Run step test with current parameters
-            await reset_function(start_point)
+            await movement_function(robot, start_point)
             await asyncio.sleep(1.0)
             
-            time_points, response = await self._run_step_test(
-                robot, pid_controller, feedback_function, 
-                start_point, end_point, error_function, reset_function
+            # Record system response
+            time_points, response = await self._record_step_response(
+                robot, feedback_function, start_point, end_point, movement_function
             )
             
             # Analyze performance
@@ -328,9 +329,9 @@ class PIDTuner:
             # Save best parameters
             if score < best_score:
                 best_score = score
-                best_kp = pid_controller.Kp
-                best_ki = pid_controller.Ki
-                best_kd = pid_controller.Kd
+                best_Kp = pid_controller.Kp
+                best_Ki = pid_controller.Ki
+                best_Kd = pid_controller.Kd
                 
             # Adjust parameters based on performance
             if metrics['rise_time'] > 1.0:
@@ -366,8 +367,69 @@ class PIDTuner:
                 break
                 
         # Return the best parameters found
-        self.log(f"Best parameters found: Kp={best_kp:.4f}, Ki={best_ki:.4f}, Kd={best_kd:.4f} with score {best_score:.4f}")
-        return best_kp, best_ki, best_kd
+        self.log(f"Best parameters found: Kp={best_Kp:.4f}, Ki={best_Ki:.4f}, Kd={best_Kd:.4f} with score {best_score:.4f}")
+        return best_Kp, best_Ki, best_Kd
+    
+    async def _record_step_response(self,
+                                   robot: Any,
+                                   feedback_function: Callable[[Any], float],
+                                   start_point: float,
+                                   end_point: float,
+                                   movement_function: Callable[[Any, float], None]) -> Tuple[List[float], List[float]]:
+        """
+        Record the system response to a step input by monitoring feedback during movement.
+        
+        This method:
+        1. Records the initial state
+        2. Commands the system to move to the end point
+        3. Continuously records the system state during movement
+        4. Returns time points and response values
+        """
+        time_points = []
+        response = []
+        start_time = time.time()
+        
+        # Record initial state
+        initial_value = feedback_function(robot)
+        time_points.append(0.0)
+        response.append(initial_value)
+        
+        # Create a monitoring task to record the response during movement
+        async def monitor_response():
+            while True:
+                current_time = time.time() - start_time
+                current_value = feedback_function(robot)
+                
+                time_points.append(current_time)
+                response.append(current_value)
+                
+                # Continue monitoring until timeout or movement completes
+                if current_time > self.timeout:
+                    break
+                    
+                await asyncio.sleep(self.sampling_rate)
+        
+        # Start the monitoring task
+        monitor_task = asyncio.create_task(monitor_response())
+        
+        # Initiate the movement
+        try:
+            # Use the movement function to move to the end point
+            await movement_function(robot, end_point)
+        except Exception as e:
+            self.log(f"Error during movement: {e}", level="error")
+        finally:
+            # Ensure we have some data after movement completes
+            await asyncio.sleep(2.0)
+            
+            # Cancel the monitoring task
+            monitor_task.cancel()
+            try:
+                await monitor_task
+            except asyncio.CancelledError:
+                pass
+        
+        return time_points, response
     
     async def _run_step_test(self, 
                             robot: Any, 
@@ -376,56 +438,24 @@ class PIDTuner:
                             start_point: float,
                             end_point: float,
                             error_function: Callable[[float, float], float],
-                            reset_function: Callable[[Any, float], None]) -> Tuple[List[float], List[float]]:
+                            movement_function: Callable[[Any, float], None]) -> Tuple[List[float], List[float]]:
         """
-        Run a step response test and collect data.
+        Run a complete step response test with the current PID parameters.
+        
+        This is a wrapper around _record_step_response that ensures the system starts
+        from the correct initial state.
         
         Returns:
             Tuple of (time_points, response_values)
         """
         # Ensure we're at the start point
         current = feedback_function(robot)
-        if abs(error_function(current, start_point)) > 0.05:
-            await reset_function(start_point)
+        if abs(error_function(current, start_point)) > 0.05 * abs(end_point - start_point):
+            await movement_function(robot, start_point)
             await asyncio.sleep(1.0)
-        
-        # Apply step input to the system
-        time_points = []
-        response = []
-        start_time = time.time()
-        
-        # Record initial state
-        time_points.append(0.0)
-        response.append(feedback_function(robot))
-        
-        # Change setpoint (this is handled by the robot's control loop externally)
-        # We just need to record the response
-        settled = False
-        
-        while time.time() - start_time < self.timeout:
-            # Sample current state
-            current_value = feedback_function(robot)
-            current_time = time.time() - start_time
             
-            time_points.append(current_time)
-            response.append(current_value)
-            
-            # Check if system has settled
-            error = error_function(current_value, end_point)
-            if abs(error) < self.settling_time_threshold * abs(end_point - start_point):
-                if not settled:
-                    settled = True
-                    settled_time = current_time
-                elif current_time - settled_time > 2.0:  # Remain settled for 2 seconds
-                    self.log(f"System settled after {current_time:.2f}s")
-                    break
-            else:
-                settled = False
-                
-            # Wait for next sample
-            await asyncio.sleep(self.sampling_rate)
-            
-        return time_points, response
+        # Record response to step input
+        return await self._record_step_response(robot, feedback_function, start_point, end_point, movement_function)
     
     def _analyze_step_response(self, 
                               time_points: List[float], 
@@ -442,50 +472,63 @@ class PIDTuner:
         if step_size == 0:
             return {'rise_time': 0, 'settling_time': 0, 'overshoot': 0, 'steady_state_error': 0}
             
-        # Normalize response to 0-1 range for analysis
-        normalized_response = [(r - start_point) / step_size for r in response]
-        target = 1.0 if end_point > start_point else -1.0
+        # Normalize response for analysis
+        direction = 1 if end_point > start_point else -1
+        normalized_response = [(r - start_point) / step_size * direction for r in response]
         
         # Calculate rise time (10% to 90%)
         try:
-            idx_10 = next(i for i, r in enumerate(normalized_response) if abs(r) >= 0.1 * abs(target))
-            idx_90 = next(i for i, r in enumerate(normalized_response) if abs(r) >= 0.9 * abs(target))
+            idx_10 = next(i for i, r in enumerate(normalized_response) if r >= 0.1)
+            idx_90 = next(i for i, r in enumerate(normalized_response) if r >= 0.9)
             rise_time = time_points[idx_90] - time_points[idx_10]
         except (StopIteration, IndexError):
-            rise_time = time_points[-1]  # Use full time if 90% is not reached
+            rise_time = time_points[-1] if time_points else 0  # Use full time if 90% is not reached
             
         # Calculate overshoot
-        overshoot = 0
-        if len(normalized_response) > 0:
-            if target > 0:
+        try:
+            if direction > 0:
                 max_value = max(normalized_response)
-                if max_value > target:
-                    overshoot = (max_value - target) * 100
+                overshoot = max(0, (max_value - 1.0) * 100)
             else:
                 min_value = min(normalized_response)
-                if min_value < target:
-                    overshoot = (target - min_value) * 100
+                overshoot = max(0, (1.0 - min_value) * 100)
+        except ValueError:
+            overshoot = 0
                     
-        # Calculate settling time
-        settling_threshold = 0.02  # 2% of step size
+        # Calculate settling time (time to stay within ±2% of final value)
+        settling_threshold = 0.02
         try:
             # Find the last time the response leaves the settling band
-            last_outside_idx = len(normalized_response) - 1
-            for i in range(len(normalized_response) - 1, 0, -1):
-                if abs(normalized_response[i] - target) > settling_threshold:
-                    last_outside_idx = i
-                    break
-                    
-            # Settling time is the time from the beginning to when response stays in the band
-            settling_time = time_points[last_outside_idx]
+            settled_indices = [i for i, r in enumerate(normalized_response) 
+                              if abs(r - 1.0) <= settling_threshold]
+            
+            if settled_indices:
+                # Find the first index where the response stays within the band
+                consecutive_count = 0
+                settling_idx = len(normalized_response) - 1
+                
+                for i in range(len(normalized_response)):
+                    if abs(normalized_response[i] - 1.0) <= settling_threshold:
+                        consecutive_count += 1
+                    else:
+                        consecutive_count = 0
+                        
+                    # Consider settled if it stays in band for at least 5 samples
+                    if consecutive_count >= 5:
+                        settling_idx = i - 4  # The first index that started the sequence
+                        break
+                        
+                settling_time = time_points[settling_idx]
+            else:
+                settling_time = time_points[-1] if time_points else 0
         except (IndexError, ValueError):
-            settling_time = time_points[-1]
+            settling_time = time_points[-1] if time_points else 0
             
         # Calculate steady state error
-        if len(normalized_response) > 0:
+        if len(normalized_response) > 5:
             # Use average of last few points to reduce noise
             steady_state = sum(normalized_response[-min(10, len(normalized_response)):]) / min(10, len(normalized_response))
-            steady_state_error = steady_state - target
+            steady_state_error = 1.0 - steady_state
         else:
             steady_state_error = 0
             
@@ -545,7 +588,7 @@ class PIDTuner:
             # Check if periods are consistent (sustained oscillations)
             if periods:
                 avg_period = sum(periods) / len(periods)
-                period_variation = max(abs(p - avg_period) for p in periods) / avg_period
+                period_variation = max(abs(p - avg_period) for p in periods) / avg_period if avg_period else 1.0
                 
                 sustained = period_variation < 0.2 or force_estimate
                 
@@ -560,13 +603,13 @@ class PIDTuner:
             # Try to estimate period using FFT
             if len(response) > 20:
                 n = len(response)
-                sample_rate = n / (time_points[-1] - time_points[0])
+                sample_rate = n / (time_points[-1] - time_points[0]) if time_points[-1] > time_points[0] else 1.0
                 fft = np.fft.fft(centered_response)
                 freqs = np.fft.fftfreq(n, 1/sample_rate)
                 
                 # Get the frequency with maximum amplitude (excluding DC)
-                idx = np.argmax(np.abs(fft[1:n//2])) + 1
-                dominant_freq = freqs[idx]
+                idx = np.argmax(np.abs(fft[1:n//2])) + 1 if n > 2 else 1
+                dominant_freq = abs(freqs[idx]) if idx < len(freqs) else 1.0
                 
                 if dominant_freq > 0:
                     return {
@@ -574,50 +617,60 @@ class PIDTuner:
                         'period': 1.0 / dominant_freq
                     }
             
-            # Fallback - rough estimate from response shape
-            peaks, _ = signal.find_peaks(centered_response)
-            if len(peaks) >= 2:
-                avg_peak_dist = sum(time_points[peaks[i+1]] - time_points[peaks[i]] 
-                                  for i in range(len(peaks)-1)) / (len(peaks)-1)
-                return {
-                    'has_sustained_oscillations': False,
-                    'period': avg_peak_dist
-                }
+            # Fallback - detect peaks
+            try:
+                from scipy import signal
+                peaks, _ = signal.find_peaks(centered_response)
+                if len(peaks) >= 2:
+                    avg_peak_dist = sum(time_points[peaks[i+1]] - time_points[peaks[i]] 
+                                      for i in range(len(peaks)-1)) / (len(peaks)-1)
+                    return {
+                        'has_sustained_oscillations': False,
+                        'period': avg_peak_dist
+                    }
+            except:
+                pass
         
         return {'has_sustained_oscillations': False}
     
     def _plot_response(self, time_points: List[float], response: List[float], start_point: float, end_point: float):
         """Plot the step response with performance metrics."""
-        plt.figure(figsize=(10, 6))
-        plt.plot(time_points, response, 'b-', linewidth=2)
-        plt.axhline(y=start_point, color='r', linestyle='--', label='Start')
-        plt.axhline(y=end_point, color='g', linestyle='--', label='Target')
-        
-        # Add settling range lines (±2%)
-        settling_range = 0.02 * abs(end_point - start_point)
-        plt.axhline(y=end_point + settling_range, color='g', linestyle=':', alpha=0.5)
-        plt.axhline(y=end_point - settling_range, color='g', linestyle=':', alpha=0.5)
-        
-        # Add annotations for metrics
-        metrics = self._analyze_step_response(time_points, response, start_point, end_point)
-        
-        plt.title('PID Controller Step Response')
-        plt.xlabel('Time (seconds)')
-        plt.ylabel('Response')
-        plt.grid(True)
-        plt.legend()
-        
-        # Add text box with metrics
-        text = f"Rise Time: {metrics['rise_time']:.2f}s\n" \
-               f"Settling Time: {metrics['settling_time']:.2f}s\n" \
-               f"Overshoot: {metrics['overshoot']:.2f}%\n" \
-               f"Steady State Error: {metrics['steady_state_error']:.4f}"
-               
-        plt.annotate(text, xy=(0.02, 0.02), xycoords='axes fraction',
-                    bbox=dict(boxstyle="round,pad=0.5", fc="lightyellow", alpha=0.8))
-        
-        plt.tight_layout()
-        plt.show()
+        try:
+            import matplotlib.pyplot as plt
+            
+            plt.figure(figsize=(10, 6))
+            plt.plot(time_points, response, 'b-', linewidth=2)
+            plt.axhline(y=start_point, color='r', linestyle='--', label='Start')
+            plt.axhline(y=end_point, color='g', linestyle='--', label='Target')
+            
+            # Add settling range lines (±2%)
+            settling_range = 0.02 * abs(end_point - start_point)
+            plt.axhline(y=end_point + settling_range, color='g', linestyle=':', alpha=0.5)
+            plt.axhline(y=end_point - settling_range, color='g', linestyle=':', alpha=0.5)
+            
+            # Add annotations for metrics
+            metrics = self._analyze_step_response(time_points, response, start_point, end_point)
+            
+            plt.title('PID Controller Step Response')
+            plt.xlabel('Time (seconds)')
+            plt.ylabel('Response')
+            plt.grid(True)
+            plt.legend()
+            
+            # Add text box with metrics
+            text = f"Rise Time: {metrics['rise_time']:.2f}s\n" \
+                   f"Settling Time: {metrics['settling_time']:.2f}s\n" \
+                   f"Overshoot: {metrics['overshoot']:.2f}%\n" \
+                   f"Steady State Error: {metrics['steady_state_error']:.4f}"
+                   
+            plt.annotate(text, xy=(0.02, 0.02), xycoords='axes fraction',
+                        bbox=dict(boxstyle="round,pad=0.5", fc="lightyellow", alpha=0.8))
+            
+            plt.tight_layout()
+            plt.savefig(f"pid_response_{time.strftime('%Y%m%d_%H%M%S')}.png")
+            plt.show()
+        except Exception as e:
+            self.log(f"Error plotting response: {e}", level="warning")
     
     def get_tuning_history(self):
         """Return the history of tuning attempts for analysis."""
@@ -625,15 +678,32 @@ class PIDTuner:
     
     def save_tuning_report(self, filename: str = "pid_tuning_report.txt"):
         """Save a tuning report to a file."""
-        with open(filename, 'w') as f:
-            f.write("PID Tuning Report\n")
-            f.write("=================\n\n")
+        try:
+            with open(filename, 'w') as f:
+                f.write("PID Tuning Report\n")
+                f.write("=================\n\n")
+                
+                for i, tuning in enumerate(self.tuning_history):
+                    f.write(f"Tuning #{i+1}\n")
+                    f.write(f"Parameters: Kp={tuning['Kp']:.4f}, Ki={tuning['Ki']:.4f}, Kd={tuning['Kd']:.4f}\n")
+                    f.write(f"Performance Metrics:\n")
+                    f.write(f"  Rise time: {tuning['metrics']['rise_time']:.2f}s\n")
+                    f.write(f"  Settling time: {tuning['metrics']['settling_time']:.2f}s\n")
+                    f.write(f"  Overshoot: {tuning['metrics']['overshoot']:.2f}%\n")
+                    f.write(f"  Steady-state error: {tuning['metrics']['steady_state_error']:.4f}\n\n")
+                    
+            self.log(f"Tuning report saved to {filename}")
+        except Exception as e:
+            self.log(f"Error saving tuning report: {e}", level="error")
             
-            for i, tuning in enumerate(self.tuning_history):
-                f.write(f"Tuning #{i+1}\n")
-                f.write(f"Parameters: Kp={tuning['kp']:.4f}, Ki={tuning['ki']:.4f}, Kd={tuning['kd']:.4f}\n")
-                f.write(f"Performance Metrics:\n")
-                f.write(f"  Rise time: {tuning['metrics']['rise_time']:.2f}s\n")
-                f.write(f"  Settling time: {tuning['metrics']['settling_time']:.2f}s\n")
-                f.write(f"  Overshoot: {tuning['metrics']['overshoot']:.2f}%\n")
-                f.write(f"  Steady-state error: {tuning['metrics']['steady_state_error']:.4f}\n\n")
+    def log(self, message, level="info"):
+        """Log a message using the provided logger or print to console."""
+        if self.logger:
+            if level == "error":
+                self.logger.error(message)
+            elif level == "warning":
+                self.logger.warning(message)
+            else:
+                self.logger.info(message)
+        else:
+            print(f"[PIDTuner] {message}")

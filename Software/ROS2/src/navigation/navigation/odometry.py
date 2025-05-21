@@ -9,6 +9,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallb
 # the self driver agent action
 from lunabotics_interfaces.msg import Point, Motors, Excavator, PathVisual, ExcavatorPotentiometer, AccelerometerCorrection, Config
 from lunabotics_interfaces.action import SelfDriver
+from lunabotics_interfaces.srv import TunePID
 from navigation.pathfinding import distance
 from sensors.spin_node_helper import spin_nodes
 
@@ -98,6 +99,7 @@ class Odometry(Node):
         # config
         self.config_sub = self.create_subscription(Config, 'website/config', self.on_config, 10, callback_group=self.config_group)
         self.website_path_visualizer = self.create_publisher(PathVisual, 'navigation/odometry_path', 10, callback_group=self.config_group)
+        self.pid_tuner_server = self.create_service(TunePID, 'pid_tuner', self.on_pid_tune, callback_group=self.config_group)
         
         # sensors
         self.position_sub = self.create_subscription(Point, 'sensors/position', self.on_position, 10, callback_group=self.sensor_group)
@@ -126,6 +128,48 @@ class Odometry(Node):
         
         self.bin_actuator_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-1.0, 1.0))
         self.excavator_lifter_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-1.0, 1.0))
+
+    async def on_pid_tune(self, request, response):
+        """Called when a PID tuning request is received."""
+        # get the PID controller
+        pid = None
+        match request.pid:
+            case "orientation_pid":
+                pid = self.orientation_pid
+            case "linear_drive_pid":
+                pid = self.linear_drive_pid
+            case "angular_drive_pid":
+                pid = self.angular_drive_pid
+            case "bin_actuator_pid":
+                pid = self.bin_actuator_pid
+            case "excavator_lifter_pid":
+                pid = self.excavator_lifter_pid
+
+        if pid is None:
+            response.success = False
+            return response
+        
+        tuner = PIDTuner(logger=self.get_logger().info)
+        # tune the PID controller
+        result = await tuner.tune_pid(
+            robot=self,
+            pid=pid,
+            get_current_value=lambda robot: robot.orientation,
+            start_destination=0.0,
+            end_destination=90.0,
+            error_calculator=self.get_degrees_error,
+            move_function=self.to_orient,
+            method=request.strategy,
+            plot_results=False
+        )
+        
+        # set the PID controller values in response
+        response.kp = pid.Kp
+        response.ki = pid.Ki
+        response.kd = pid.Kd
+
+        response.success = True
+        return response
 
     # when the config is received for tuning pid loop
     def on_config(self, config: Config):
@@ -606,16 +650,6 @@ def positive_angle(angle: float):
 def main(args=None):
     rclpy.init(args=args)
     odometry = Odometry()
-    tuner = PIDTuner(log=odometry.get_logger().info)
-    asyncio.run(tuner.tune_pid(
-        odometry,
-        odometry.orientation_pid,
-        lambda robot: robot.orientation,
-        0.0,
-        90.0,
-        odometry.get_degrees_error,
-        odometry.perform_orientation_test,
-    ))
     # start_point = Point()
     # start_point.x = 100.1
     # start_point.y = 300.1
