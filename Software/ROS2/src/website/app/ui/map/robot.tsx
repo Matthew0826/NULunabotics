@@ -45,7 +45,7 @@ export default function Robot({
                         transform: `translate(-50%, -50%)`,
                     }} />
             </div>
-            {confidenceRect && (
+            {confidenceRect && (confidenceRect.x1 != 0 || confidenceRect.y1 != 0) && (
                 <div
                     className={`absolute border-2 border-red-500`}
                     style={{

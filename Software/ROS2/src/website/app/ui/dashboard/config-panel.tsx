@@ -76,35 +76,26 @@ export default function ConfigPanel() {
     };
 
     // update our config state from user interaction
-    const handleTextboxInteraction = (node: string, category: string, setting: string, value: string) => {
-        return;
+    const handleTextboxInteraction = (profile: string, node: string, category: string, setting: string, value: string) => {
+        setLoadedConfigState((prev) => {
+            if (!prev) return prev;
+
+            const newConfig = [...prev[profile]];
+            const nodeIndex = newConfig.findIndex((item) => item.node === node);
+            if (nodeIndex !== -1) {
+                const categoryIndex = newConfig[nodeIndex].categories.findIndex((cat) => cat.category === category);
+                if (categoryIndex !== -1) {
+                    const settingIndex = newConfig[nodeIndex].categories[categoryIndex].settings.findIndex((set) => set.setting === setting);
+                    if (settingIndex !== -1) {
+                        newConfig[nodeIndex].categories[categoryIndex].settings[settingIndex].value = value;
+                    }
+                }
+            }
+            const newProfiles = { ...prev };
+            newProfiles[profile] = newConfig;
+            return newProfiles;
+        });
     }
-
-    // const handleChangeConfig = (node: string, category: string, setting: string, value: string) => {
-    //     setConfig((prevConfig) => {
-    //         if (!prevConfig) return prevConfig;
-
-    //         const newConfig = [...prevConfig];
-    //         const nodeIndex = newConfig.findIndex((item) => item.node === node);
-    //         if (nodeIndex !== -1) {
-    //             const categoryIndex = newConfig[nodeIndex].categories.findIndex((cat) => cat.category === category);
-    //             if (categoryIndex !== -1) {
-    //                 const settingIndex = newConfig[nodeIndex].categories[categoryIndex].settings.findIndex((set) => set.setting === setting);
-    //                 if (settingIndex !== -1) {
-    //                     newConfig[nodeIndex].categories[categoryIndex].settings[settingIndex].value = value;
-    //                 }
-    //             }
-    //         }
-    //         return newConfig;
-    //     });
-
-    //     sendToServer("config", {
-    //         node: node,
-    //         category: category,
-    //         setting: setting,
-    //         value: value,
-    //     });
-    // };
 
     // ensure we have loaded before rendering
     if (!loadedConfigState || !profileState) {
@@ -127,7 +118,7 @@ export default function ConfigPanel() {
                                         key={`setting-${item.node}-${category.category}-${setting.setting}-${settingIndex}`}
                                         setting={setting.setting}
                                         value={setting.value.toString()}
-                                        handleChange={(value) => handleTextboxInteraction(item.node, category.category, setting.setting, value)}
+                                        handleChange={(value) => handleTextboxInteraction(profileState, item.node, category.category, setting.setting, value)}
                                     />
                                 ))}
                             </div>

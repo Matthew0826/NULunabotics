@@ -31,6 +31,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SerialPortStates.msg"
   "msg/Config.msg"
   "srv/Path.srv"
+  "srv/TunePID.srv"
   "action/SelfDriver.action"
   "action/Plan.action"
 )

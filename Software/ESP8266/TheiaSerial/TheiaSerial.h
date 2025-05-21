@@ -164,7 +164,7 @@ public:
         static uint8_t pubId = 0;
         static uint16_t payloadLength = 0;
         static uint16_t payloadIndex = 0;
-        static uint8_t payloadBuffer[256];
+        static uint8_t payloadBuffer[512];
         static unsigned long lastByteTime = 0;
         
         // Handle timeout to recover from incomplete message reception

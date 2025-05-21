@@ -57,7 +57,7 @@ export default function DashboardPanels() {
                 <Panel title="Controls" hiddenByDefault={true}>
                     <ControlsReminder />
                 </Panel>
-                <Panel title="">
+                {/* <Panel title="">
                     <ObjModelAnimator
                         baseFilename="/models/lunabot_base"
                         wheelFilename="/models/lunabot_wheel"
@@ -71,7 +71,7 @@ export default function DashboardPanels() {
                             maxPolarAngle: Math.PI * 0.75,  // Can't go below model
                             minPolarAngle: Math.PI * 0.25   // Can't go fully above model
                         }} />
-                </Panel>
+                </Panel> */}
             </div>
             <div className="w-[66vw] hidden xl:block flex-2">{mapPanel}</div>
         </div>
