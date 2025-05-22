@@ -1,5 +1,6 @@
-import { Dispatch, SetStateAction, useState } from 'react';
+"use client";
 
+<<<<<<< HEAD
 // A better slider component with lamba for value handling
 export default function Slider({
     labels, 
@@ -16,11 +17,26 @@ export default function Slider({
     max?: number,
     step?: number
 }) {
+=======
+import { useEffect, useState } from 'react';
+
+export default function Slider({ labels, value, setValue }: { labels: number[], value: number; setValue: (val: number) => void }) {
+    // Only track dragging on client side
+>>>>>>> a31e4dfd1cfd7157d8b8207a6cc5baa49a100a81
     const [isDragging, setIsDragging] = useState(false);
+    // Use a separate state for visual value to avoid hydration mismatch
+    const [displayValue, setDisplayValue] = useState(value);
+
+    // Sync values after hydration
+    useEffect(() => {
+        setDisplayValue(value);
+    }, [value]);
 
     const handleChange = (e: any) => {
+        const newValue = parseFloat(e.target.value);
+        setDisplayValue(newValue);
         if (setValue) {
-            setValue(parseFloat(e.target.value));
+            setValue(newValue);
         }
     };
 
@@ -33,7 +49,11 @@ export default function Slider({
                 <div className="w-full h-1 bg-gray-200 rounded-full">
                     <div
                         className="absolute h-1 bg-zinc-800 rounded-full"
+<<<<<<< HEAD
                         style={{ width: `${valuePercent}%` }}
+=======
+                        style={{ width: `${displayValue * 100}%` }}
+>>>>>>> a31e4dfd1cfd7157d8b8207a6cc5baa49a100a81
                     />
                 </div>
                 {labels.map((label, index) => (
@@ -45,6 +65,7 @@ export default function Slider({
                 ))}
                 <div
                     className={`absolute h-4 w-4 rounded-full bg-zinc-800 shadow transform -translate-y-1/2 -translate-x-1/2 top-1/2 cursor-pointer transition-transform ${isDragging ? 'scale-110' : 'hover:scale-110'}`}
+<<<<<<< HEAD
                     style={{ left: `${valuePercent}%` }}
                 />
                 <input
@@ -53,6 +74,16 @@ export default function Slider({
                     max={max}
                     step={step}
                     value={value}
+=======
+                    style={{ left: `${displayValue * 100}%` }}
+                />
+                <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={displayValue}
+>>>>>>> a31e4dfd1cfd7157d8b8207a6cc5baa49a100a81
                     onChange={handleChange}
                     onMouseDown={() => setIsDragging(true)}
                     onMouseUp={() => setIsDragging(false)}
@@ -68,18 +99,24 @@ export default function Slider({
                     </span>
                 ))}
             </div>
-            {/* number input box */}
             <div className="mt-4 flex justify-center">
                 <input
                     type="number"
+<<<<<<< HEAD
                     min={min}
                     max={max}
                     step={step}
                     value={value}
+=======
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={displayValue}
+>>>>>>> a31e4dfd1cfd7157d8b8207a6cc5baa49a100a81
                     onChange={handleChange}
                     className="border border-gray-300 rounded px-2 py-1 w-24 text-center"
                 />
             </div>
         </div>
     );
-};
+}

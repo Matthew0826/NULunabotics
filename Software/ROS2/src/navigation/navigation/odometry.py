@@ -493,7 +493,7 @@ class Odometry(Node):
             # make sure theres at least a little power so the robot continues turning
             if abs(power) < 0.1:
                 power = 0.1 if power > 0 else -0.1
-            self.get_logger().info(f"power after: {power}, error: {error}")
+            # self.get_logger().info(f"power after: {power}, error: {error}")
             # drive the motors for a bit
             await self.drive(-power, power, seconds=0.2)
             await self.yield_once()
