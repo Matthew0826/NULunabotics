@@ -5,6 +5,7 @@ from typing import Callable, Any, Tuple, List, Optional, Union
 import matplotlib.pyplot as plt
 from collections import deque
 import logging
+import threading
 
 class PIDTuner:
     """
@@ -42,6 +43,7 @@ class PIDTuner:
         self.sampling_rate = sampling_rate
         self.tuning_history = []
         self.logger = logger or logging.getLogger('pid_tuner')
+        self.robot = None
         
     async def tune_pid(self, 
                        robot: Any,
@@ -70,6 +72,7 @@ class PIDTuner:
         Returns:
             Tuple of optimized (Kp, Ki, Kd) gains
         """
+        self.robot = robot
         self.log(f"Starting PID tuning from {start_point} to {end_point}")
         
         # Save original PID values to restore if needed
@@ -79,8 +82,8 @@ class PIDTuner:
         
         try:
             # Reset to start position
-            await movement_function(robot, start_point)
-            await asyncio.sleep(1.0)  # Allow system to stabilize
+            await movement_function(start_point)
+            await self.sleep(1.0)  # Allow system to stabilize
             
             if method == "ziegler_nichols":
                 Kp, Ki, Kd = await self._ziegler_nichols_tuning(
@@ -105,7 +108,7 @@ class PIDTuner:
             
             # Run a final test with the tuned parameters
             time_points, response = await self._run_step_test(
-                robot, pid_controller, feedback_function, 
+                robot, pid_controller, feedback_function,
                 start_point, end_point, error_function, movement_function
             )
             
@@ -172,8 +175,8 @@ class PIDTuner:
         
         for iteration in range(self.max_iterations):
             # Run step test with current parameters
-            await movement_function(robot, start_point)
-            await asyncio.sleep(1.0)
+            await movement_function(start_point)
+            await self.sleep(1.0)
             
             # Record the system response for analysis
             time_points, response = await self._record_step_response(
@@ -213,6 +216,10 @@ class PIDTuner:
         
         return Kp, Ki, Kd
     
+    async def sleep(self, seconds: float):
+        """Sleep for a specified number of seconds."""
+        await self.robot.yield_once(seconds)
+    
     async def _cohen_coon_tuning(self, 
                                robot: Any, 
                                pid_controller: Any,
@@ -231,8 +238,8 @@ class PIDTuner:
         pid_controller.Ki = 0.0
         pid_controller.Kd = 0.0
         
-        await movement_function(robot, start_point)
-        await asyncio.sleep(1.0)
+        await movement_function(start_point)
+        await self.sleep(1.0)
         
         # Record the system response
         time_points, response = await self._record_step_response(
@@ -243,6 +250,9 @@ class PIDTuner:
         try:
             # Calculate process gain K
             delta_y = response[-1] - response[0]
+            # make sure delta_y isn't 0
+            if delta_y == 0:
+                delta_y = 0.00001
             delta_u = end_point - start_point
             K = delta_y / delta_u
             
@@ -253,6 +263,8 @@ class PIDTuner:
             
             t_delay = time_points[t_delay_idx]
             t_constant = time_points[t_63_idx] - t_delay
+            if t_constant <= 0:
+                t_constant = 0.01  # Avoid division by zero
             
             # Calculate Cohen-Coon parameters
             r = t_delay / t_constant
@@ -302,8 +314,8 @@ class PIDTuner:
         
         for iteration in range(self.max_iterations):
             # Run step test with current parameters
-            await movement_function(robot, start_point)
-            await asyncio.sleep(1.0)
+            await movement_function(start_point)
+            await self.sleep(1.0)
             
             # Record system response
             time_points, response = await self._record_step_response(
@@ -369,21 +381,16 @@ class PIDTuner:
         # Return the best parameters found
         self.log(f"Best parameters found: Kp={best_Kp:.4f}, Ki={best_Ki:.4f}, Kd={best_Kd:.4f} with score {best_score:.4f}")
         return best_Kp, best_Ki, best_Kd
-    
     async def _record_step_response(self,
-                                   robot: Any,
-                                   feedback_function: Callable[[Any], float],
-                                   start_point: float,
-                                   end_point: float,
-                                   movement_function: Callable[[Any, float], None]) -> Tuple[List[float], List[float]]:
+                               robot: Any,
+                               feedback_function: Callable[[Any], float],
+                               start_point: float,
+                               end_point: float,
+                               movement_function: Callable[[Any, float], None]) -> Tuple[List[float], List[float]]:
         """
         Record the system response to a step input by monitoring feedback during movement.
         
-        This method:
-        1. Records the initial state
-        2. Commands the system to move to the end point
-        3. Continuously records the system state during movement
-        4. Returns time points and response values
+        This method uses a ROS-compatible approach to monitoring the robot state.
         """
         time_points = []
         response = []
@@ -394,43 +401,61 @@ class PIDTuner:
         time_points.append(0.0)
         response.append(initial_value)
         
-        # Create a monitoring task to record the response during movement
-        async def monitor_response():
-            while True:
-                current_time = time.time() - start_time
-                current_value = feedback_function(robot)
-                
-                time_points.append(current_time)
-                response.append(current_value)
-                
-                # Continue monitoring until timeout or movement completes
-                if current_time > self.timeout:
-                    break
-                    
-                await asyncio.sleep(self.sampling_rate)
+        # Create a ROS timer for monitoring
+        response_data = {"complete": False}
         
-        # Start the monitoring task
-        monitor_task = asyncio.create_task(monitor_response())
-        
-        # Initiate the movement
-        try:
-            # Use the movement function to move to the end point
-            await movement_function(robot, end_point)
-        except Exception as e:
-            self.log(f"Error during movement: {e}", level="error")
-        finally:
-            # Ensure we have some data after movement completes
-            await asyncio.sleep(2.0)
+        # Define a callback for the timer
+        def monitor_callback():
+            if response_data["complete"]:
+                return
+                
+            current_time = time.time() - start_time
+            current_value = feedback_function(robot)
             
-            # Cancel the monitoring task
-            monitor_task.cancel()
-            try:
-                await monitor_task
-            except asyncio.CancelledError:
-                pass
+            time_points.append(current_time)
+            response.append(current_value)
+            
+            # Stop monitoring after timeout
+            if current_time > self.timeout:
+                response_data["complete"] = True
+        
+        # Set up the timer using ROS Node's create_timer method if available
+        if hasattr(robot, 'create_timer'):
+            # ROS 2 node has create_timer method
+            timer = robot.create_timer(self.sampling_rate, monitor_callback)
+        else:
+            # Fallback to a separate thread if not a ROS node
+            stop_event = threading.Event()
+            
+            def threaded_monitor():
+                while not stop_event.is_set():
+                    monitor_callback()
+                    time.sleep(self.sampling_rate)
+                    
+            monitor_thread = threading.Thread(target=threaded_monitor)
+            monitor_thread.start()
+        
+        try:
+            # Initiate the movement
+            await movement_function(end_point)
+            
+            # Ensure we have some data after movement completes
+            await self.sleep(2.0)
+            
+        finally:
+            # Clean up the timer or thread
+            response_data["complete"] = True
+            
+            if hasattr(robot, 'create_timer'):
+                # Destroy the ROS timer
+                robot.destroy_timer(timer)
+            else:
+                # Stop the monitoring thread
+                stop_event.set()
+                monitor_thread.join(timeout=1.0)
         
         return time_points, response
-    
+
     async def _run_step_test(self, 
                             robot: Any, 
                             pid_controller: Any,
@@ -451,8 +476,8 @@ class PIDTuner:
         # Ensure we're at the start point
         current = feedback_function(robot)
         if abs(error_function(current, start_point)) > 0.05 * abs(end_point - start_point):
-            await movement_function(robot, start_point)
-            await asyncio.sleep(1.0)
+            await movement_function(start_point)
+            await self.sleep(1.0)
             
         # Record response to step input
         return await self._record_step_response(robot, feedback_function, start_point, end_point, movement_function)

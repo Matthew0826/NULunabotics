@@ -53,7 +53,7 @@ class SpacialDataPublisher(Node):
         self.x = 448
         self.y = 100.0
         self.orientation = float(random.randint(0, 360))
-        self.initial_orientation = -self.orientation
+        self.initial_orientation = 0.0#-self.orientation
         
         # to cause a delay in the simulation to mirror real kalman filter delay
         self.position_history_length = 5

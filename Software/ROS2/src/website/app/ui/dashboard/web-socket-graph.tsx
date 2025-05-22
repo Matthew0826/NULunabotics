@@ -6,8 +6,8 @@ import {
 } from "react";
 import Graph from "./components/graph";
 import { Dataset } from "@/app/lib/utils";
-import {ROSSocketMessage} from "@/app/types/sockets";
-import {useWebSocketContext} from "@/app/contexts/web-socket-context";
+import { ROSSocketMessage } from "@/app/types/sockets";
+import { useWebSocketContext } from "@/app/contexts/web-socket-context";
 
 export type GraphInfo = {
     name: string;

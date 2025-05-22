@@ -31,6 +31,25 @@ const ROS2_BATTERY_TYPE = "sensor_msgs/msg/BatteryState";
 const LUNABOTICS_SERIAL_PORT_TYPE = "lunabotics_interfaces/msg/SerialPortStates";
 const LUNABOTICS_CONFIG_TYPE = "lunabotics_interfaces/msg/Config";
 
+const pastMotorSpeeds: Record<string, number> = {};
+const verifyMotorSpeed = (motor: string, speed: number) => {
+    let motorSpeed = speed;
+    // check if not much has changed
+    if (Math.abs(pastMotorSpeeds[motor] - motorSpeed) < 0.05) {
+        // make sure a small value is not being sent
+        if (Math.abs(motorSpeed) < 0.1) {
+            motorSpeed = 0.0;
+            pastMotorSpeeds[motor] = motorSpeed;
+            return motorSpeed;
+        }
+        pastMotorSpeeds[motor] = motorSpeed;
+        return null;
+    } else {
+        pastMotorSpeeds[motor] = motorSpeed;
+        return motorSpeed;
+    }
+}
+
 export const publishMotorsToROS2 = (messageJson: GamepadState) => {
     const motorsMsg = rclnodejs.createMessageObject(LUNABOTICS_MOTORS_TYPE);
     const x = messageJson.x;
@@ -38,20 +57,29 @@ export const publishMotorsToROS2 = (messageJson: GamepadState) => {
     const left = y + x;
     const right = y - x;
     const maxMagnitude = Math.max(1, Math.abs(left), Math.abs(right));
-    const leftSpeed = left / maxMagnitude;
-    const rightSpeed = right / maxMagnitude;
-    motorsMsg.front_left_wheel = leftSpeed;
-    motorsMsg.back_left_wheel = leftSpeed;
-    motorsMsg.front_right_wheel = rightSpeed;
-    motorsMsg.back_right_wheel = rightSpeed;
-    rosControlsPublisher.publish(motorsMsg);
+    let leftSpeed = verifyMotorSpeed("left_wheel", left / maxMagnitude);
+    let rightSpeed = verifyMotorSpeed("right_wheel", right / maxMagnitude);
+
+    if (leftSpeed != null && rightSpeed != null) {
+        motorsMsg.front_left_wheel = leftSpeed;
+        motorsMsg.back_left_wheel = leftSpeed;
+        motorsMsg.front_right_wheel = rightSpeed;
+        motorsMsg.back_right_wheel = rightSpeed;
+        rosControlsPublisher.publish(motorsMsg);
+    }
 
     const excavatorMsg = rclnodejs.createMessageObject(LUNABOTICS_EXCAVATOR_TYPE);
     const excavatorSpeed = messageJson.actuatorPower;
-    excavatorMsg.actuator_speed = messageJson.isActuator ? excavatorSpeed : 0.0;
-    excavatorMsg.excavator_lifter_speed = messageJson.isActuator ? 0.0 : excavatorSpeed;
-    excavatorMsg.conveyor_speed = messageJson.conveyorSpeed;
-    rosExcavatorPublisher.publish(excavatorMsg);
+    const actuatorSpeed = verifyMotorSpeed("actuator", messageJson.isActuator ? excavatorSpeed : 0.0);
+    const excavatorLifterSpeed = verifyMotorSpeed("excavator_lifter", messageJson.isActuator ? 0.0 : excavatorSpeed);
+    const conveyorSpeed = verifyMotorSpeed("conveyor", messageJson.conveyorSpeed);
+
+    if (actuatorSpeed != null && excavatorLifterSpeed != null && conveyorSpeed != null) {
+        excavatorMsg.actuator_speed = actuatorSpeed;
+        excavatorMsg.excavator_lifter_speed = excavatorLifterSpeed;
+        excavatorMsg.conveyor_speed = conveyorSpeed;
+        rosExcavatorPublisher.publish(excavatorMsg);
+    }
 };
 
 export const publishMockObstacle = (messageJson: any) => {
@@ -94,14 +122,6 @@ export const publishOrientationCorrection = (messageJson: any) => {
 }
 
 export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, callback: (point: any[]) => void) => {
-    // To view service events use the following command:
-    //    ros2 topic echo "/add_two_ints/_service_event"
-    // client.configureIntrospection(
-    //     rosNode.getClock(),
-    //     rclnodejs.QoS.profileSystemDefault,
-    //     rclnodejs.ServiceIntrospectionStates.METADATA
-    // );
-
     const request = {
         start: {
             x: point1[0],
