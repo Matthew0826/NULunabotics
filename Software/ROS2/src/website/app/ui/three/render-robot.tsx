@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Group } from "three";
+import {Group, Mesh} from "three";
 import { ObstacleType } from "@/app/types/map-objects";
 import { useRobotContext } from "@/app/contexts/robot-context";
 
@@ -90,6 +90,7 @@ const Render3DRobotModel = ({
         excavatorModel: THREE.Group | null;
         lidarPointsMesh: THREE.Group | null;
         obstaclesMesh: THREE.Group | null;
+        mapOutlineMesh: THREE.Mesh | null;
         controls: OrbitControls | null;
         animating: boolean;
     }>({
@@ -100,11 +101,44 @@ const Render3DRobotModel = ({
         baseModel: null,
         wheelModels: null,
         excavatorModel: null,
+        mapOutlineMesh: null,
         lidarPointsMesh: null,
         obstaclesMesh: null,
         controls: null,
         animating: false
     });
+
+    function createTerrainMesh(width: number, height: number, resolution: number) {
+        const geometry = new THREE.PlaneGeometry(width, height, resolution, resolution);
+        geometry.rotateX(-Math.PI / 2); // Face upward
+
+        const material = new THREE.MeshStandardMaterial({ color: 0xdddddd, side: THREE.DoubleSide, flatShading: true, wireframe: true });
+        return new THREE.Mesh(geometry, material);
+    }
+
+    function raiseMeshAtPoints(mesh: THREE.Mesh, obstacles: ObstacleType[], radius = 0.5, height = 0.5) {
+        const posAttr = mesh.geometry.attributes.position;
+        const vertex = new THREE.Vector3();
+
+
+        for (let i = 0; i < posAttr.count; i++) {
+            vertex.fromBufferAttribute(posAttr, i);
+
+            // Apply effect from all points
+            for (const obstacle of obstacles) {
+                const dist = vertex.distanceTo(new THREE.Vector3(obstacle.x, 0, obstacle.y));
+                if (dist < radius) {
+                    const influence = 1 - dist / radius;
+                    vertex.y += height * influence * (obstacle.isHole ? -1 : 1);
+                }
+            }
+
+            posAttr.setXYZ(i, vertex.x, vertex.y, vertex.z);
+        }
+
+        posAttr.needsUpdate = true;
+        mesh.geometry.computeVertexNormals(); // for lighting update
+    }
 
     // Load and set up the 3D scene
     useEffect(() => {
@@ -130,7 +164,7 @@ const Render3DRobotModel = ({
             0.1,
             1000
         );
-        camera.position.z = 15;
+        camera.position.z = 17.5;
         sceneRef.current.camera = camera;
 
         // Renderer setup
@@ -165,6 +199,8 @@ const Render3DRobotModel = ({
             controls.dampingFactor = controlsConfig.dampingFactor ?? 0.05;
             controls.maxPolarAngle = controlsConfig.maxPolarAngle ?? Math.PI;
             controls.minPolarAngle = controlsConfig.minPolarAngle ?? 0;
+
+            controls.target = new THREE.Vector3(0, 0.75, 0);
 
             sceneRef.current.controls = controls;
         }
@@ -225,6 +261,7 @@ const Render3DRobotModel = ({
         };
 
         sceneRef.current.robotObjectGroup = new THREE.Group();
+        sceneRef.current.robotObjectGroup.position.set(0, 1.71, 0);
 
 
         loadModel(baseFilename, (object: Group) => {
@@ -254,21 +291,21 @@ const Render3DRobotModel = ({
 
 
         // Origin sphere
-        const originMesh = new THREE.Mesh(
+        const lidarOriginMesh = new THREE.Mesh(
             new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16, 3),
             new THREE.MeshStandardMaterial({ color: 0xff0000 })
         );
-        originMesh.position.set(lidarOrigin.relPos.x, lidarOrigin.relPos.y, lidarOrigin.relPos.z);
-        originMesh.rotation.set(lidarOrigin.pitch, lidarOrigin.yawOffset, 0);
-        sceneRef.current.robotObjectGroup.add(originMesh);
+        lidarOriginMesh.position.set(lidarOrigin.relPos.x, lidarOrigin.relPos.y, lidarOrigin.relPos.z);
+        lidarOriginMesh.rotation.set(lidarOrigin.pitch, lidarOrigin.yawOffset, 0);
+        sceneRef.current.robotObjectGroup.add(lidarOriginMesh);
 
         // Clear existing points if re-rendering
         const lidarPointGroup = new THREE.Group();
         scene.add(lidarPointGroup);
 
         // Clear existing points if re-rendering
-        const obstaclesMesh = new THREE.Group();
-        scene.add(obstaclesMesh);
+        const obstaclesGroup = new THREE.Group();
+        scene.add(obstaclesGroup);
 
 
         const WHEEL_OFFSET_X = 1.72188;  // In meters from blend file
@@ -303,12 +340,22 @@ const Render3DRobotModel = ({
 
                     scene.add(sceneRef.current.robotObjectGroup);
                 }
-
-
             });
 
             setIsLoading(false);
         });
+
+        const terrain = createTerrainMesh(58.7, 46.7, 400);
+        scene.add(terrain);
+        sceneRef.current.mapOutlineMesh = terrain;
+
+        // Add wireframe lines
+        // const wireframe = new THREE.LineSegments(
+        //     new THREE.WireframeGeometry(terrain.geometry),
+        //     new THREE.LineBasicMaterial({ color: 0x000000 })
+        // );
+        // scene.add(wireframe); // Attach to terrain so it moves/deforms with it
+
 
         // Handle container resize
         const handleResize = () => {
@@ -458,7 +505,7 @@ const Render3DRobotModel = ({
             const color = obstacle.isHole ? 0xcccccc : 0xff0000;
 
             const worldPoint = new THREE.Vector3(obstacle.x / 10, 0, obstacle.y / 10);
-            worldPoint.sub(new THREE.Vector3(robot.x / 10, 1.3, robot.y / 10));
+            worldPoint.sub(new THREE.Vector3(robot.x / 10, robot.y / 10));
 
             const pointMesh = new THREE.Mesh(
                 new THREE.SphereGeometry(obstacle.radius / 2.5 / 10, 8, 8),
@@ -470,6 +517,11 @@ const Render3DRobotModel = ({
 
         sceneRef.current.scene.add(group);
         sceneRef.current.lidarPointsMesh = group;
+
+        if (sceneRef.current.mapOutlineMesh) {
+            // ISSUES HERE
+            raiseMeshAtPoints(sceneRef.current.mapOutlineMesh, obstacles, 0.5, 0.5);
+        }
     }, [lidarPoints, lidarOrigin]);
 
 
