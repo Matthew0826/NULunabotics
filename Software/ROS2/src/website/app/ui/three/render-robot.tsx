@@ -1,14 +1,14 @@
 "use client";
 
 // Render3DRobotModel.tsx
-import {useEffect, useMemo, useRef, useState} from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import {OBJLoader} from 'three/examples/jsm/loaders/OBJLoader.js';
-import {MTLLoader} from 'three/examples/jsm/loaders/MTLLoader.js';
-import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
-import {Group} from "three";
-import {ObstacleType} from "@/app/types/map-objects";
-import {useRobotContext} from "@/app/contexts/robot-context";
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { Group } from "three";
+import { ObstacleType } from "@/app/types/map-objects";
+import { useRobotContext } from "@/app/contexts/robot-context";
 
 interface Render3DRobotModelProps {
     baseFilename: string;
@@ -31,24 +31,24 @@ interface Render3DRobotModelProps {
 }
 
 const Render3DRobotModel = ({
-                                baseFilename,
-                                wheelFilename,
-                                excavatorFilename,
-                                backgroundColor = '#ffffff',
-                                transparent = true,
-                                width = '100%',
-                                height = '100%',
-                                enableControls = true,
-                                controlsConfig = {
-                                    enableZoom: true,
-                                    enablePan: true,
-                                    autoRotate: false,
-                                    autoRotateSpeed: 1.0,
-                                    dampingFactor: 0.05,
-                                    maxPolarAngle: Math.PI,
-                                    minPolarAngle: 0
-                                }
-                            }: Render3DRobotModelProps) => {
+    baseFilename,
+    wheelFilename,
+    excavatorFilename,
+    backgroundColor = '#ffffff',
+    transparent = true,
+    width = '100%',
+    height = '100%',
+    enableControls = true,
+    controlsConfig = {
+        enableZoom: true,
+        enablePan: true,
+        autoRotate: false,
+        autoRotateSpeed: 1.0,
+        dampingFactor: 0.05,
+        maxPolarAngle: Math.PI,
+        minPolarAngle: 0
+    }
+}: Render3DRobotModelProps) => {
     const mountRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -256,11 +256,11 @@ const Render3DRobotModel = ({
         // Origin sphere
         const originMesh = new THREE.Mesh(
             new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16, 3),
-            new THREE.MeshStandardMaterial({color: 0xff0000})
+            new THREE.MeshStandardMaterial({ color: 0xff0000 })
         );
         originMesh.position.set(lidarOrigin.relPos.x, lidarOrigin.relPos.y, lidarOrigin.relPos.z);
         originMesh.rotation.set(lidarOrigin.pitch, lidarOrigin.yawOffset, 0);
-        scene.add(originMesh);
+        sceneRef.current.robotObjectGroup.add(originMesh);
 
         // Clear existing points if re-rendering
         const lidarPointGroup = new THREE.Group();
@@ -367,7 +367,7 @@ const Render3DRobotModel = ({
             if (sceneRef.current.robotObjectGroup) {
                 if (sceneRef.current.robotObjectGroup.rotation.y !== robotStateRef.current.rotation) {
                     // Rotate the whole robot object group
-                    sceneRef.current.robotObjectGroup.rotation.y = robotStateRef.current.rotation;
+                    sceneRef.current.robotObjectGroup.rotation.y = (robotStateRef.current.rotation - 90) / 180 * Math.PI;
                 }
             }
 
@@ -431,7 +431,7 @@ const Render3DRobotModel = ({
 
                 const pointMesh = new THREE.Mesh(
                     new THREE.SphereGeometry(index === 0 ? 0.03 : 0.015, 6, 6),
-                    new THREE.MeshStandardMaterial({color})
+                    new THREE.MeshStandardMaterial({ color })
                 );
                 pointMesh.position.copy(worldPoint.multiplyScalar(MODEL_SCALE));
                 group.add(pointMesh);
@@ -455,14 +455,14 @@ const Render3DRobotModel = ({
         const group = new THREE.Group();
 
         obstacles.forEach((obstacle: ObstacleType) => {
-            const color = obstacle.isHole ? 0x00ff00 : 0xff0000;
+            const color = obstacle.isHole ? 0xcccccc : 0xff0000;
 
-            const worldPoint = new THREE.Vector3(obstacle.x, 0, obstacle.y);
-            worldPoint.sub(new THREE.Vector3(robot.x, 0, robot.y));
+            const worldPoint = new THREE.Vector3(obstacle.x / 10, 0, obstacle.y / 10);
+            worldPoint.sub(new THREE.Vector3(robot.x / 10, 1.3, robot.y / 10));
 
             const pointMesh = new THREE.Mesh(
                 new THREE.SphereGeometry(obstacle.radius / 2.5 / 10, 8, 8),
-                new THREE.MeshStandardMaterial({color: color})
+                new THREE.MeshStandardMaterial({ color: color })
             );
             pointMesh.position.copy(worldPoint);
             group.add(pointMesh);
@@ -474,8 +474,8 @@ const Render3DRobotModel = ({
 
 
     return (
-        <div ref={containerRef} style={{width, height, position: 'relative'}}>
-            <div ref={mountRef} style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%'}}/>
+        <div ref={containerRef} style={{ width, height, position: 'relative' }}>
+            <div ref={mountRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
             {isLoading && (
                 <div style={{
                     position: 'absolute',

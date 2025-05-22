@@ -1,11 +1,23 @@
-import { Dispatch, SetStateAction, useState } from 'react';
+"use client";
 
-export default function Slider({ labels, value, setValue }: { labels: number[], value: number; setValue: Dispatch<SetStateAction<number>> | undefined }) {
+import { useEffect, useState } from 'react';
+
+export default function Slider({ labels, value, setValue }: { labels: number[], value: number; setValue: (val: number) => void }) {
+    // Only track dragging on client side
     const [isDragging, setIsDragging] = useState(false);
+    // Use a separate state for visual value to avoid hydration mismatch
+    const [displayValue, setDisplayValue] = useState(value);
+
+    // Sync values after hydration
+    useEffect(() => {
+        setDisplayValue(value);
+    }, [value]);
 
     const handleChange = (e: any) => {
+        const newValue = parseFloat(e.target.value);
+        setDisplayValue(newValue);
         if (setValue) {
-            setValue(parseFloat(e.target.value));
+            setValue(newValue);
         }
     };
 
@@ -15,7 +27,7 @@ export default function Slider({ labels, value, setValue }: { labels: number[], 
                 <div className="w-full h-1 bg-gray-200 rounded-full">
                     <div
                         className="absolute h-1 bg-zinc-800 rounded-full"
-                        style={{ width: `${value * 100}%` }}
+                        style={{ width: `${displayValue * 100}%` }}
                     />
                 </div>
                 {labels.map((label, index) => (
@@ -27,14 +39,14 @@ export default function Slider({ labels, value, setValue }: { labels: number[], 
                 ))}
                 <div
                     className={`absolute h-4 w-4 rounded-full bg-zinc-800 shadow transform -translate-y-1/2 -translate-x-1/2 top-1/2 cursor-pointer transition-transform ${isDragging ? 'scale-110' : 'hover:scale-110'}`}
-                    style={{ left: `${value * 100}%` }}
+                    style={{ left: `${displayValue * 100}%` }}
                 />
                 <input
                     type="range"
                     min="0"
                     max="1"
                     step="0.01"
-                    value={value}
+                    value={displayValue}
                     onChange={handleChange}
                     onMouseDown={() => setIsDragging(true)}
                     onMouseUp={() => setIsDragging(false)}
@@ -50,18 +62,17 @@ export default function Slider({ labels, value, setValue }: { labels: number[], 
                     </span>
                 ))}
             </div>
-            {/* number input box */}
             <div className="mt-4 flex justify-center">
                 <input
                     type="number"
                     min={0}
                     max={1}
                     step={0.01}
-                    value={value}
+                    value={displayValue}
                     onChange={handleChange}
                     className="border border-gray-300 rounded px-2 py-1 w-24 text-center"
                 />
             </div>
         </div>
     );
-};
+}
