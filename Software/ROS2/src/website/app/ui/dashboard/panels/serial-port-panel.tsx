@@ -9,16 +9,19 @@ type SerialPortType = {
 };
 
 export default function SerialPortPanel() {
-    const { messages, sendToServer } = useWebSocketContext();
+    const { latestMessages, sendToServer } = useWebSocketContext();
     const [serialPorts, setSerialPorts] = useState<SerialPortType[]>([]);
+
     useEffect(() => {
-        if (messages.length == 0) return;
-        const portMessage = messages[messages.length - 1];
-        if (portMessage.type === "serial_port_state") {
-            console.log("Serial port state: ", portMessage.message);
-            setSerialPorts(portMessage.message.states || []);
+        if (latestMessages.length == 0) return;
+        for(const message of latestMessages) {
+            if (message.type === "serial_port_state") {
+                const data = message.message;
+                setSerialPorts(data.states || []);
+            }
         }
-    }, [messages]);
+    }, [latestMessages]);
+
     const handleUploadCode = (port: string) => {
         if (window.confirm("Are you sure you want to upload code? This will disconnect the board briefly and RESET it!")) {
             console.log(`Uploading code to ${port}`);

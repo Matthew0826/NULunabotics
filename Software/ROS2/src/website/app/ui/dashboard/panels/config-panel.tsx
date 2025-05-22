@@ -10,29 +10,28 @@ export default function ConfigPanel() {
     const [loadedConfigState, setLoadedConfigState] = useState<Profiles | null>(null);
     const [profileState, setProfileState] = useState<string | null>(null);
 
-    const { messages, sendToServer } = useWebSocketContext();
+    const { latestMessages, sendToServer } = useWebSocketContext();
 
     // using this to listen to the messages from the server
     useEffect(() => {
         // return if no message from the server
-        if (messages.length <= 0) { return; }
+        if (latestMessages.length <= 0) { return; }
 
-        // get the last message
-        const lastMessage = messages[messages.length - 1];
-
-        // we can now load the config profile
-        if (lastMessage.type === "loadConfigProfile") {
-            const newProfile = lastMessage.message;
-            setProfileState(newProfile.profile);
-            setLoadedConfigState((prevConfig) => {
-                if (prevConfig) {
-                    return { ...prevConfig, [newProfile.profile]: newProfile.config };
-                } else {
-                    return { [newProfile.profile]: newProfile.config };
-                }
-            });
+        for(const message of latestMessages) {
+            // we can now load the config profile
+            if (message.type === "loadConfigProfile") {
+                const newProfile = message.message;
+                setProfileState(newProfile.profile);
+                setLoadedConfigState((prevConfig) => {
+                    if (prevConfig) {
+                        return {...prevConfig, [newProfile.profile]: newProfile.config};
+                    } else {
+                        return {[newProfile.profile]: newProfile.config};
+                    }
+                });
+            }
         }
-    }, [messages]);
+    }, [latestMessages]);
 
     // request the config from the server for the new profile
     const handleLoadProfile = (profileName: string) => {

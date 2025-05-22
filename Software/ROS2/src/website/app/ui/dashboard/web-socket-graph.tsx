@@ -23,7 +23,7 @@ export default function WebSocketGraph({
 }: {
     graphInfo: GraphInfo;
 }) {
-    const { messages } = useWebSocketContext();
+    const { allMessages, latestMessages } = useWebSocketContext();
 
     const [graph, setGraph] = useState<GraphInfo>(graphInfo);
     const [timeCounter, setTimeCounter] = useState(0);
@@ -31,8 +31,7 @@ export default function WebSocketGraph({
     const [batteryPercent, setBatteryPercent] = useState(0);
 
     useEffect(() => {
-        if (messages.length == 0) return;
-        const powerMessages = [...new Set(messages
+        const powerMessages = [...new Set(allMessages
             .filter((message: ROSSocketMessage) => message.type === "battery")
             .map((message) => message.message)
             .flat())];
@@ -45,7 +44,7 @@ export default function WebSocketGraph({
         newGraph.dataSets["voltage"].data = voltages;
         setGraph(newGraph);
         setBatteryPercent(percent);
-    }, [messages]);
+    }, [allMessages]);
 
     return (
         <>

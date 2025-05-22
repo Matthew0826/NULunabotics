@@ -73,7 +73,7 @@ export default function RobotContextProvider({ children }: { children: ReactNode
         relPos: new Vector3(1.35, 1.1, -1.8),
     }
 
-    const { messages } = useWebSocketContext();
+    const { latestMessages, allMessages } = useWebSocketContext();
 
     const loadMockData = async () => {
         // const data: Point[] = [];
@@ -123,64 +123,68 @@ export default function RobotContextProvider({ children }: { children: ReactNode
             });
     }
 
+    // Called once on mount
     useEffect(() => {
-        if (messages.length == 0) {
-            // in the case of a reset, clear the path data
             setLeftWheelSpeed(0);
             setRightWheelSpeed(0);
             setExcavatorPosition(0);
             setLidarData([]);
             // void loadMockData();
             setObstacles([]);
-            return;
+    }, []);
+
+    useEffect(() => {
+        for(const message of latestMessages) {
+
+            if (message.type === "motors") {
+                const data = (message?.message || []);
+
+                setLeftWheelSpeed(data.leftWheelSpeed);
+                setRightWheelSpeed(data.rightWheelSpeed);
+            } else if (message.type === "excavator") {
+                const data = message?.message || {};
+                setExcavatorPosition(data.armPosition);
+            } else if (message.type === "lidar") {
+                const relPoints: RelativeLidarPoint[] = message?.message || [];
+
+                setLidarRelativePoints(relPoints);
+                const globPoints = relPoints.map((point) => {
+                    const relPos = lidarRelativeToRelative3D(
+                        point.distance,
+                        point.angle,
+                        lidarOrigin,
+                    )
+
+                    return {
+                        globPos: relPos.add(new Vector3(robot.x, 0, robot.y)),
+                        weight: point.weight,
+                    };
+                });
+
+                setLidarData(prevState => [...prevState, globPoints]);
+            } else if (message.type === "position") {
+                const data = message?.message || {};
+                setRobot(prev => ({...prev, x: data.x, y: data.y}));
+            } else if (message.type === "orientation") {
+                const data = message?.message || 0;
+                setRobot(prev => ({...prev, rotation: 360.0 - data}));
+            } else if (message.type === "position_confidence") {
+                const data = message?.message || {};
+                setRobot(prev => ({
+                    ...prev,
+                    posConfidenceRect: {
+                        x1: data.x1,
+                        y1: data.y1,
+                        x2: data.x2,
+                        y2: data.y2,
+                    }
+                }));
+            }
         }
-        const lastMessage = messages[messages.length - 1];
-        if (lastMessage.type === "motors") {
-            const data = (lastMessage?.message || []);
+    }, [latestMessages]);
 
-            setLeftWheelSpeed(data.leftWheelSpeed);
-            setRightWheelSpeed(data.rightWheelSpeed);
-        } else if (lastMessage.type === "excavator") {
-            const data = lastMessage?.message || {};
-            setExcavatorPosition(data.armPosition);
-        } else if (lastMessage.type === "lidar") {
-            const relPoints: RelativeLidarPoint[] = lastMessage?.message || [];
-
-            setLidarRelativePoints(relPoints);
-            const globPoints = relPoints.map((point) => {
-                const relPos = lidarRelativeToRelative3D(
-                    point.distance,
-                    point.angle,
-                    lidarOrigin,
-                )
-
-                return {
-                    globPos: relPos.add(new Vector3(robot.x, 0, robot.y)),
-                    weight: point.weight,
-                };
-            });
-
-            setLidarData(prevState => [...prevState, globPoints]);
-        } else if (lastMessage.type === "position") {
-            const data = lastMessage?.message || {};
-            setRobot(prev => ({ ...prev, x: data.x, y: data.y }));
-        } else if (lastMessage.type === "orientation") {
-            const data = lastMessage?.message || 0;
-            setRobot(prev => ({ ...prev, rotation: 360.0 - data }));
-        } else if (lastMessage.type === "position_confidence") {
-            const data = lastMessage?.message || {};
-            setRobot(prev => ({
-                ...prev,
-                posConfidenceRect: {
-                    x1: data.x1,
-                    y1: data.y1,
-                    x2: data.x2,
-                    y2: data.y2,
-                }
-            }));
-        }
-
-        const obstaclesMessages = [...new Set(messages
+    useEffect(() => {
+        const obstaclesMessages = [...new Set(allMessages
             .filter((message: ROSSocketMessage) => message.type === "obstacles")
             .map((message) => message.message)
             .flat()
@@ -189,7 +193,7 @@ export default function RobotContextProvider({ children }: { children: ReactNode
             }))];
 
         setObstacles(obstaclesMessages);
-    }, [messages]);
+    }, [allMessages]);
 
     return (
         <RobotContext.Provider value={{

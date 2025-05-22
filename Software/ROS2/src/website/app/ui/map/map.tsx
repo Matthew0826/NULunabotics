@@ -14,31 +14,36 @@ export const COLUMN_WIDTH = 0.8; // meters
 
 // Note: all obstacles and paths are in centimeters
 export default function Map() {
-    const { messages, sendToServer } = useWebSocketContext();
+    const { latestMessages, sendToServer } = useWebSocketContext();
     const [pathData, setPathData] = useState<MapPoint[]>([]);
     const [odometryPathData, setOdometryPathData] = useState<MapPoint[]>([]);
 
     const { robot, obstacles } = useRobotContext();
 
+    // Called once on mount
     useEffect(() => {
-        if (messages.length == 0) {
-            // in the case of a reset, clear the path data
-            setPathData([]);
-            setOdometryPathData([]);
+        setPathData([]);
+        setOdometryPathData([]);
+    }, []);
+
+    useEffect(() => {
+        if (latestMessages.length == 0) {
             return;
         }
-        const lastMessage = messages[messages.length - 1];
-        if (lastMessage.type === "path") {
-            const data = (lastMessage?.message || []).map((point) => ([point.x, point.y] as MapPoint));
-            // console.log("Path data", data);
-            setPathData(data);
-        } else if (lastMessage.type === "odometry_path") {
-            const data = (lastMessage?.message || []).map((point) => ([point.x, point.y] as MapPoint));
-            // console.log("Odometry path data", data);
-            setOdometryPathData(data);
+
+        for (const message of latestMessages) {
+            if (message.type === "path") {
+                const data = (message?.message || []).map((point) => ([point.x, point.y] as MapPoint));
+                // console.log("Path data", data);
+                setPathData(data);
+            } else if (message.type === "odometry_path") {
+                const data = (message?.message || []).map((point) => ([point.x, point.y] as MapPoint));
+                // console.log("Odometry path data", data);
+                setOdometryPathData(data);
+            }
         }
 
-    }, [messages]);
+    }, [latestMessages]);
 
     // used to focus the map div when the page loads
     // so that keyboard controls work

@@ -8,9 +8,9 @@ import Timer from "./components/timer";
 import Slider from "./components/slider";
 import SerialPortPanel from "./panels/serial-port-panel";
 import ConfigPanel from "./panels/config-panel";
-import ExcavatorVisual from "./excavator_temp_visual";
+import ExcavatorVisual from "./panels/excavator_visual_panel";
 import OrientationCorrectionPanel from "./panels/orientation-correction-panel";
-import ControlsReminder from "./components/controls-reminder";
+import ControlsPanel from "./panels/controls-panel";
 import Render3DRobotModel from "@/app/ui/three/render-robot";
 import {useGamepadManagerContext} from "@/app/contexts/gamepad-context";
 
@@ -51,7 +51,7 @@ export default function DashboardPanels() {
                     <SerialPortPanel />
                 </Panel>
                 <Panel title="Controls" hiddenByDefault={true}>
-                    <ControlsReminder />
+                    <ControlsPanel />
                 </Panel>
                 <Panel title="">
                     <Render3DRobotModel

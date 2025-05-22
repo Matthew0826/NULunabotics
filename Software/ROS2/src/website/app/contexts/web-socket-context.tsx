@@ -13,12 +13,14 @@ import {ROSSocketMessage} from "@/app/types/sockets";
 import {tempStartingData} from "@/app/lib/temp-graph-info";
 
 type WebSocketContextType = {
-    messages: ROSSocketMessage[];
+    allMessages: ROSSocketMessage[];
+    latestMessages: ROSSocketMessage[];
     sendToServer: (messageType: string, message: any) => void;
 };
 
 const WebSocketContext = createContext<WebSocketContextType>({
-    messages: [],
+    allMessages: [],
+    latestMessages: [],
     sendToServer: () => { },
 });
 
@@ -47,6 +49,8 @@ export default function WebSocketProvider({
     const [messages, setMessages] = useState<ROSSocketMessage[]>(
         tempStartingData
     );
+    const [latestMessages, setLatestMessages] = useState<ROSSocketMessage[]>([]);
+
     const messageBuffer = useRef<any[]>([]);
     const flushing = useRef(false);
 
@@ -56,21 +60,31 @@ export default function WebSocketProvider({
                 typeof event.data === "string"
                     ? event.data
                     : await event.data.text();
-            const message = JSON.parse(payload) as ROSSocketMessage;
-            // messageBuffer.current.push(message);
-            if (message.type === "obstacles") {
-                setMessages((prev) => [...prev, message]);
-            } else if (message.type === "battery") {
-                setMessages((prev) => {
-                    let powerMsgCount = 0;
-                    const otherMessages = prev.filter((a) => a.type != message.type);
-                    const powerMessages = [...prev.filter((a) => a.type == message.type), message].slice(-10);
-                    return [...otherMessages, ...powerMessages];
-                });
-            } else if (message.type === "resetAutonomous") {
-                setMessages([]);
-            } else {
-                setMessages((prev) => [...(prev.filter(a => a.type != message.type)), message]);
+            const messageList = JSON.parse(payload) as ROSSocketMessage[];
+
+            let latestMessagesThisBatch: ROSSocketMessage[] = [];
+            messageList.forEach((message: ROSSocketMessage) => {
+                if (message.type === "obstacles") {
+                    latestMessagesThisBatch.push(message);
+                } else if (message.type === "battery") {
+                    // setMessages((prev) => {
+                    //     let powerMsgCount = 0;
+                    //     const otherMessages = prev.filter((a) => a.type != message.type);
+                    //     const powerMessages = [...prev.filter((a) => a.type == message.type), message].slice(-10);
+                    //     return [...otherMessages, ...powerMessages];
+                    // });
+                    latestMessagesThisBatch.push(message);
+                } else if (message.type === "resetAutonomous") {
+                    messageList.push(message);
+                } else {
+                    // setMessages((prev) => [...(prev.filter(a => a.type != message.type)), message]);
+                    latestMessagesThisBatch = [...latestMessagesThisBatch.filter(a => a.type != message.type), message];
+                }
+            });
+
+            if (latestMessagesThisBatch.length > 0) {
+                setLatestMessages(latestMessagesThisBatch);
+                setMessages(prev => [...prev, ...latestMessagesThisBatch]);
             }
         }
 
@@ -109,7 +123,7 @@ export default function WebSocketProvider({
     }
 
     return (
-        <WebSocketContext.Provider value={{ messages, sendToServer }}>
+        <WebSocketContext.Provider value={{ allMessages: messages, latestMessages, sendToServer }}>
             {children}
         </WebSocketContext.Provider>
     );

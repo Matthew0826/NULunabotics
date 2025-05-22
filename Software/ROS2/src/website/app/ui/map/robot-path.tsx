@@ -98,7 +98,7 @@ function pointsToPathWithQuadraticCurves(
  * This component represents the path the robot intends to take through the map.
  */
 export default function RobotPath({ path, odometryPath, robot }: { path?: MapPoint[], odometryPath: MapPoint[], robot: any }) {
-    const { messages, sendToServer } = useWebSocketContext();
+    const { sendToServer } = useWebSocketContext();
     const pathRef = React.useRef<HTMLDivElement>(null);
     const [previousClickPosition, setPreviousClickPosition] = React.useState<MapPoint | null>(null);
     const handlePathClick = (e: React.MouseEvent) => {
