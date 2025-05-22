@@ -81,6 +81,10 @@ export type ROSSocketMessage = ({
         message?: any;
     }
     | {
+        type: "reset";
+        message?: any;
+    }
+    | {
         type: "loadConfigProfile";
         message: {
             profile: string;

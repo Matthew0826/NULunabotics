@@ -1,16 +1,9 @@
 import * as rclnodejs from "rclnodejs";
-import { sendToClient } from "./sockets";
+import {sendToClient} from "./sockets";
 import {MapPoint} from "@/app/types/map-objects";
 import {GamepadState} from "@/app/contexts/gamepad-context";
+
 const Plan = rclnodejs.require("lunabotics_interfaces/action/Plan");
-
-export const lidarPoints: Point[] = [];
-
-export type Point = {
-    distance: number;
-    angle: number;
-    weight: number;
-};
 
 const LUNABOTICS_LIDAR_ROTATION_TYPE = "lunabotics_interfaces/msg/LidarRotation";
 const LUNABOTICS_MOTORS_TYPE = "lunabotics_interfaces/msg/Motors";
@@ -184,12 +177,13 @@ export async function sendPlanAction(start: any, should_excavate: boolean, shoul
     }
     return result;
 }
+
 let doLoopAction = false;
 
 function loopActionForever(excavate: boolean) {
     if (!doLoopAction) return;
     let promise;
-    promise = sendPlanAction(robotPosition, excavate, !excavate, { x: -1, y: -1 });
+    promise = sendPlanAction(robotPosition, excavate, !excavate, {x: -1, y: -1});
     // wait for the promise to resolve
     promise.then((response: any) => {
         loopActionForever(!excavate);
@@ -239,7 +233,7 @@ let rosOrientationCorrectionPublisher: rclnodejs.Publisher<typeof LUNABOTICS_ORI
 let rosClient: rclnodejs.Client<typeof LUNABOTICS_PATH_TYPE>;
 let planActionClient: rclnodejs.ActionClient<typeof LUNABOTICS_PLAN_TYPE>;
 
-let robotPosition = { x: 448, y: 100 };
+let robotPosition = {x: 448, y: 100};
 
 rclnodejs.init().then(() => {
     const node = new rclnodejs.Node("website_backend");
@@ -275,7 +269,7 @@ rclnodejs.init().then(() => {
         LUNABOTICS_LIDAR_ROTATION_TYPE,
         "sensors/lidar",
         (msg: any) => {
-            sendToClient("lidar", msg.points, true);
+            sendToClient({type: "lidar", message: msg.points}, true);
         }
     );
     let previousObstacle: any = null;
@@ -284,7 +278,10 @@ rclnodejs.init().then(() => {
         "navigation/obstacles",
         (msg: any) => {
             if (msg == previousObstacle) return;
-            sendToClient("obstacles", msg);
+            sendToClient({
+                type: "obstacles",
+                message: msg
+            });
             previousObstacle = msg;
         }
     );
@@ -294,84 +291,84 @@ rclnodejs.init().then(() => {
         (msg: any) => {
             robotPosition.x = msg.x;
             robotPosition.y = msg.y;
-            sendToClient("position", msg, false);
+            sendToClient({type: "position", message: msg}, false);
         }
     );
     node.createSubscription(
         LUNABOTICS_RECT_TYPE,
         "/sensors/position_confidence",
         (msg: any) => {
-            sendToClient("position_confidence", msg, true);
+            sendToClient({type: "position_confidence", message: msg}, true);
         }
     );
     node.createSubscription(
         ROS2_FLOAT_TYPE,
         "sensors/orientation",
         (msg: any) => {
-            sendToClient("orientation", msg.data, true);
+            sendToClient({type: "orientation", message: msg.data}, true);
         }
     );
     node.createSubscription(
         LUNABOTICS_PATH_VISUAL_TYPE,
         "navigation/path",
         (msg: any) => {
-            sendToClient("path", msg.nodes);
+            sendToClient({type: "path", message: msg.nodes});
         }
     );
     node.createSubscription(
         LUNABOTICS_PATH_VISUAL_TYPE,
         "navigation/odometry_path",
         (msg: any) => {
-            sendToClient("odometry_path", msg.nodes);
+            sendToClient({type: "odometry_path", message: msg.nodes});
         }
     );
     node.createSubscription(
         ROS2_BOOL_TYPE,
         "website/reset",
         (msg: any) => {
-            sendToClient("reset", msg.data);
+            sendToClient({type: "reset", message: msg.data});
         }
     );
     node.createSubscription(
         LUNABOTICS_SERIAL_PORT_TYPE,
         "sensors/serial_port_state",
         (msg: any) => {
-            sendToClient("serial_port_state", msg);
+            sendToClient({type: "serial_port_state", message: msg});
         }
     );
     node.createSubscription(
         LUNABOTICS_EXCAVATOR_TYPE,
         "physical_robot/excavator",
         (msg: any) => {
-            sendToClient("excavator", msg, true);
+            sendToClient({type: "excavator", message: msg}, true);
         }
     )
     node.createSubscription(
         LUNABOTICS_MOTORS_TYPE,
         "physical_robot/motors",
         (msg: any) => {
-            sendToClient("motors", msg, false);
+            sendToClient({type: "motors", message: msg}, false);
         }
     )
     node.createSubscription(
         LUNABOTICS_EXCAVATOR_PERCENT_TYPE,
         "sensors/excavator_percent",
         (msg: any) => {
-            sendToClient("excavator_percent", msg, true);
+            sendToClient({type: "excavator_percent", message: msg}, true);
         }
     )
     node.createSubscription(
         ROS2_FLOAT_TYPE,
         "sensors/excavator_distance",
         (msg: any) => {
-            sendToClient("distance_sensor", msg, true);
+            sendToClient({type: "distance_sensor", message: msg}, true);
         }
     )
     node.createSubscription(
         ROS2_BATTERY_TYPE,
         "battery/state",
         (msg: any) => {
-            sendToClient("battery", msg, true);
+            sendToClient({type: "battery", message: msg}, true);
         }
     )
     rosClient = node.createClient(

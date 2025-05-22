@@ -60,8 +60,13 @@ export default function WebSocketProvider({
                 typeof event.data === "string"
                     ? event.data
                     : await event.data.text();
-            const messageList = JSON.parse(payload) as ROSSocketMessage[];
-            // console.log("Received message:", messageList);
+            const messageList = JSON.parse(payload) as (ROSSocketMessage[] | undefined);
+
+            console.log(messageList);
+            if (!messageList) {
+                console.error("Received undefined message list");
+                return;
+            }
 
             let latestMessagesThisBatch: ROSSocketMessage[] = [];
             messageList.forEach((message: ROSSocketMessage) => {

@@ -58,7 +58,7 @@ export default function RobotContextProvider({ children }: { children: ReactNode
         y: 100,
         width: 68,
         height: 98,
-        rotation: 0,
+        rotation: 90,
         posConfidenceRect: {
             x1: 0,
             y1: 0,
