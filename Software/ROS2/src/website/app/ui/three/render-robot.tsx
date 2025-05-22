@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import {Group, Mesh} from "three";
+import { Group, Mesh } from "three";
 import { ObstacleType } from "@/app/types/map-objects";
 import { useRobotContext } from "@/app/contexts/robot-context";
 
@@ -505,7 +505,7 @@ const Render3DRobotModel = ({
             const color = obstacle.isHole ? 0xcccccc : 0xff0000;
 
             const worldPoint = new THREE.Vector3(obstacle.x / 10, 0, obstacle.y / 10);
-            worldPoint.sub(new THREE.Vector3(robot.x / 10, robot.y / 10));
+            worldPoint.sub(new THREE.Vector3(robot.x / 10, 0.0, robot.y / 10));
 
             const pointMesh = new THREE.Mesh(
                 new THREE.SphereGeometry(obstacle.radius / 2.5 / 10, 8, 8),

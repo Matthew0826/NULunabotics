@@ -1,36 +1,28 @@
 "use client";
 
+import { useState } from "react";
+
 // A better slider component with lamba for value handling
 export default function Slider({
-    labels, 
-    value, 
-    setValue, 
-    min = 0, 
-    max = 1, 
+    labels,
+    value,
+    setValue,
+    min = 0,
+    max = 1,
     step = 0.01
-}: { 
-    labels: number[], 
+}: {
+    labels: number[],
     value: number,
-    setValue: Dispatch<SetStateAction<number>> | undefined,
+    setValue: (val: number) => void,
     min?: number,
     max?: number,
     step?: number
 }) {
     const [isDragging, setIsDragging] = useState(false);
-    // Use a separate state for visual value to avoid hydration mismatch
-    const [displayValue, setDisplayValue] = useState(value);
-
-    // Sync values after hydration
-    useEffect(() => {
-        setDisplayValue(value);
-    }, [value]);
 
     const handleChange = (e: any) => {
         const newValue = parseFloat(e.target.value);
-        setDisplayValue(newValue);
-        if (setValue) {
-            setValue(newValue);
-        }
+        setValue(newValue);
     };
 
     // percentage of slider

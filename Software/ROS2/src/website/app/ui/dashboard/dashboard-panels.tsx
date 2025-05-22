@@ -50,7 +50,7 @@ export default function DashboardPanels() {
                 <Panel title="Power">
                     <WebSocketGraph graphInfo={tempGraphPower} />
                 </Panel>
-                <Panel title="Orientation Correction">
+                <Panel title="Orientation Correction" hiddenByDefault={true}>
                     <OrientationCorrectionPanel />
                 </Panel>
                 <Panel title="Wheel Speed" hiddenByDefault={true}>
