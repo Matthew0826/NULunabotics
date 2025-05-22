@@ -1,7 +1,7 @@
 import * as rclnodejs from "rclnodejs";
 import { sendToClient } from "./sockets";
-import { Point as Vector2 } from "@/app/ui/map/robot-path";
-import { GamepadState } from "../ui/dashboard/gamepad-state-provider";
+import {MapPoint} from "@/app/types/map-objects";
+import {GamepadState} from "@/app/contexts/gamepad-context";
 const Plan = rclnodejs.require("lunabotics_interfaces/action/Plan");
 
 export const lidarPoints: Point[] = [];
@@ -121,7 +121,7 @@ export const publishOrientationCorrection = (messageJson: any) => {
     rosOrientationCorrectionPublisher.publish(orientationMsg);
 }
 
-export const sendPathfindingRequest = async (point1: Vector2, point2: Vector2, callback: (point: any[]) => void) => {
+export const sendPathfindingRequest = async (point1: MapPoint, point2: MapPoint, callback: (point: any[]) => void) => {
     const request = {
         start: {
             x: point1[0],
