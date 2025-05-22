@@ -57,6 +57,8 @@ export function useKeyboardController(): [number, Dispatch<SetStateAction<number
                 newState.conveyorSpeed = speedRef.current;
             }
             newState.timestamp = Date.now();
+
+
             sendToServer("controls", { ...newState, isActuator: flipped });
             setState(newState);
         }
