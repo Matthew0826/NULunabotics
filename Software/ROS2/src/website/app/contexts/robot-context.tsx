@@ -58,7 +58,7 @@ export default function RobotContextProvider({ children }: { children: ReactNode
         y: 100,
         width: 68,
         height: 98,
-        rotation: 90,
+        rotation: 0,
         posConfidenceRect: {
             x1: 0,
             y1: 0,
@@ -70,7 +70,8 @@ export default function RobotContextProvider({ children }: { children: ReactNode
     const lidarOrigin: RelativeLidarOrigin = {
         yawOffset: -Math.PI / 2,
         pitch: -Math.PI / 4,
-        relPos: new Vector3(1.35, 1.1, -1.8),
+        relPos: new Vector3(-0.95, 2.65, -1.8),
+        // relPos: new Vector3(-0.95, 0, -1.8),
     }
 
     const { latestMessages, allMessages } = useWebSocketContext();
@@ -107,6 +108,7 @@ export default function RobotContextProvider({ children }: { children: ReactNode
                         point.distance,
                         point.angle,
                         lidarOrigin,
+                        robot.rotation,
                     )
 
                     return {
@@ -152,6 +154,7 @@ export default function RobotContextProvider({ children }: { children: ReactNode
                         point.distance,
                         point.angle,
                         lidarOrigin,
+                        robot.rotation,
                     )
 
                     return {
@@ -166,7 +169,7 @@ export default function RobotContextProvider({ children }: { children: ReactNode
                 setRobot(prev => ({ ...prev, x: data.x, y: data.y }));
             } else if (message.type === "orientation") {
                 const data = message?.message || 0;
-                setRobot(prev => ({ ...prev, rotation: 360.0 - data }));
+                setRobot(prev => ({ ...prev, rotation: data + 90 }));
             } else if (message.type === "position_confidence") {
                 const data = message?.message || {};
                 setRobot(prev => ({

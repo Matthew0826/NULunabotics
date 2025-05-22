@@ -35,7 +35,9 @@ export function gamepadLoop(
     speed: number = 0.5
 ) {
     let start: number;
+    let lastSent = 0; // Throttle timestamp
     console.log("Beginning gamepad loop.");
+
     function step(timestamp: number) {
         if (start === undefined) {
             start = timestamp;
@@ -50,6 +52,7 @@ export function gamepadLoop(
             requestAnimationFrame(step);
             return;
         }
+
         // gamepad.buttons.forEach((button, index) => {
         //     if (button.pressed) {
         //         console.log("Button " + index + " pressed");
@@ -75,17 +78,23 @@ export function gamepadLoop(
         var y1 = gamepad.axes[1];
         var x2 = gamepad.axes[2];
         var y2 = gamepad.axes[3];
+        const now = Date.now();
+
         const newData = {
             x: x1,
             y: -y1,
             conveyorSpeed: gamepad.buttons[5].pressed ? speed : 0.0,
             isActuator: !gamepad.buttons[4].pressed,
             actuatorPower: y2 * speed,
-            timestamp: Date.now()
-        }
-        if (gamepadData !== newData) {
+            timestamp: now
+        };
+
+        // Throttled. if a message was sent in the last 100ms, don't send another one until
+        // the 100ms is up. If a message was sent over that, send a new one.
+        if (now - lastSent >= 100) {
             setState(newData);
             sendToServer("controls", newData);
+            lastSent = now;
         }
 
         requestAnimationFrame(step);

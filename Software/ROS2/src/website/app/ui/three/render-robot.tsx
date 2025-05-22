@@ -88,9 +88,9 @@ const Render3DRobotModel = ({
         baseModel: THREE.Group | null;
         wheelModels: THREE.Group[] | null;
         excavatorModel: THREE.Group | null;
-        lidarPointsMesh: THREE.Group | null;
+        lidarPointsMesh: THREE.Points | null;
         obstaclesMesh: THREE.Group | null;
-        mapOutlineMesh: THREE.Mesh | null;
+        terrainMesh: THREE.Mesh | null;
         controls: OrbitControls | null;
         animating: boolean;
     }>({
@@ -101,7 +101,7 @@ const Render3DRobotModel = ({
         baseModel: null,
         wheelModels: null,
         excavatorModel: null,
-        mapOutlineMesh: null,
+        terrainMesh: null,
         lidarPointsMesh: null,
         obstaclesMesh: null,
         controls: null,
@@ -295,7 +295,10 @@ const Render3DRobotModel = ({
             new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16, 3),
             new THREE.MeshStandardMaterial({ color: 0xff0000 })
         );
-        lidarOriginMesh.position.set(lidarOrigin.relPos.x, lidarOrigin.relPos.y, lidarOrigin.relPos.z);
+        lidarOriginMesh.position.set(
+            lidarOrigin.relPos.x,
+            lidarOrigin.relPos.y - sceneRef.current.robotObjectGroup.position.y,
+            lidarOrigin.relPos.z);
         lidarOriginMesh.rotation.set(lidarOrigin.pitch, lidarOrigin.yawOffset, 0);
         sceneRef.current.robotObjectGroup.add(lidarOriginMesh);
 
@@ -340,14 +343,16 @@ const Render3DRobotModel = ({
 
                     scene.add(sceneRef.current.robotObjectGroup);
                 }
+
+                sceneRef.current.terrainMesh?.position.set(-robot.x / 100, 0, -robot.y / 100);
             });
 
             setIsLoading(false);
         });
 
-        const terrain = createTerrainMesh(58.7, 46.7, 400);
+        const terrain = createTerrainMesh(58.7, 46.7, 50);
         scene.add(terrain);
-        sceneRef.current.mapOutlineMesh = terrain;
+        sceneRef.current.terrainMesh = terrain;
 
         // Add wireframe lines
         // const wireframe = new THREE.LineSegments(
@@ -414,7 +419,7 @@ const Render3DRobotModel = ({
             if (sceneRef.current.robotObjectGroup) {
                 if (sceneRef.current.robotObjectGroup.rotation.y !== robotStateRef.current.rotation) {
                     // Rotate the whole robot object group
-                    sceneRef.current.robotObjectGroup.rotation.y = -(robotStateRef.current.rotation + 90) / 180 * Math.PI;
+                    sceneRef.current.robotObjectGroup.rotation.y = (robotStateRef.current.rotation) / 180 * Math.PI;
                 }
             }
 
@@ -458,36 +463,41 @@ const Render3DRobotModel = ({
     useEffect(() => {
         if (!sceneRef.current.scene) return;
 
-        // Remove previous group
+        // Remove previous points mesh
         if (sceneRef.current.lidarPointsMesh) {
             sceneRef.current.scene.remove(sceneRef.current.lidarPointsMesh);
         }
 
-        const group = new THREE.Group();
+        const positions: number[] = [];
+        const colors: number[] = [];
 
-        // console.log("Lidar points", lidarPoints);
+        const color = new THREE.Color();
+
         lidarPoints.forEach(groupOfPoints => {
             groupOfPoints.forEach((point, index) => {
-                const distance = 10;
+                const worldPoint = point.globPos.clone()
+                    .sub(new THREE.Vector3(robot.x, 0, robot.y))
+                    .multiplyScalar(MODEL_SCALE);
+                positions.push(worldPoint.x, worldPoint.y, worldPoint.z);
 
-                const colorDistance = Math.round(Math.min(Math.max(1, distance / 10 * 255), 255));
-                const color = `#${(255 - colorDistance).toString(16).padStart(2, '0')}${colorDistance.toString(16).padStart(2, '0')}00`;
-
-                const worldPoint = point.globPos
-                worldPoint.sub(new THREE.Vector3(robot.x, 0, robot.y));
-
-                const pointMesh = new THREE.Mesh(
-                    new THREE.SphereGeometry(index === 0 ? 0.03 : 0.015, 6, 6),
-                    new THREE.MeshStandardMaterial({ color })
-                );
-                pointMesh.position.copy(worldPoint.multiplyScalar(MODEL_SCALE));
-                group.add(pointMesh);
+                const intensity = index === 0 ? 1.0 : 0.6;
+                color.setHSL(0.33 * (1 - intensity), 1.0, 0.5);
+                colors.push(color.r, color.g, color.b);
             });
         });
 
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 
-        sceneRef.current.scene.add(group);
-        sceneRef.current.lidarPointsMesh = group;
+        const material = new THREE.PointsMaterial({
+            size: 0.15,
+            vertexColors: true,
+        });
+
+        const points = new THREE.Points(geometry, material);
+        sceneRef.current.scene.add(points);
+        sceneRef.current.lidarPointsMesh = points;
     }, [lidarPoints, lidarOrigin]);
 
 
@@ -516,12 +526,12 @@ const Render3DRobotModel = ({
         });
 
         sceneRef.current.scene.add(group);
-        sceneRef.current.lidarPointsMesh = group;
+        sceneRef.current.obstaclesMesh = group;
 
-        if (sceneRef.current.mapOutlineMesh) {
-            // ISSUES HERE
-            raiseMeshAtPoints(sceneRef.current.mapOutlineMesh, obstacles, 0.5, 0.5);
-        }
+        // if (sceneRef.current.mapOutlineMesh) {
+        //     // ISSUES HERE
+        //     raiseMeshAtPoints(sceneRef.current.mapOutlineMesh, obstacles, 0.5, 0.5);
+        // }
     }, [lidarPoints, lidarOrigin]);
 
 
