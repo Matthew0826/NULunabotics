@@ -29,7 +29,7 @@ export default function WebSocketGraph({
     const [timeCounter, setTimeCounter] = useState(0);
 
     const [batteryPercent, setBatteryPercent] = useState(0);
-    
+
     useEffect(() => {
         const powerMessages = [...new Set(allMessages
             .filter((message: ROSSocketMessage) => message.type === "battery")
@@ -60,7 +60,7 @@ export default function WebSocketGraph({
 
     return (
         <>
-            <div className="h-[300px] w-full overflow-hidden">
+            <div className="w-full overflow-hidden">
                 <Graph
                     dataSets={graph.dataSets}
                     title={graph.name}

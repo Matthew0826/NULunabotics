@@ -12,6 +12,7 @@ import ControlsPanel from "./panels/controls-panel";
 import Render3DRobotModel from "@/app/ui/three/render-robot";
 import WheelSpeedPanel from "./panels/wheel-speed";
 import ConfigPanel from "./panels/config-panel";
+import StaticPanel from "@/app/ui/dashboard/panels/static-panel";
 
 export default function DashboardPanels() {
     const mapPanel = (
@@ -21,11 +22,11 @@ export default function DashboardPanels() {
     );
 
     return (
-        <div className="flex flex-row gap-4 p-6 h-full w-full">
-            <div className="flex flex-col gap-4 w-full flex-1 overflow-y-auto overflow-x-hidden scrollbar-hidden max-h-screen">
+        <div className="flex flex-row gap-2 p-2 h-full w-full">
+            <div className="flex flex-col gap-2 w-full flex-1 overflow-y-auto overflow-x-hidden scrollbar-hidden max-h-screen">
                 {/* <div className="xl:hidden">{mapPanel}</div> */}
                 <div className="xl:hidden">{mapPanel}</div>
-                <Panel title="">
+                <Panel title={'Robot 3D View'} canHide={false} contentPadding={false}>
                     <Render3DRobotModel
                         baseFilename="/models/lunabot_base"
                         wheelFilename="/models/lunabot_wheel"
@@ -36,11 +37,11 @@ export default function DashboardPanels() {
                             enableZoom: false,
                             autoRotate: false,
                             // Limit vertical rotation (in radians)
-                            maxPolarAngle: Math.PI * 0.75,  // Can't go below model
+                            maxPolarAngle: Math.PI * 0.502,  // Can't go below model
                             minPolarAngle: Math.PI * 0.25   // Can't go fully above model
                         }} />
                 </Panel>
-                {/* <BatteryIndicator /> */}
+                 {/*<BatteryIndicator />*/}
                 <Panel title="Autonomous" canHide={false}>
                     <Timer startTime={0} />
                 </Panel>
