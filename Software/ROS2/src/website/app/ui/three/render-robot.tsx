@@ -300,7 +300,11 @@ const Render3DRobotModel = ({
                     scene.add(wheelClone)
                 } else {
                     sceneRef.current.robotObjectGroup.add(wheelClone);
+
+                    scene.add(sceneRef.current.robotObjectGroup);
                 }
+
+
             });
 
             setIsLoading(false);
