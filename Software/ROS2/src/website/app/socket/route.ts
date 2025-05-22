@@ -1,17 +1,17 @@
 // Web socket server code
 
-import { IncomingMessage } from "node:http";
-import WebSocket, { WebSocketServer } from "ws";
+import {IncomingMessage} from "node:http";
+import WebSocket, {WebSocketServer} from "ws";
 import { lidarPoints, publishCodeUpload, publishConfig, publishMockObstacle, publishSimReset, publishMotorsToROS2, publishOrientationCorrection, sendPathfindingRequest, sendPlanAction, startLoopingAction, stopLoopingAction } from "../lib/ros2";
-import { sendToClient, sockets } from "../lib/sockets";
-import { getConfigFromProfile } from "../lib/config-manager";
+import {sendToClient, sockets} from "../lib/sockets";
+import {getConfigFromProfile} from "../lib/config-manager";
 import {ROSSocketMessage} from "@/app/types/sockets";
 
 export function GET() {
     const headers = new Headers();
     headers.set("Connection", "Upgrade");
     headers.set("Upgrade", "websocket");
-    return new Response("Upgrade Required", { status: 426, headers });
+    return new Response("Upgrade Required", {status: 426, headers});
 }
 
 // This is like the server of the web socket
@@ -70,10 +70,14 @@ export function SOCKET(
     sockets.add(client);
 
     // assume default
-    sendToClient("loadConfigProfile", {
-        profile: "default",
-        config: getConfigFromProfile("default")
+    sendToClient({
+        type: "loadConfigProfile",
+        message: {
+            profile: "default",
+            config: getConfigFromProfile("default")
+        }
     });
 
-    return () => { }; //clearInterval(interval);
+    return () => {
+    }; //clearInterval(interval);
 }
