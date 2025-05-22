@@ -10,40 +10,50 @@ export default function ConfigPanel() {
     const [loadedConfigState, setLoadedConfigState] = useState<Profiles | null>(null);
     const [profileState, setProfileState] = useState<string | null>(null);
 
-    const { latestMessages, sendToServer } = useWebSocketContext();
+    const { latestMessages, allMessages, sendToServer } = useWebSocketContext();
 
     // using this to listen to the messages from the server
     useEffect(() => {
-        // return if no message from the server
-        if (latestMessages.length <= 0) { return; }
+        if (latestMessages.length <= 0) return;
 
-        for(const message of latestMessages) {
-            // we can now load the config profile
+        for (const message of latestMessages) {
             if (message.type === "loadConfigProfile") {
+                console.log("GOT NEW CONFIG");
                 const newProfile = message.message;
-                setProfileState(newProfile.profile);
+
+                // stop unnecessary state updates
                 setLoadedConfigState((prevConfig) => {
-                    if (prevConfig) {
-                        return {...prevConfig, [newProfile.profile]: newProfile.config};
-                    } else {
-                        return {[newProfile.profile]: newProfile.config};
-                    }
+                    const existing = prevConfig?.[newProfile.profile];
+                    const isSame = existing && JSON.stringify(existing) === JSON.stringify(newProfile.config);
+
+                    if (isSame) return prevConfig;
+
+                    return {
+                        ...prevConfig,
+                        [newProfile.profile]: newProfile.config
+                    };
                 });
+
+                // only update profileState if different
+                setProfileState((prev) =>
+                    prev === newProfile.profile ? prev : newProfile.profile
+                );
             }
         }
     }, [latestMessages]);
 
     // request the config from the server for the new profile
     const handleLoadProfile = (profileName: string) => {
-        sendToServer("loadConfigProfile", profileName);
+        console.log("HANDLE TIME:", profileName);
+        sendToServer("loadConfigProfile", { profile: profileName });
     };
 
     // request the server save current config to current profile
     const handleSaveProfile = () => {
         if (loadedConfigState && profileState) {
             sendToServer("saveConfigProfile", {
-                profileName: profileState,
-                config: loadedConfigState,
+                profile: profileState,
+                config: loadedConfigState[profileState],
             });
         }
     };
@@ -78,8 +88,32 @@ export default function ConfigPanel() {
     // actual rendering of the config panel
     return (
         <div className="flex flex-col gap-4 p-6 h-full w-full">
-            <p className="text-xs">Note: doesn't save! Remember to paste your values somewhere.</p>
-            {loadedConfigState[profileState].map((item, nodeIndex) => (
+            <p className="text-xs">Note: DOES save! Remember to press "save config."</p>
+            
+            {/* Profile Load */}
+            <div className="flex items-center gap-2">
+                <input
+                    type="text"
+                    placeholder="Enter profile name"
+                    className="border px-2 py-1 rounded"
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            const value = (e.target as HTMLInputElement).value.trim();
+                            console.log("VAL?", value);
+                            if (value !== "") {
+                                console.log("VAL!", value);
+                                setProfileState(null);
+                                handleLoadProfile(value);
+                                (e.target as HTMLInputElement).value = "";
+                            }
+                        }
+                    }}
+                />
+                <span className="text-xs text-gray-500">Loaded Profile: {profileState}</span>
+            </div>
+
+            {/* Config Display */}
+            {profileState && loadedConfigState[profileState] && loadedConfigState[profileState].map((item, nodeIndex) => (
                 <div className="flex flex-col gap-2 border-2 border-slate-800 p-4 rounded-lg" key={`node-${item.node}-${nodeIndex}`}>
                     <b className="text-center">{item.node}</b>
                     {item.categories.map((category, catIndex) => (
@@ -99,6 +133,14 @@ export default function ConfigPanel() {
                     ))}
                 </div>
             ))}
+
+            {/* Save Button */}
+            <button
+                onClick={handleSaveProfile}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            >
+                Save Config
+            </button>
         </div>
     );
 }

@@ -4,7 +4,7 @@ import { IncomingMessage } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
 import { publishCodeUpload, publishConfig, publishMockObstacle, publishSimReset, publishMotorsToROS2, publishOrientationCorrection, sendPathfindingRequest, sendPlanAction, startLoopingAction, stopLoopingAction } from "../lib/ros2";
 import { sendToClient, sockets } from "../lib/sockets";
-import { getConfigFromProfile } from "../lib/config-manager";
+import { getConfigFromProfile, setConfigFromProfile } from "../lib/config-manager";
 import { ROSSocketMessage } from "@/app/types/sockets";
 
 export function GET() {
@@ -53,7 +53,9 @@ export function SOCKET(
             } else if (messageJson.type === "orientationCorrection") {
                 publishOrientationCorrection(messageJson.message);
             } else if (messageJson.type == "loadConfigProfile") {
+                console.log(messageJson.message.profile);
                 // based on the name of profile, returns information for that profile
+                console.log("HERE YOU GO", messageJson.message.profile);
                 sendToClient({
                     type: "loadConfigProfile",
                     message: {
@@ -62,7 +64,8 @@ export function SOCKET(
                     }
                 });
             } else if (messageJson.type === "saveConfigProfile") {
-                publishConfig(messageJson.message);
+                console.log("OK SERVER SAVE");
+                setConfigFromProfile(messageJson.message.config, messageJson.message.profile);
             }
         } catch (error) {
             console.error("Error parsing message:", error);

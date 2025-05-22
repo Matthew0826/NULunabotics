@@ -29,33 +29,46 @@ export default function WebSocketGraph({
     const [timeCounter, setTimeCounter] = useState(0);
 
     const [batteryPercent, setBatteryPercent] = useState(0);
-
+    
     useEffect(() => {
         const powerMessages = [...new Set(allMessages
             .filter((message: ROSSocketMessage) => message.type === "battery")
             .map((message) => message.message)
             .flat())];
+
         const currents = powerMessages.map((message) => message.current);
         const voltages = powerMessages.map((message) => message.voltage);
-        const percent = powerMessages.length != 0 ? powerMessages[powerMessages.length - 1].percentage : 0;
+        const percent = powerMessages.length !== 0 ? powerMessages[powerMessages.length - 1].percentage : 0;
 
-        const newGraph = { ...graph };
-        newGraph.dataSets["current"].data = currents;
-        newGraph.dataSets["voltage"].data = voltages;
-        setGraph(newGraph);
+        setGraph((prevGraph) => ({
+            ...prevGraph,
+            dataSets: {
+                ...prevGraph.dataSets,
+                current: {
+                    ...prevGraph.dataSets.current,
+                    data: currents,
+                },
+                voltage: {
+                    ...prevGraph.dataSets.voltage,
+                    data: voltages,
+                },
+            },
+        }));
+
         setBatteryPercent(percent);
     }, [allMessages]);
 
     return (
         <>
-            <Graph
-                key={graph.name}
-                dataSets={graph.dataSets}
-                title={graph.name}
-                xAxisLabel={graph.xAxisLabel}
-                yAxisLabel={graph.yAxisLabel}
-                timeCounter={timeCounter}
-            />
+            <div className="h-[300px] w-full overflow-hidden">
+                <Graph
+                    dataSets={graph.dataSets}
+                    title={graph.name}
+                    xAxisLabel={graph.xAxisLabel}
+                    yAxisLabel={graph.yAxisLabel}
+                    timeCounter={timeCounter}
+                />
+            </div>
 
             <div className="fixed top-4 right-4 flex items-center bg-white p-2 rounded-lg shadow-lg">
                 <div className="w-14 h-6 border-2 border-gray-700 rounded flex items-center relative">

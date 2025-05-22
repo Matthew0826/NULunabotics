@@ -4,6 +4,7 @@ import { warn } from "console";
 import {ConfigType, Profiles} from "@/app/types/config";
 
 export function setConfigFromProfile(config: ConfigType[] | null, profileName: string) {
+    console.log("SET PROFILE");
     // Ensure not null!
     if (config == null) {
         warn("Config is null, cannot save profile");
@@ -41,22 +42,36 @@ export function setConfigFromProfile(config: ConfigType[] | null, profileName: s
 // Create a zeroed version of the config (if exists then zero the existing values)
 // Use default as template to generate zeroed version?
 function initConfigProfile(profileName: string): ConfigType[] {
-    // make the zeroed version of the config
-    // create a zeroed config type
-    const zeroedConfig: ConfigType[] = [{
-        node: "zeroed_node",
-        categories: []
-    }]
+    console.log("INIT PROFILE");
+    const templatePath = path.join(process.cwd(), "public", "config.template.json");
 
-    // set this zeroed config to the profile
-    setConfigFromProfile(zeroedConfig, profileName);
+    let defaultConfig: ConfigType[] = [{
+        node: "placeholder",
+        categories: []
+    }];
+
+    try {
+        if (fs.existsSync(templatePath)) {
+            const data = fs.readFileSync(templatePath, "utf-8");
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed)) {
+                defaultConfig = parsed;
+            }
+        } else {
+            console.warn("Template config file not found. Using fallback empty config.");
+        }
+    } catch (err) {
+        console.error("Failed to load template config:", err);
+    }
+
+    setConfigFromProfile(defaultConfig, profileName);
     console.log(`Created new profile "${profileName}" in config.json`);
 
-    // pass along the values
-    return zeroedConfig;
+    return defaultConfig;
 }
 
 export function getConfigFromProfile(profileName: string): ConfigType[] {
+    console.log("GET PROFILE");
     const configPath = path.join(process.cwd(), "public", "config.json");
 
     let profiles: Profiles = {};
@@ -78,7 +93,10 @@ export function getConfigFromProfile(profileName: string): ConfigType[] {
     }
 
     // Case 1: Exact profile exists, return values easy
-    if (profiles[profileName]) {
+    // if (profiles[profileName]) {
+    //     return profiles[profileName];
+    // }
+    if (profiles.hasOwnProperty(profileName)) {
         return profiles[profileName];
     }
 

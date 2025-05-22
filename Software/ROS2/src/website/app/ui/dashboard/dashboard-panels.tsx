@@ -6,12 +6,12 @@ import Panel from "./panels/panel";
 import WebSocketGraph from "./web-socket-graph";
 import Timer from "./components/timer";
 import SerialPortPanel from "./panels/serial-port-panel";
-import ConfigPanel from "./panels/config-panel";
 import ExcavatorVisual from "./panels/excavator_visual_panel";
 import OrientationCorrectionPanel from "./panels/orientation-correction-panel";
 import ControlsPanel from "./panels/controls-panel";
 import Render3DRobotModel from "@/app/ui/three/render-robot";
 import WheelSpeedPanel from "./panels/wheel-speed";
+import ConfigPanel from "./panels/config-panel";
 
 export default function DashboardPanels() {
     const mapPanel = (
@@ -22,7 +22,7 @@ export default function DashboardPanels() {
 
     return (
         <div className="flex flex-row gap-4 p-6 h-full w-full">
-            <div className="flex flex-col gap-4 w-full flex-1 overflow-y-scroll overflow-x-hidden scrollbar-hidden">
+            <div className="flex flex-col gap-4 w-full flex-1 overflow-y-auto overflow-x-hidden scrollbar-hidden max-h-screen">
                 {/* <div className="xl:hidden">{mapPanel}</div> */}
                 <div className="xl:hidden">{mapPanel}</div>
                 <Panel title="">
@@ -56,7 +56,7 @@ export default function DashboardPanels() {
                 <Panel title="Wheel Speed" hiddenByDefault={true}>
                     <WheelSpeedPanel />
                 </Panel>
-                <Panel title="Config" hiddenByDefault={true}>
+                <Panel title="Config" hiddenByDefault={false}>
                     <ConfigPanel />
                 </Panel>
                 <Panel title="Serial Ports" hiddenByDefault={true}>
