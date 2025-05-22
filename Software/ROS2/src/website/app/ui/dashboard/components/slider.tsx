@@ -50,6 +50,18 @@ export default function Slider({ labels, value, setValue }: { labels: number[], 
                     </span>
                 ))}
             </div>
+            {/* number input box */}
+            <div className="mt-4 flex justify-center">
+                <input
+                    type="number"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={value}
+                    onChange={handleChange}
+                    className="border border-gray-300 rounded px-2 py-1 w-24 text-center"
+                />
+            </div>
         </div>
     );
 };
