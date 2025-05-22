@@ -9,8 +9,8 @@ import {
     useRef,
     useState,
 } from "react";
-import {ROSSocketMessage} from "@/app/types/sockets";
-import {tempStartingData} from "@/app/lib/temp-graph-info";
+import { ROSSocketMessage } from "@/app/types/sockets";
+import { tempStartingData } from "@/app/lib/temp-graph-info";
 
 type WebSocketContextType = {
     allMessages: ROSSocketMessage[];
@@ -61,6 +61,7 @@ export default function WebSocketProvider({
                     ? event.data
                     : await event.data.text();
             const messageList = JSON.parse(payload) as ROSSocketMessage[];
+            // console.log("Received message:", messageList);
 
             let latestMessagesThisBatch: ROSSocketMessage[] = [];
             messageList.forEach((message: ROSSocketMessage) => {
@@ -96,16 +97,17 @@ export default function WebSocketProvider({
             socketRef.current?.removeEventListener("message", handleMessage);
     }, []);
 
-    const interval = setInterval(() => {
-        if (messageBuffer.current.length > 0 && !flushing.current) {
-            flushing.current = true;
-            setMessages((prev) => [
-                ...prev,
-                ...messageBuffer.current.splice(0),
-            ]);
-            flushing.current = false;
-        }
-    }, 20);
+    // setInterval(() => {
+    //     if (messageBuffer.current.length > 0 && !flushing.current) {
+    //         flushing.current = true;
+    //         setMessages((prev) => [
+    //             ...prev,
+    //             ...messageBuffer.current.splice(0),
+    //         ]);
+    //         console.log("Flushing messages", messageBuffer.current);
+    //         flushing.current = false;
+    //     }
+    // }, 10);
 
     function sendToServer(messageType: string, message: any) {
         try {

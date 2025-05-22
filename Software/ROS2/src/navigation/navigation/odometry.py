@@ -417,7 +417,6 @@ class Odometry(Node):
             # make sure theres at least a little power
             if abs(power) < 0.1:
                 power = 0.1 if power > 0 else -0.1
-            self.get_logger().info(f"power after: {power}, error: {error}")
             # drive the motors for a bit
             drive_callback(power)
             await self.yield_once(0.2)
@@ -488,7 +487,6 @@ class Odometry(Node):
             # find error for PID
             error = self.get_degrees_error(final_orientation)
             # check if completed
-            self.get_logger().info(f"tol: {self.deg_tolerance}, error: {error}")
             if abs(error) <= self.deg_tolerance: break
             # update PID
             power = self.orientation_pid.update(error, self.get_clock().now())

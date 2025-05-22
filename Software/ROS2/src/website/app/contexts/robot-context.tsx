@@ -125,25 +125,24 @@ export default function RobotContextProvider({ children }: { children: ReactNode
 
     // Called once on mount
     useEffect(() => {
-            setLeftWheelSpeed(0);
-            setRightWheelSpeed(0);
-            setExcavatorPosition(0);
-            setLidarData([]);
-            // void loadMockData();
-            setObstacles([]);
+        setLeftWheelSpeed(0);
+        setRightWheelSpeed(0);
+        setExcavatorPosition(0);
+        setLidarData([]);
+        // void loadMockData();
+        setObstacles([]);
     }, []);
 
     useEffect(() => {
-        for(const message of latestMessages) {
+        for (const message of latestMessages) {
 
             if (message.type === "motors") {
                 const data = (message?.message || []);
-
-                setLeftWheelSpeed(data.leftWheelSpeed);
-                setRightWheelSpeed(data.rightWheelSpeed);
-            } else if (message.type === "excavator") {
+                setLeftWheelSpeed(data.front_left_wheel);
+                setRightWheelSpeed(data.front_right_wheel);
+            } else if (message.type === "excavator_percent") {
                 const data = message?.message || {};
-                setExcavatorPosition(data.armPosition);
+                setExcavatorPosition(data.excavator_lifter_percent);
             } else if (message.type === "lidar") {
                 const relPoints: RelativeLidarPoint[] = message?.message || [];
 
@@ -164,10 +163,10 @@ export default function RobotContextProvider({ children }: { children: ReactNode
                 setLidarData(prevState => [...prevState, globPoints]);
             } else if (message.type === "position") {
                 const data = message?.message || {};
-                setRobot(prev => ({...prev, x: data.x, y: data.y}));
+                setRobot(prev => ({ ...prev, x: data.x, y: data.y }));
             } else if (message.type === "orientation") {
                 const data = message?.message || 0;
-                setRobot(prev => ({...prev, rotation: 360.0 - data}));
+                setRobot(prev => ({ ...prev, rotation: 360.0 - data }));
             } else if (message.type === "position_confidence") {
                 const data = message?.message || {};
                 setRobot(prev => ({

@@ -1,12 +1,14 @@
+"use client";
+
 // Render3DRobotModel.tsx
-import {useEffect, useRef, useState} from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import {OBJLoader} from 'three/examples/jsm/loaders/OBJLoader.js';
-import {MTLLoader} from 'three/examples/jsm/loaders/MTLLoader.js';
-import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
-import {Group} from "three";
-import {ObstacleType} from "@/app/types/map-objects";
-import {useRobotContext} from "@/app/contexts/robot-context";
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { Group } from "three";
+import { ObstacleType } from "@/app/types/map-objects";
+import { useRobotContext } from "@/app/contexts/robot-context";
 
 interface Render3DRobotModelProps {
     baseFilename: string;
@@ -29,29 +31,39 @@ interface Render3DRobotModelProps {
 }
 
 const Render3DRobotModel = ({
-                                baseFilename,
-                                wheelFilename,
-                                excavatorFilename,
-                                backgroundColor = '#ffffff',
-                                transparent = true,
-                                width = '100%',
-                                height = '100%',
-                                enableControls = true,
-                                controlsConfig = {
-                                    enableZoom: true,
-                                    enablePan: true,
-                                    autoRotate: false,
-                                    autoRotateSpeed: 1.0,
-                                    dampingFactor: 0.05,
-                                    maxPolarAngle: Math.PI,
-                                    minPolarAngle: 0
-                                }
-                            }: Render3DRobotModelProps) => {
+    baseFilename,
+    wheelFilename,
+    excavatorFilename,
+    backgroundColor = '#ffffff',
+    transparent = true,
+    width = '100%',
+    height = '100%',
+    enableControls = true,
+    controlsConfig = {
+        enableZoom: true,
+        enablePan: true,
+        autoRotate: false,
+        autoRotateSpeed: 1.0,
+        dampingFactor: 0.05,
+        maxPolarAngle: Math.PI,
+        minPolarAngle: 0
+    }
+}: Render3DRobotModelProps) => {
     const mountRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [cameraPosition, setCameraPosition] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 5));
+
+    const robotStateRef = useRef<{
+        leftWheelSpeed: number;
+        rightWheelSpeed: number;
+        excavatorPosition: number;
+    }>({
+        leftWheelSpeed: 0,
+        rightWheelSpeed: 0,
+        excavatorPosition: 0
+    });
 
     const MODEL_SCALE = 1;
 
@@ -114,7 +126,7 @@ const Render3DRobotModel = ({
             0.1,
             1000
         );
-        camera.position.z = 10;
+        camera.position.z = 15;
         sceneRef.current.camera = camera;
 
         // Renderer setup
@@ -187,7 +199,7 @@ const Render3DRobotModel = ({
 
                         },
                         (xhr) => {
-                            console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
+                            // console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
                         },
                         (error) => {
                             console.error('Error loading OBJ:', error);
@@ -198,7 +210,7 @@ const Render3DRobotModel = ({
                 },
                 // Progress callback
                 (xhr) => {
-                    console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
+                    // console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
                 },
                 // Error callback
                 (error) => {
@@ -226,7 +238,7 @@ const Render3DRobotModel = ({
         // Origin sphere
         const originMesh = new THREE.Mesh(
             new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16, 3),
-            new THREE.MeshStandardMaterial({color: 0xff0000})
+            new THREE.MeshStandardMaterial({ color: 0xff0000 })
         );
         originMesh.position.set(lidarOrigin.relPos.x, lidarOrigin.relPos.y, lidarOrigin.relPos.z);
         originMesh.rotation.set(lidarOrigin.pitch, lidarOrigin.yawOffset, 0);
@@ -318,15 +330,15 @@ const Render3DRobotModel = ({
                 const leftWheels = sceneRef.current.wheelModels?.filter(wheel => wheel.position.x < 0);
                 const rightWheels = sceneRef.current.wheelModels?.filter(wheel => wheel.position.x > 0);
                 leftWheels?.forEach(part => {
-                    part.rotation.x += 0.065 * leftWheelSpeed;
+                    part.rotation.x -= 0.065 * robotStateRef.current.leftWheelSpeed;
                 });
                 rightWheels?.forEach(part => {
-                    part.rotation.x -= 0.065 * rightWheelSpeed;
+                    part.rotation.x -= 0.065 * robotStateRef.current.rightWheelSpeed;
                 });
 
                 // Rotate the excavator model
-                if (sceneRef.current.excavatorModel && excavatorPosition) {
-                    sceneRef.current.excavatorModel.rotation.x = excavatorPosition * -30 / 180 * Math.PI; // About 30 degrees moves it from fully up to down.
+                if (sceneRef.current.excavatorModel && robotStateRef.current.excavatorPosition) {
+                    sceneRef.current.excavatorModel.rotation.x = robotStateRef.current.excavatorPosition * -30 / 180 * Math.PI; // About 30 degrees moves it from fully up to down.
                 }
             }
 
@@ -353,8 +365,18 @@ const Render3DRobotModel = ({
                     mountRef.current.removeChild(sceneRef.current.renderer.domElement);
                 }
             }
+
         };
-    }, [baseFilename, backgroundColor, transparent, enableControls, controlsConfig]);
+    }, [baseFilename, wheelFilename, excavatorFilename, backgroundColor, transparent, enableControls, controlsConfig]);
+
+    useEffect(() => {
+        robotStateRef.current = {
+            leftWheelSpeed,
+            rightWheelSpeed,
+            excavatorPosition
+        }
+    }, [leftWheelSpeed, rightWheelSpeed, excavatorPosition]);
+
 
     useEffect(() => {
         if (!sceneRef.current.scene) return;
@@ -366,7 +388,7 @@ const Render3DRobotModel = ({
 
         const group = new THREE.Group();
 
-        console.log("Lidar points", lidarPoints);
+        // console.log("Lidar points", lidarPoints);
         lidarPoints.forEach(groupOfPoints => {
             groupOfPoints.forEach((point, index) => {
                 const distance = 10;
@@ -379,7 +401,7 @@ const Render3DRobotModel = ({
 
                 const pointMesh = new THREE.Mesh(
                     new THREE.SphereGeometry(index === 0 ? 0.03 : 0.015, 6, 6),
-                    new THREE.MeshStandardMaterial({color})
+                    new THREE.MeshStandardMaterial({ color })
                 );
                 pointMesh.position.copy(worldPoint.multiplyScalar(MODEL_SCALE));
                 group.add(pointMesh);
@@ -410,7 +432,7 @@ const Render3DRobotModel = ({
 
             const pointMesh = new THREE.Mesh(
                 new THREE.SphereGeometry(obstacle.radius / 2.5 / 10, 8, 8),
-                new THREE.MeshStandardMaterial({color: color})
+                new THREE.MeshStandardMaterial({ color: color })
             );
             pointMesh.position.copy(worldPoint);
             group.add(pointMesh);
@@ -422,8 +444,8 @@ const Render3DRobotModel = ({
 
 
     return (
-        <div ref={containerRef} style={{width, height, position: 'relative'}}>
-            <div ref={mountRef} style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%'}}/>
+        <div ref={containerRef} style={{ width, height, position: 'relative' }}>
+            <div ref={mountRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
             {isLoading && (
                 <div style={{
                     position: 'absolute',
