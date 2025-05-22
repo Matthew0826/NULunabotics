@@ -1,17 +1,17 @@
 // Web socket server code
 
-import {IncomingMessage} from "node:http";
-import WebSocket, {WebSocketServer} from "ws";
-import { lidarPoints, publishCodeUpload, publishConfig, publishMockObstacle, publishSimReset, publishMotorsToROS2, publishOrientationCorrection, sendPathfindingRequest, sendPlanAction, startLoopingAction, stopLoopingAction } from "../lib/ros2";
-import {sendToClient, sockets} from "../lib/sockets";
-import {getConfigFromProfile} from "../lib/config-manager";
-import {ROSSocketMessage} from "@/app/types/sockets";
+import { IncomingMessage } from "node:http";
+import WebSocket, { WebSocketServer } from "ws";
+import { publishCodeUpload, publishConfig, publishMockObstacle, publishSimReset, publishMotorsToROS2, publishOrientationCorrection, sendPathfindingRequest, sendPlanAction, startLoopingAction, stopLoopingAction } from "../lib/ros2";
+import { sendToClient, sockets } from "../lib/sockets";
+import { getConfigFromProfile } from "../lib/config-manager";
+import { ROSSocketMessage } from "@/app/types/sockets";
 
 export function GET() {
     const headers = new Headers();
     headers.set("Connection", "Upgrade");
     headers.set("Upgrade", "websocket");
-    return new Response("Upgrade Required", {status: 426, headers});
+    return new Response("Upgrade Required", { status: 426, headers });
 }
 
 // This is like the server of the web socket
@@ -54,9 +54,12 @@ export function SOCKET(
                 publishOrientationCorrection(messageJson.message);
             } else if (messageJson.type == "loadConfigProfile") {
                 // based on the name of profile, returns information for that profile
-                sendToClient("loadConfigProfile", {
-                    profile: messageJson.message,
-                    config: getConfigFromProfile(messageJson.message.profile)
+                sendToClient({
+                    type: "loadConfigProfile",
+                    message: {
+                        profile: messageJson.message.profile,
+                        config: getConfigFromProfile(messageJson.message.profile)
+                    }
                 });
             } else if (messageJson.type === "saveConfigProfile") {
                 publishConfig(messageJson.message);

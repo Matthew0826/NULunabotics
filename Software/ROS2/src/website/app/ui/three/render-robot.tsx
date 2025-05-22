@@ -414,7 +414,7 @@ const Render3DRobotModel = ({
             if (sceneRef.current.robotObjectGroup) {
                 if (sceneRef.current.robotObjectGroup.rotation.y !== robotStateRef.current.rotation) {
                     // Rotate the whole robot object group
-                    sceneRef.current.robotObjectGroup.rotation.y = (robotStateRef.current.rotation - 90) / 180 * Math.PI;
+                    sceneRef.current.robotObjectGroup.rotation.y = -(robotStateRef.current.rotation + 90) / 180 * Math.PI;
                 }
             }
 

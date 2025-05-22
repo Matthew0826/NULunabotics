@@ -62,7 +62,6 @@ export default function WebSocketProvider({
                     : await event.data.text();
             const messageList = JSON.parse(payload) as (ROSSocketMessage[] | undefined);
 
-            console.log(messageList);
             if (!messageList) {
                 console.error("Received undefined message list");
                 return;
@@ -115,6 +114,7 @@ export default function WebSocketProvider({
     // }, 10);
 
     function sendToServer(messageType: string, message: any) {
+        console.log("Sending message to server:", messageType, message);
         try {
             if (socketRef.current?.readyState !== WebSocket.OPEN) {
                 console.log("WebSocket is not open. Unable to send message.");
