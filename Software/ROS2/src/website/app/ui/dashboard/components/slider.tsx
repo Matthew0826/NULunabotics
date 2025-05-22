@@ -1,6 +1,21 @@
 import { Dispatch, SetStateAction, useState } from 'react';
 
-export default function Slider({ labels, value, setValue }: { labels: number[], value: number; setValue: Dispatch<SetStateAction<number>> | undefined }) {
+// A better slider component with lamba for value handling
+export default function Slider({
+    labels, 
+    value, 
+    setValue, 
+    min = 0, 
+    max = 1, 
+    step = 0.01
+}: { 
+    labels: number[], 
+    value: number,
+    setValue: Dispatch<SetStateAction<number>> | undefined,
+    min?: number,
+    max?: number,
+    step?: number
+}) {
     const [isDragging, setIsDragging] = useState(false);
 
     const handleChange = (e: any) => {
@@ -9,13 +24,16 @@ export default function Slider({ labels, value, setValue }: { labels: number[], 
         }
     };
 
+    // percentage of slider
+    const valuePercent = ((value - min) / (max - min)) * 100;
+
     return (
         <div className="w-full max-w-md mx-auto py-8 px-4">
             <div className="relative">
                 <div className="w-full h-1 bg-gray-200 rounded-full">
                     <div
                         className="absolute h-1 bg-zinc-800 rounded-full"
-                        style={{ width: `${value * 100}%` }}
+                        style={{ width: `${valuePercent}%` }}
                     />
                 </div>
                 {labels.map((label, index) => (
@@ -27,13 +45,13 @@ export default function Slider({ labels, value, setValue }: { labels: number[], 
                 ))}
                 <div
                     className={`absolute h-4 w-4 rounded-full bg-zinc-800 shadow transform -translate-y-1/2 -translate-x-1/2 top-1/2 cursor-pointer transition-transform ${isDragging ? 'scale-110' : 'hover:scale-110'}`}
-                    style={{ left: `${value * 100}%` }}
+                    style={{ left: `${valuePercent}%` }}
                 />
                 <input
                     type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
+                    min={min}
+                    max={max}
+                    step={step}
                     value={value}
                     onChange={handleChange}
                     onMouseDown={() => setIsDragging(true)}
@@ -54,9 +72,9 @@ export default function Slider({ labels, value, setValue }: { labels: number[], 
             <div className="mt-4 flex justify-center">
                 <input
                     type="number"
-                    min={0}
-                    max={1}
-                    step={0.01}
+                    min={min}
+                    max={max}
+                    step={step}
                     value={value}
                     onChange={handleChange}
                     className="border border-gray-300 rounded px-2 py-1 w-24 text-center"

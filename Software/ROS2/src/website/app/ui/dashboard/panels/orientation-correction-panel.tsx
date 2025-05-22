@@ -14,6 +14,6 @@ export default function OrientationCorrectionPanel() {
         });
     }, [orientationCorrection]);
     return (
-        <Slider labels={[0.0, 90.0, 180.0, 270.0, 360.0]} value={orientationCorrection} setValue={setOrientationCorrection} />
+    <Slider labels={[0.0, 90.0, 180.0, 270.0, 360.0]} value={orientationCorrection} setValue={setOrientationCorrection} min={0} max={360} step={1} />
     )
 }
