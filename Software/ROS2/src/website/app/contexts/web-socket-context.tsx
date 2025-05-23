@@ -76,11 +76,11 @@ export default function WebSocketProvider({
             let latestMessagesThisBatch: ROSSocketMessage[] = [];
             messageList.forEach((message: ROSSocketMessage) => {
                 if (message.type === "obstacles") {
-                    setObstacleMessages((prev) => [...prev, message]);
+                    setObstacleMessages((prev) => [...prev, message].splice(-500));
                 } else if (message.type === "battery") {
                     setBatteryMessages((prev) => [...prev, message].splice(-10));
                 } else if (message.type === "resetAutonomous") {
-                    messageList.push(message);
+                    latestMessagesThisBatch.push(message);
                 } else {
                     // setMessages((prev) => [...(prev.filter(a => a.type != message.type)), message]);
                     latestMessagesThisBatch = [...latestMessagesThisBatch.filter(a => a.type != message.type), message];

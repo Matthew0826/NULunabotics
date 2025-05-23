@@ -233,24 +233,25 @@ const Render3DRobotModel = ({
             const objUrl = `${objPath}.obj`;
             // const mtlUrl = `${objPath}.mtl`;
 
-                const objLoader = new OBJLoader();
-                // objLoader.setMaterials(materials);
+            const objLoader = new OBJLoader();
+            // objLoader.setMaterials(materials);
 
-                objLoader.load(
-                    objUrl,
-                    (object) => {
-                        // Same success handling as above
-                        loadedModel(object);
-                    },
-                    (xhr) => {
-                        // console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
-                    },
-                    (error) => {
-                        console.error('Error loading OBJ:', error);
-                        setError('Failed to load 3D model');
-                        setIsLoading(false);
-                    }
-                );
+            objLoader.load(
+                objUrl,
+                (object) => {
+                    // Same success handling as above
+                    object.rotateY(Math.PI / 2);
+                    loadedModel(object);
+                },
+                (xhr) => {
+                    // console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
+                },
+                (error) => {
+                    console.error('Error loading OBJ:', error);
+                    setError('Failed to load 3D model');
+                    setIsLoading(false);
+                }
+            );
 
             // const mtlLoader = new MTLLoader();
             // mtlLoader.load(
@@ -355,7 +356,7 @@ const Render3DRobotModel = ({
         // Origin sphere
         const lidarOriginMesh = new THREE.Mesh(
             new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16, 3),
-            new THREE.MeshStandardMaterial({ color: 0xff0000 })
+            new THREE.MeshStandardMaterial({ color: 0xff0000, transparent: true, opacity: 0.0 })
         );
         lidarOriginMesh.position.set(
             lidarOrigin.relPos.x,
@@ -377,13 +378,13 @@ const Render3DRobotModel = ({
         const WHEEL_OFFSET_X_FRONT = -5;  // In meters from blend file
         const WHEEL_OFFSET_X_BACK = 5.4874;  // In meters from blend file
         const WHEEL_OFFSET_Z = 5.0126;  // In meters from blend file
-        const WHEEL_OFFSET_Y= -1.4637 + 3; // In meters from blend file
+        const WHEEL_OFFSET_Y = -1.4637 + 3; // In meters from blend file
 
         const wheelPositions = [
             [1, 1],
-            [WHEEL_OFFSET_X_BACK/WHEEL_OFFSET_X_FRONT, 1],
+            [WHEEL_OFFSET_X_BACK / WHEEL_OFFSET_X_FRONT, 1],
             [1, -1],
-            [WHEEL_OFFSET_X_BACK/WHEEL_OFFSET_X_FRONT, -1]
+            [WHEEL_OFFSET_X_BACK / WHEEL_OFFSET_X_FRONT, -1]
         ];
 
         loadModel(wheelFilename, (wheel: Group) => {
@@ -478,7 +479,7 @@ const Render3DRobotModel = ({
 
                 // Rotate the excavator model
                 if (sceneRef.current.excavatorModel && robotStateRef.current.excavatorPosition) {
-                    sceneRef.current.excavatorModel.rotation.x = robotStateRef.current.excavatorPosition * -30 / 180 * Math.PI; // About 30 degrees moves it from fully up to down.
+                    sceneRef.current.excavatorModel.rotation.x = robotStateRef.current.excavatorPosition * 30 / 180 * Math.PI; // About 30 degrees moves it from fully up to down.
                 }
 
                 // Rotate if there's unaccounted rotation
