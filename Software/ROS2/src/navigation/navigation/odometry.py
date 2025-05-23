@@ -37,6 +37,9 @@ CONVEYOR_SPEED = 0.6
 EXCAVATION_TIME = 10.0
 BIN_TIME = 3.0
 
+# seconds of time it waits to allow for positioning to update
+PAUSE_TIME = 3.0
+
 class Odometry(Node):
     """
         This node has an action server that takes requests to move the robot.
@@ -66,6 +69,9 @@ class Odometry(Node):
         # action values to store for when its done
         self.goal_handle = None
         self.was_cancelled = False
+        self.start_time = self.get_clock().now()
+        self.prev_time = self.start_time
+        self.total_pause_time = 0.0
 
         # margin of error for rotation (degrees)
         self.deg_tolerance = 3.0 
@@ -228,6 +234,8 @@ class Odometry(Node):
         feedback_msg.progress = 0.0
         feedback_msg.finished_driving = False
         start_time = self.get_clock().now()
+        self.start_time = start_time
+        self.total_pause_time = 0.0
         self.was_cancelled = False
 
         # get points
@@ -440,6 +448,13 @@ class Odometry(Node):
             current_degrees = self.orientation
         return ((final_degrees - current_degrees + 180) % 360) - 180
 
+    async def drive_square(self, length: float = 100.0):
+        """Drive robot in square from where it is."""
+        # self.to_position(Point(self.position.x, self.position.y))
+        await self.to_position(Point(self.position.x + length, self.position.y))
+        await self.to_position(Point(self.position.x + length, self.position.y + length))
+        await self.to_position(Point(self.position.x, self.position.y + length))
+
     async def drive(self, left_power: float, right_power: float, seconds: float):
         """Sets the motor power for a given duration."""
         # set the motor power
@@ -541,7 +556,7 @@ class Odometry(Node):
             if error > initial_error * 1.5:
                 return False
             # update pid
-            now = self.get_clock().now()
+            now = self.get_clock().now() - self.total_pause_time
             forward_power = self.linear_drive_pid.update(error, now)
             turn_power = 0.0  # self.angular_drive_pid.update(orientation_error, now)
             # adjust motor power based on turn power from PID
@@ -551,8 +566,11 @@ class Odometry(Node):
             if (go_reverse):
                 left_power = -left_power
                 right_power = -right_power
-
-            await self.drive(left_power, right_power, seconds=0.2)
+            if (int((now - self.start_time).nanoseconds // 1_000_000) % (PAUSE_TIME * 2)) < PAUSE_TIME:
+                await self.drive(left_power, right_power, seconds=0.2)
+            else:
+                self.total_pause_time += (now - self.prev_time).nanoseconds // 1_000_000
+            self.prev_time = now
             await self.yield_once()
             
             if self.was_cancelled: return False
