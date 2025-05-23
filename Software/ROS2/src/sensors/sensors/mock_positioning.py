@@ -53,10 +53,10 @@ class SpacialDataPublisher(Node):
         self.x = 448
         self.y = 100.0
         self.orientation = float(random.randint(0, 360))
-        self.initial_orientation = -self.orientation
+        self.initial_orientation = 0.0# -self.orientation
         
         # to cause a delay in the simulation to mirror real kalman filter delay
-        self.position_history_length = 5
+        self.position_history_length = 15
         self.position_history = deque(maxlen=self.position_history_length)
         
         self.motor_power_left = 0.0
@@ -105,8 +105,8 @@ class SpacialDataPublisher(Node):
             self.orientation = float(self.orientation % 360)
             
             # Move forward/backward based on average power with the corrected orientation
-            self.x += math.cos(math.radians(360 - self.orientation)) * average_power * tick_speed
-            self.y += math.sin(math.radians(360 - self.orientation)) * average_power * tick_speed
+            self.x += math.cos(math.radians(90 - self.orientation)) * average_power * tick_speed
+            self.y += math.sin(math.radians(90 - self.orientation)) * average_power * tick_speed
         if abs(self.actuator_powers[0]) > 0.1 or abs(self.actuator_powers[1]) > 0.1:
             new_percent_left = clamp(self.actuator_percents[0] + self.actuator_powers[0] * np.random.uniform(0.04, 0.06))
             new_percent_right = clamp(self.actuator_percents[1] + self.actuator_powers[1] * np.random.uniform(0.04, 0.06))
@@ -123,9 +123,10 @@ class SpacialDataPublisher(Node):
     def timer_callback(self):
         self.update_simulation()
         msg = Float32()
-        msg.data = float(((self.orientation + self.initial_orientation + 360.0) % 360.0))
+        msg.data = float(360.0 - ((self.orientation + self.initial_orientation + 360.0) % 360.0))
         # publish mock orientation based on motor power
         self.orientation_pub.publish(msg)
+        # self.get_logger().info(f"Publishing orientation: {msg.data}")
         
         msg = Point()
         msg.x = float(self.x)

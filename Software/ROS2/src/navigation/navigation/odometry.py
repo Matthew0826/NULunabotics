@@ -39,7 +39,7 @@ EXCAVATION_TIME = 10.0
 BIN_TIME = 3.0
 
 # seconds of time it waits to allow for positioning to update
-PAUSE_TIME = 3.0
+PAUSE_TIME = 1.0
 
 class Odometry(Node):
     """
@@ -247,7 +247,7 @@ class Odometry(Node):
         if not self.has_corrected_orientation:
             self.get_logger().info('correcting orientation')
             # perform the correction
-            await self.perform_orientation_correction()
+            # await self.perform_orientation_correction()
             self.get_logger().info('corrected orientation')
             # set the flag to true so we dont do it again
             self.has_corrected_orientation = True
@@ -338,9 +338,9 @@ class Odometry(Node):
         if (orientation < 0.0 or orientation > 360.0):
             self.get_logger().info(f"invalid orientation: {orientation}")
             return
-        self.orientation = orientation
+        self.orientation = 360.0 - ((orientation + 90.0) % 360.0)
         
-        delta_time = (self.get_clock().now() - self.last_orientation_time).nanoseconds / 1_000_000_000
+        delta_time = (self.get_clock().now() - self.last_orientation_time).nanoseconds / 1e9
         hz = 1.0/delta_time
         if hz < 5:
             pass
@@ -569,12 +569,15 @@ class Odometry(Node):
             if (go_reverse):
                 left_power = -left_power
                 right_power = -right_power
+            self.get_logger().info(f"{now_seconds - self.start_time.nanoseconds/1e9}")
             if (int(now_seconds - self.start_time.nanoseconds/1e9) % (PAUSE_TIME * 2)) < PAUSE_TIME:
                 await self.drive(left_power, right_power, seconds=0.2)
             else:
+                self.get_logger().info(f"pausing for {PAUSE_TIME} seconds")
                 self.set_motor_power(0.0, 0.0)
                 dt = now_seconds - self.prev_time.nanoseconds/1e9
-                self.total_pause_time += dt
+                self.total_pause_time += PAUSE_TIME
+                await self.yield_once(PAUSE_TIME)
             self.prev_time = now
             await self.yield_once()
             
@@ -667,7 +670,7 @@ class Odometry(Node):
         self.get_logger().info(f"corrected orientation: {int(corrected_orientation)} degrees (is it close to {int(closest_multiple)}?)")
         # publish correction
         correction = AccelerometerCorrection()
-        correction.initial_angle = -orientation_error
+        correction.initial_angle = -orientation_error - 90.0
         correction.should_reset = 0
         self.orientation_corrector.publish(correction)
     

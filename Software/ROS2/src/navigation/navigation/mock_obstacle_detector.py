@@ -115,6 +115,9 @@ class MockObstacleDetector(Node):
             return False
         if obstacle[3]: # already seen
             return False
+        if ((obstacle[0] - self.robot_position[0]) ** 2 + (obstacle[1] - self.robot_position[1]) ** 2) < (LIDAR_VIEW_DISTANCE*4) ** 2:
+            return True
+        return False
         robot_pos = np.array(self.robot_position)
 
         # Step 1: Forward-facing unit vector

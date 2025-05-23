@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import Slider from "../components/slider";
 import { useWebSocketContext } from "@/app/contexts/web-socket-context";
 
@@ -6,6 +8,14 @@ export default function OrientationCorrectionPanel() {
     const [previousOrientationCorrection, setPreviousOrientationCorrection] = useState(0.0);
     const [orientationCorrection, setOrientationCorrection] = useState(0.0);
     const { sendToServer } = useWebSocketContext();
+
+    const [isClient, setIsClient] = useState(false);
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+    if (!isClient) {
+        return <div />;
+    }
 
     const handleOrientationCorrection = (correction: number) => {
         sendToServer("orientationCorrection", {

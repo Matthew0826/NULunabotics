@@ -1,4 +1,4 @@
-import {GamepadState} from "@/app/contexts/gamepad-context";
+import { GamepadState } from "@/app/contexts/gamepad-context";
 import React from "react";
 
 function setupGamePad() {
