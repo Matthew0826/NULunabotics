@@ -23,7 +23,7 @@ export default function WebSocketGraph({
 }: {
     graphInfo: GraphInfo;
 }) {
-    const { allMessages, latestMessages } = useWebSocketContext();
+    const { batteryMessages } = useWebSocketContext();
 
     const [graph, setGraph] = useState<GraphInfo>(graphInfo);
     const [timeCounter, setTimeCounter] = useState(0);
@@ -31,14 +31,10 @@ export default function WebSocketGraph({
     const [batteryPercent, setBatteryPercent] = useState(0);
 
     useEffect(() => {
-        const powerMessages = [...new Set(allMessages
-            .filter((message: ROSSocketMessage) => message.type === "battery")
-            .map((message) => message.message)
-            .flat())];
 
-        const currents = powerMessages.map((message) => message.current);
-        const voltages = powerMessages.map((message) => message.voltage);
-        const percent = powerMessages.length !== 0 ? powerMessages[powerMessages.length - 1].percentage : 0;
+        const currents = batteryMessages.map((message) => message.message.current);
+        const voltages = batteryMessages.map((message) => message.message.voltage);
+        const percent = batteryMessages.length !== 0 ? batteryMessages[batteryMessages.length - 1].message.percentage : 0;
 
         setGraph((prevGraph) => ({
             ...prevGraph,
@@ -56,7 +52,7 @@ export default function WebSocketGraph({
         }));
 
         setBatteryPercent(percent);
-    }, [allMessages]);
+    }, [batteryMessages]);
 
     return (
         <>

@@ -29,7 +29,7 @@ typedef struct {
 
 typedef struct {
     float initialOrientation;
-    bool shouldReset;
+    int32_t shouldReset;
 } Correction;
 
 typedef struct {
@@ -80,8 +80,8 @@ FusionAhrs ahrs;
 // set AHRS algorithm settings
 const FusionAhrsSettings settings = {
     .convention = FusionConventionNwu,
-    .gain = 0.4,  // or tune between 0.3 and 0.5
-    .gyroscopeRange = 1000.0, // 1000 degrees/sec because otherwise it likes to reset
+    .gain = 0.3,  // or tune between 0.3 and 0.5
+    .gyroscopeRange = 500.0, // 1000 degrees/sec because otherwise it likes to reset
     .accelerationRejection = 10.0,  // keep high to reject motion
     .magneticRejection = 0.0,  // unused since magnetometer is disabled
     .recoveryTriggerPeriod = 5 * SAMPLE_RATE,
@@ -93,8 +93,8 @@ float beaconDistances[3] = {-1.0, -1.0, -1.0};
 
 float initialAngle = 0.0;
 void handleCorrection(const Correction& correction) {
-    initialAngle = correction.initialOrientation;
-    if (correction.shouldReset) {
+    initialAngle += correction.initialOrientation;
+    if (correction.shouldReset == 1) {
         // reset the ahrs
         FusionAhrsInitialise(&ahrs);
         FusionOffsetInitialise(&offset, SAMPLE_RATE);
@@ -107,6 +107,24 @@ void mockCallback(const Acceleration& acceleration) {
 
 void mockCallback2(const BeaconDistances& beaconDistances) {
     // nothing
+}
+
+void scanI2C() {
+    Serial.println("Scanning I2C bus...");
+    int nDevices = 0;
+    for (byte address = 1; address < 127; address++) {
+        Wire.beginTransmission(address);
+        byte error = Wire.endTransmission();
+        if (error == 0) {
+            Serial.print("I2C device found at address 0x");
+            if (address < 16) Serial.print("0");
+            Serial.println(address, HEX);
+            nDevices++;
+        }
+    }
+    if (nDevices == 0) {
+        Serial.println("No I2C devices found");
+    }
 }
 
 void setup() {
@@ -129,18 +147,20 @@ void setup() {
     // Configure UWB module for TAG mode
     // If you're having issues, try sending "AT+RESET" first
     // sendCommand("AT+RESET");
-    sendCommand("AT");
+    // sendCommand("AT");
     sendCommand("AT+MODE=" + MODE);
     sendCommand("AT+NETWORKID=" + NETWORK_ID);
     sendCommand("AT+ADDRESS=" + TAG_ADDRESS);
     sendCommand("AT+CPIN=" + PASSWORD);
 
-    // Find accelerometer
-    if (!mpu.begin()) {
-        // Failed to find MPU6050 chip
-        while (true) delay(10);
-    }
 
+    // Find accelerometer
+    // d1 is sda, d3 is scl
+    Wire.begin(D4, D3);
+    scanI2C();
+    if (!mpu.begin(0x68, &Wire)) {
+        // while (true) delay(10);
+    }
     // Set up accelerometer
     mpu.setAccelerometerRange(MPU6050_RANGE_4_G);
     mpu.setGyroRange(MPU6050_RANGE_500_DEG);
@@ -175,11 +195,13 @@ void loop() {
     delay(20);
 }
 
+float error = 0.0;
+
 Acceleration updateAccelerometer(sensors_event_t a, sensors_event_t g, float dt) {
     // Convert gyroscope data to degrees per second
     FusionVector gyroscope = {FusionRadiansToDegrees(g.gyro.x), FusionRadiansToDegrees(g.gyro.y), FusionRadiansToDegrees(g.gyro.z)};
     // Convert to g's (1g = 9.81 m/s^2)
-    FusionVector accelerometer = {a.acceleration.x / 9.81, a.acceleration.y / 9.81, a.acceleration.z / 9.81};
+    FusionVector accelerometer = {(a.acceleration.x-0.8) / 9.81, (a.acceleration.y) / 9.81, a.acceleration.z / 9.81};
 
     // update gyroscope offset correction algorithm
     gyroscope = FusionOffsetUpdate(&offset, gyroscope);
@@ -187,10 +209,16 @@ Acceleration updateAccelerometer(sensors_event_t a, sensors_event_t g, float dt)
     const FusionEuler euler = FusionQuaternionToEuler(FusionAhrsGetQuaternion(&ahrs));
     
     Acceleration acceleration;
-    acceleration.orientation = fmod(euler.angle.yaw + initialAngle + 360.0, 360.0);
-    acceleration.accelerationX = a.acceleration.x;
+    error += dt;
+    acceleration.orientation = 360.0 - fmod(euler.angle.yaw + initialAngle + 360.0 + error, 360.0);
+    acceleration.accelerationX = a.acceleration.x-0.8;
     acceleration.accelerationY = a.acceleration.y;
     acceleration.accelerationZ = a.acceleration.z;
+    // if (abs(acceleration.accelerationX) > 50.0 || abs(acceleration.accelerationY) > 50.0) {
+    //     initialAngle += acceleration.orientation;
+    //     FusionAhrsInitialise(&ahrs);
+    //     FusionOffsetInitialise(&offset, SAMPLE_RATE);
+    // }
     return acceleration;
 }
 

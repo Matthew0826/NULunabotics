@@ -90,12 +90,12 @@ class FeatureDetector:
                 features.append(feature)
         
         # Process crater features
-        for peak_idx in crater_peaks:
-            feature = self._extract_feature(sorted_points, peak_idx, smoothed_deviations, 
-                                            feature_type="crater", height_threshold=height_threshold,
-                                            min_width=min_width, max_width=max_width)
-            if feature:
-                features.append(feature)
+        # for peak_idx in crater_peaks:
+        #     feature = self._extract_feature(sorted_points, peak_idx, smoothed_deviations, 
+        #                                     feature_type="crater", height_threshold=height_threshold,
+        #                                     min_width=min_width, max_width=max_width)
+        #     if feature:
+        #         features.append(feature)
         
         # the real y of the feature is a radius below
         for i in range(len(features)):

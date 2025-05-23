@@ -36,10 +36,7 @@ export type ROSSocketMessage = ({
             data: number;
         };
     }
-    | {
-        type: "obstacles";
-        message: ROSObstacle[];
-    }
+    | ObstacleROSMessage
     | {
         type: "position";
         message: {
@@ -68,14 +65,7 @@ export type ROSSocketMessage = ({
         type: "odometry_path";
         message: ROSMapPoint[];
     }
-    | {
-        type: "battery";
-        message: {
-            voltage: number;
-            current: number;
-            percentage: number;
-        }[];
-    }
+    | BatteryROSMessage
     | {
         type: "resetAutonomous";
         message?: any;
@@ -130,3 +120,17 @@ export type ROSSocketMessage = ({
     | {
         type: "beginAutonomous" | "stopAutonomous";
     });
+
+export type ObstacleROSMessage = {
+    type: "obstacles";
+    message: ROSObstacle;
+}
+
+export type BatteryROSMessage = {
+    type: "battery";
+    message: {
+        voltage: number;
+        current: number;
+        percentage: number;
+    };
+}

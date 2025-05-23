@@ -36,11 +36,6 @@ def generate_launch_description():
         ),
         Node(
             package='sensors',
-            executable='mock_positioning',
-            output='screen'
-        ),
-        Node(
-            package='sensors',
             executable='lidar_forwarder',
             output='screen'
         )

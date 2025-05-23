@@ -21,8 +21,8 @@ from navigation.pid_tuner2 import PIDTuner
 from std_msgs.msg import Float32
 import math
 
-MAX_ACTUATOR_PERCENT = 0.9
-MIN_ACTUATOR_PERCENT = 0.1
+MAX_ACTUATOR_PERCENT = 0.98
+MIN_ACTUATOR_PERCENT = 0.2
 
 # when the excavator lifter motor is at this %, the distance sensor can be used to detect the ground
 DISTANCE_SENSOR_ENABLE_THRESHOLD = 0.7
@@ -120,14 +120,14 @@ class Odometry(Node):
             # Corrects based on the rate of change of error (slows down before overshooting).
             # High Kd = dampens oscillations, slows final approach.
             # Too much = system becomes unresponsive.
-        self.orientation_pid = PIDController(Kp=0.015, Ki=0.0005, Kd=0.002, output_limits=(-0.8, 0.8))
-        self.linear_drive_pid = PIDController(Kp=0.03, Ki=0.001, Kd=0.01, output_limits=(-0.8, 0.8))
+        self.orientation_pid = PIDController(Kp=0.011, Ki=0.0005, Kd=0.002, output_limits=(-0.5, 0.5))
+        self.linear_drive_pid = PIDController(Kp=0.018, Ki=0.001, Kd=0.01, output_limits=(-0.55, 0.55))
         # for some reason this one starts doing big loops around the target when you give it some Ki and Kd on the simulation
         # especially when the speed of the simulation is increased
-        self.angular_drive_pid = PIDController(Kp=0.008, Ki=0.0, Kd=0.0, output_limits=(-0.35, 0.35))
+        self.angular_drive_pid = PIDController(Kp=0.008, Ki=0.0, Kd=0.0, output_limits=(-0.25, 0.25))
         
-        self.bin_actuator_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-1.0, 1.0))
-        self.excavator_lifter_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-1.0, 1.0))
+        self.bin_actuator_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-0.5, 0.5))
+        self.excavator_lifter_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-0.5, 0.5))
 
     async def on_pid_tune(self, request, response):
         """Called when a PID tuning request is received."""
@@ -150,9 +150,7 @@ class Odometry(Node):
                 )
             case "linear_drive_pid":
                 pid = self.linear_drive_pid
-                start = Point()
-                start.x = 448.0
-                start.y = 100.0
+                start = self.position
                 end = Point()
                 end.x = 348.0
                 end.y = 100.0
@@ -520,7 +518,7 @@ class Odometry(Node):
         initial_error = distance(self.position, destination)
         if initial_error < self.dist_tolerance: return True
         
-        await self.face_position(destination, deg_offset)
+        # await self.face_position(destination, deg_offset)
         after_orientation_time = self.get_clock().now()
         
         # reset the PID controllers
@@ -545,7 +543,7 @@ class Odometry(Node):
             # update pid
             now = self.get_clock().now()
             forward_power = self.linear_drive_pid.update(error, now)
-            turn_power = self.angular_drive_pid.update(orientation_error, now)
+            turn_power = 0.0  # self.angular_drive_pid.update(orientation_error, now)
             # adjust motor power based on turn power from PID
             left_power = clamp(forward_power - turn_power, -1.0, 1.0)
             right_power = clamp(forward_power + turn_power, -1.0, 1.0)
@@ -647,7 +645,7 @@ class Odometry(Node):
         # publish correction
         correction = AccelerometerCorrection()
         correction.initial_angle = -orientation_error
-        correction.should_reset = False
+        correction.should_reset = 0
         self.orientation_corrector.publish(correction)
     
     async def perform_orientation_test(self, what):

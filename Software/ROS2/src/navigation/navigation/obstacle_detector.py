@@ -10,7 +10,7 @@ import numpy as np
 
 
 # TODO: put actual values in for the offset
-ROBOT_LIDAR_OFFSET = (30, 0, 20) # X, Y, Z (in cm)
+ROBOT_LIDAR_OFFSET = (37, 0, 19) # X, Y, Z (in cm)
                            # ^ vertical
 
 def rotate_vector_2d(vector, angle_degrees):
@@ -71,7 +71,7 @@ class ObstacleDetector(Node):
         relative_position.y = y
         # adjust x and y based on robot orientation
         if self.robot_position is not None and self.robot_orientation is not None:
-            x, y = rotate_vector_2d(np.array([x + ROBOT_LIDAR_OFFSET[0], y + ROBOT_LIDAR_OFFSET[1]]), self.robot_orientation + 90.0)
+            x, y = rotate_vector_2d(np.array([x + ROBOT_LIDAR_OFFSET[0], y + ROBOT_LIDAR_OFFSET[2]]), self.robot_orientation - 90)
             x = self.robot_position[0] + x
             y = self.robot_position[1] + y
         position.x = float(x)

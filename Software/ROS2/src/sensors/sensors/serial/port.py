@@ -45,6 +45,7 @@ class SerialPort:
         while self.running and self.is_open:
             try:
                 data = self.serial.read(64)
+                # if self.port == "/dev/ttyUSB3" and b'\n' in data: print(f"{data}") 
                 if data:
                     self.read_buffer.extend(data)
                     self.process_buffer()

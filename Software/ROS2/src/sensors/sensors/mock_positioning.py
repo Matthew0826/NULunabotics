@@ -117,7 +117,7 @@ class SpacialDataPublisher(Node):
         self.get_logger().info(f"Got orientation correction: {msg.initial_angle} (correct was {self.initial_orientation})")
         self.initial_orientation -= msg.initial_angle
         self.get_logger().info(f"New initial orientation: {self.initial_orientation}")
-        if msg.should_reset:
+        if msg.should_reset == 1:
             self.orientation = 0.0
             
     def timer_callback(self):

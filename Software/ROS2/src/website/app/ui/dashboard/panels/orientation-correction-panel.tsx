@@ -9,11 +9,11 @@ export default function OrientationCorrectionPanel() {
 
     const handleOrientationCorrection = (correction: number) => {
         sendToServer("orientationCorrection", {
-            orientationCorrection: (orientationCorrection - correction) * 360.0,
+            orientationCorrection: (orientationCorrection - correction),
         });
         setOrientationCorrection(correction);
     };
     return (
-    <Slider labels={[0.0, 90.0, 180.0, 270.0, 360.0]} value={orientationCorrection} setValue={setOrientationCorrection} min={0} max={360} step={1} />
+        <Slider labels={[0.0, 90.0, 180.0, 270.0, 360.0]} value={orientationCorrection} setValue={handleOrientationCorrection} min={0} max={360} step={1} />
     )
 }

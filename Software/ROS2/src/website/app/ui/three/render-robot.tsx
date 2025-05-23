@@ -60,11 +60,13 @@ const Render3DRobotModel = ({
         rightWheelSpeed: number;
         excavatorPosition: number;
         rotation: number;
+        robotPosition: THREE.Vector3;
     }>({
         leftWheelSpeed: 0,
         rightWheelSpeed: 0,
         excavatorPosition: 0,
         rotation: 0,
+        robotPosition: new THREE.Vector3(0, 0, 0)
     });
 
     const MODEL_SCALE = 1;
@@ -297,7 +299,8 @@ const Render3DRobotModel = ({
         );
         lidarOriginMesh.position.set(
             lidarOrigin.relPos.x,
-            lidarOrigin.relPos.y - sceneRef.current.robotObjectGroup.position.y,
+            lidarOrigin.relPos.y,
+            // lidarOrigin.relPos.y + sceneRef.current.robotObjectGroup.position.y,
             lidarOrigin.relPos.z);
         lidarOriginMesh.rotation.set(lidarOrigin.pitch, lidarOrigin.yawOffset, 0);
         sceneRef.current.robotObjectGroup.add(lidarOriginMesh);
@@ -423,6 +426,11 @@ const Render3DRobotModel = ({
                 }
             }
 
+            if (sceneRef.current.terrainMesh) {
+                // mOve the terrain mesh to the robot's position
+                sceneRef.current.terrainMesh.position.set(-robotStateRef.current.robotPosition.x / 100, 0, -robotStateRef.current.robotPosition.y / 100);
+            }
+
             if (sceneRef.current.renderer && sceneRef.current.scene && sceneRef.current.camera) {
                 sceneRef.current.renderer.render(sceneRef.current.scene, sceneRef.current.camera);
             }
@@ -456,6 +464,7 @@ const Render3DRobotModel = ({
             rightWheelSpeed,
             excavatorPosition,
             rotation: robot.rotation,
+            robotPosition: new THREE.Vector3(robot.x / 100, 0, robot.y / 100)
         }
     }, [leftWheelSpeed, rightWheelSpeed, excavatorPosition]);
 
@@ -480,8 +489,7 @@ const Render3DRobotModel = ({
                     .multiplyScalar(MODEL_SCALE);
                 positions.push(worldPoint.x, worldPoint.y, worldPoint.z);
 
-                const intensity = index === 0 ? 1.0 : 0.6;
-                color.setHSL(0.33 * (1 - intensity), 1.0, 0.5);
+                color.setHSL(index / groupOfPoints.length, 1.0, 0.5);
                 colors.push(color.r, color.g, color.b);
             });
         });
@@ -491,7 +499,9 @@ const Render3DRobotModel = ({
         geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 
         const material = new THREE.PointsMaterial({
-            size: 0.15,
+            size: 0.12,
+            transparent: true,
+            opacity: 0.8,
             vertexColors: true,
         });
 
@@ -519,7 +529,7 @@ const Render3DRobotModel = ({
 
             const pointMesh = new THREE.Mesh(
                 new THREE.SphereGeometry(obstacle.radius / 2.5 / 10, 8, 8),
-                new THREE.MeshStandardMaterial({ color: color })
+                new THREE.MeshStandardMaterial({ color: color, transparent: true, opacity: 0.15 })
             );
             pointMesh.position.copy(worldPoint);
             group.add(pointMesh);

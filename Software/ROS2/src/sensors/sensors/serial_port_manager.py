@@ -99,6 +99,8 @@ class SerialPortManager(Node):
     # add a serial port to the list
     # this is called when the serial port is connected
     def add_serial_port(self, port: str):
+        # ignore lidar
+        if port == "/dev/ttyUSB1": return
         if port not in self.serial_ports:
             # dependency injection of this node into the serial port
             new_port = SerialPort(self, port)

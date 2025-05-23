@@ -73,7 +73,7 @@ bool validateSpeed(float speed, int id) {
   switch (id) {
     case 0:
       percentValue = excavatorPercent;
-      if (isLimitSwitchTriggered) {
+      if (isLimitSwitchTriggered && speed > 0) {
         return false;
       }
       break;

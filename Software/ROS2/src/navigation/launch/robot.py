@@ -23,14 +23,14 @@ def generate_launch_description():
         #    executable='obstacle_detector',
         #    output='screen'
         #),
-        #IncludeLaunchDescription(
+        # IncludeLaunchDescription(
         #    PythonLaunchDescriptionSource(ld19_launch_path)
-        #),
-        #Node(
+        # ),
+        # Node(
         #    package='sensors',
         #    executable='lidar_forwarder',
         #    output='screen'
-        #),
+        # ),
         
         # serial port manager
         Node(

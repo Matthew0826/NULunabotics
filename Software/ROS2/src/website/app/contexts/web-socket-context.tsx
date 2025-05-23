@@ -9,17 +9,21 @@ import {
     useRef,
     useState,
 } from "react";
-import { ROSSocketMessage } from "@/app/types/sockets";
+import { BatteryROSMessage, ObstacleROSMessage, ROSSocketMessage } from "@/app/types/sockets";
 import { tempStartingData } from "@/app/lib/temp-graph-info";
 
 type WebSocketContextType = {
-    allMessages: ROSSocketMessage[];
+    // allMessages: ROSSocketMessage[];
+    obstacleMessages: ObstacleROSMessage[];
+    batteryMessages: BatteryROSMessage[];
     latestMessages: ROSSocketMessage[];
     sendToServer: (messageType: string, message: any) => void;
 };
 
 const WebSocketContext = createContext<WebSocketContextType>({
-    allMessages: [],
+    // allMessages: [],
+    obstacleMessages: [],
+    batteryMessages: [],
     latestMessages: [],
     sendToServer: () => { },
 });
@@ -46,9 +50,11 @@ export default function WebSocketProvider({
         };
     }, []);
 
-    const [messages, setMessages] = useState<ROSSocketMessage[]>(
-        tempStartingData
-    );
+    // const [messages, setMessages] = useState<ROSSocketMessage[]>(
+    //     tempStartingData
+    // );
+    const [batteryMessages, setBatteryMessages] = useState<BatteryROSMessage[]>([]);
+    const [obstacleMessages, setObstacleMessages] = useState<ObstacleROSMessage[]>([]);
     const [latestMessages, setLatestMessages] = useState<ROSSocketMessage[]>([]);
 
     const messageBuffer = useRef<any[]>([]);
@@ -70,15 +76,9 @@ export default function WebSocketProvider({
             let latestMessagesThisBatch: ROSSocketMessage[] = [];
             messageList.forEach((message: ROSSocketMessage) => {
                 if (message.type === "obstacles") {
-                    latestMessagesThisBatch.push(message);
+                    setObstacleMessages((prev) => [...prev, message]);
                 } else if (message.type === "battery") {
-                    // setMessages((prev) => {
-                    //     let powerMsgCount = 0;
-                    //     const otherMessages = prev.filter((a) => a.type != message.type);
-                    //     const powerMessages = [...prev.filter((a) => a.type == message.type), message].slice(-10);
-                    //     return [...otherMessages, ...powerMessages];
-                    // });
-                    latestMessagesThisBatch.push(message);
+                    setBatteryMessages((prev) => [...prev, message].splice(-10));
                 } else if (message.type === "resetAutonomous") {
                     messageList.push(message);
                 } else {
@@ -89,7 +89,6 @@ export default function WebSocketProvider({
 
             if (latestMessagesThisBatch.length > 0) {
                 setLatestMessages(latestMessagesThisBatch);
-                setMessages(prev => [...prev, ...latestMessagesThisBatch]);
             }
         }
 
@@ -121,7 +120,9 @@ export default function WebSocketProvider({
                 return;
             }
             if (messageType === "resetAutonomous") {
-                setMessages([]);
+                setObstacleMessages([]);
+                setBatteryMessages([]);
+                setLatestMessages([]);
             }
             socketRef.current?.send(JSON.stringify({ type: messageType, message: message }));
         } catch (error) {
@@ -130,7 +131,13 @@ export default function WebSocketProvider({
     }
 
     return (
-        <WebSocketContext.Provider value={{ allMessages: messages, latestMessages, sendToServer }}>
+        <WebSocketContext.Provider value={{
+            // allMessages: messages,
+            obstacleMessages,
+            batteryMessages,
+            latestMessages,
+            sendToServer
+        }}>
             {children}
         </WebSocketContext.Provider>
     );

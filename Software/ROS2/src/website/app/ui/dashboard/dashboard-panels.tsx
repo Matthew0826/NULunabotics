@@ -12,7 +12,6 @@ import ControlsPanel from "./panels/controls-panel";
 import Render3DRobotModel from "@/app/ui/three/render-robot";
 import WheelSpeedPanel from "./panels/wheel-speed";
 import ConfigPanel from "./panels/config-panel";
-import StaticPanel from "@/app/ui/dashboard/panels/static-panel";
 
 export default function DashboardPanels() {
     const mapPanel = (
@@ -41,7 +40,7 @@ export default function DashboardPanels() {
                             minPolarAngle: Math.PI * 0.25   // Can't go fully above model
                         }} />
                 </Panel>
-                 {/*<BatteryIndicator />*/}
+                {/*<BatteryIndicator />*/}
                 <Panel title="Autonomous" canHide={false}>
                     <Timer startTime={0} />
                 </Panel>

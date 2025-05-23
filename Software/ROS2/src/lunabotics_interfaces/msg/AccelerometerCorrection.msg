@@ -1,2 +1,2 @@
 float32 initial_angle
-bool should_reset
+int32 should_reset
