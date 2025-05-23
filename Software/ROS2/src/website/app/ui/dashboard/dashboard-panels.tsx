@@ -27,9 +27,12 @@ export default function DashboardPanels() {
                 <div className="xl:hidden">{mapPanel}</div>
                 <Panel title={'Robot 3D View'} canHide={false} contentPadding={false}>
                     <Render3DRobotModel
-                        baseFilename="/models/lunabot_base"
-                        wheelFilename="/models/lunabot_wheel"
-                        excavatorFilename="/models/lunabot_excavator"
+                        baseFilename="/models/theia/chasis"
+                        wheelFilename="/models/theia/centerWheel"
+                        excavatorFilename="/models/theia/excavator"
+                        jointLFilename="/models/theia/jointL"
+                        jointRFilename="/models/theia/jointR"
+                        motorsFilename="/models/theia/scuffedMotors"
                         height={'50vh'}
                         controlsConfig={{
                             enablePan: false,

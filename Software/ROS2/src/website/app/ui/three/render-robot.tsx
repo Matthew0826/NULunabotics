@@ -14,6 +14,9 @@ interface Render3DRobotModelProps {
     baseFilename: string;
     wheelFilename: string;
     excavatorFilename: string;
+    jointRFilename: string;
+    jointLFilename: string;
+    motorsFilename: string;
     backgroundColor?: string;
     transparent?: boolean;
     width?: string | number;
@@ -34,6 +37,9 @@ const Render3DRobotModel = ({
     baseFilename,
     wheelFilename,
     excavatorFilename,
+    jointRFilename,
+    jointLFilename,
+    motorsFilename,
     backgroundColor = '#ffffff',
     transparent = true,
     width = '100%',
@@ -166,7 +172,9 @@ const Render3DRobotModel = ({
             0.1,
             1000
         );
-        camera.position.z = 17.5;
+        camera.position.z = -17.5;
+        camera.position.x = 10;
+        camera.position.y = 17.5;
         sceneRef.current.camera = camera;
 
         // Renderer setup
@@ -202,7 +210,7 @@ const Render3DRobotModel = ({
             controls.maxPolarAngle = controlsConfig.maxPolarAngle ?? Math.PI;
             controls.minPolarAngle = controlsConfig.minPolarAngle ?? 0;
 
-            controls.target = new THREE.Vector3(0, 0.75, 0);
+            controls.target = new THREE.Vector3(0, 1.75, 0);
 
             sceneRef.current.controls = controls;
         }
@@ -223,50 +231,102 @@ const Render3DRobotModel = ({
         // Load OBJ file
         const loadModel = (objPath: string, loadedModel: (object: Group) => void) => {
             const objUrl = `${objPath}.obj`;
-            const mtlUrl = `${objPath}.mtl`;
+            // const mtlUrl = `${objPath}.mtl`;
 
-            const mtlLoader = new MTLLoader();
-            mtlLoader.load(
-                mtlUrl,
-                (materials) => {
-                    materials.preload();
-                    const objLoader = new OBJLoader();
-                    objLoader.setMaterials(materials);
+                const objLoader = new OBJLoader();
+                // objLoader.setMaterials(materials);
 
-                    objLoader.load(
-                        objUrl,
-                        (object) => {
-                            // Same success handling as above
-                            loadedModel(object);
-                        },
-                        (xhr) => {
-                            // console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
-                        },
-                        (error) => {
-                            console.error('Error loading OBJ:', error);
-                            setError('Failed to load 3D model');
-                            setIsLoading(false);
-                        }
-                    );
-                },
-                // Progress callback
-                (xhr) => {
-                    // console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
-                },
-                // Error callback
-                (error) => {
-                    console.error('Error loading OBJ:', error);
-                    setError('Failed to load 3D model');
-                    setIsLoading(false);
-                }
-            );
+                objLoader.load(
+                    objUrl,
+                    (object) => {
+                        // Same success handling as above
+                        loadedModel(object);
+                    },
+                    (xhr) => {
+                        // console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
+                    },
+                    (error) => {
+                        console.error('Error loading OBJ:', error);
+                        setError('Failed to load 3D model');
+                        setIsLoading(false);
+                    }
+                );
+
+            // const mtlLoader = new MTLLoader();
+            // mtlLoader.load(
+            //     mtlUrl,
+            //     (materials) => {
+            //         materials.preload();
+            //        const objLoader = new OBJLoader();
+            //                     objLoader.setMaterials(materials);
+            //
+            //                     objLoader.load(
+            //                         objUrl,
+            //                         (object) => {
+            //                             // Same success handling as above
+            //                             loadedModel(object);
+            //                         },
+            //                         (xhr) => {
+            //                             // console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
+            //                         },
+            //                         (error) => {
+            //                             console.error('Error loading OBJ:', error);
+            //                             setError('Failed to load 3D model');
+            //                             setIsLoading(false);
+            //                         }
+            //                     );
+            //                 },
+            //     // Progress callback
+            //     (xhr) => {
+            //         // console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
+            //     },
+            //     // Error callback
+            //     (error) => {
+            //         console.error('Error loading OBJ:', error);
+            //         setError('Failed to load 3D model');
+            //         setIsLoading(false);
+            //     }
+            // );
+
         };
 
         sceneRef.current.robotObjectGroup = new THREE.Group();
-        sceneRef.current.robotObjectGroup.position.set(0, 1.71, 0);
 
 
         loadModel(baseFilename, (object: Group) => {
+            sceneRef.current.baseModel = object;
+
+            object.scale.multiplyScalar(MODEL_SCALE);
+
+            if (!sceneRef.current.robotObjectGroup) {
+                scene.add(object)
+            } else {
+                sceneRef.current.robotObjectGroup.add(object);
+            }
+        });
+        loadModel(jointLFilename, (object: Group) => {
+            sceneRef.current.baseModel = object;
+
+            object.scale.multiplyScalar(MODEL_SCALE);
+
+            if (!sceneRef.current.robotObjectGroup) {
+                scene.add(object)
+            } else {
+                sceneRef.current.robotObjectGroup.add(object);
+            }
+        });
+        loadModel(jointRFilename, (object: Group) => {
+            sceneRef.current.baseModel = object;
+
+            object.scale.multiplyScalar(MODEL_SCALE);
+
+            if (!sceneRef.current.robotObjectGroup) {
+                scene.add(object)
+            } else {
+                sceneRef.current.robotObjectGroup.add(object);
+            }
+        });
+        loadModel(motorsFilename, (object: Group) => {
             sceneRef.current.baseModel = object;
 
             object.scale.multiplyScalar(MODEL_SCALE);
@@ -314,15 +374,16 @@ const Render3DRobotModel = ({
         scene.add(obstaclesGroup);
 
 
-        const WHEEL_OFFSET_X = 1.72188;  // In meters from blend file
-        const WHEEL_OFFSET_Z = 2.27074;  // In meters from blend file
-        const WHEEL_OFFSET_Y = -1.1233; // In meters from blend file
+        const WHEEL_OFFSET_X_FRONT = -5;  // In meters from blend file
+        const WHEEL_OFFSET_X_BACK = 5.4874;  // In meters from blend file
+        const WHEEL_OFFSET_Z = 5.0126;  // In meters from blend file
+        const WHEEL_OFFSET_Y= -1.4637 + 3; // In meters from blend file
 
         const wheelPositions = [
             [1, 1],
-            [-1, 1],
+            [WHEEL_OFFSET_X_BACK/WHEEL_OFFSET_X_FRONT, 1],
             [1, -1],
-            [-1, -1]
+            [WHEEL_OFFSET_X_BACK/WHEEL_OFFSET_X_FRONT, -1]
         ];
 
         loadModel(wheelFilename, (wheel: Group) => {
@@ -331,7 +392,7 @@ const Render3DRobotModel = ({
             wheelPositions.forEach(([xSign, ySign], i) => {
                 const wheelClone = wheel.clone(); // clone so each wheel is independent
                 wheelClone.position.set(
-                    xSign * WHEEL_OFFSET_X * MODEL_SCALE,
+                    xSign * WHEEL_OFFSET_X_FRONT * MODEL_SCALE,
                     WHEEL_OFFSET_Y * MODEL_SCALE,
                     ySign * WHEEL_OFFSET_Z * MODEL_SCALE
                 );
@@ -352,6 +413,9 @@ const Render3DRobotModel = ({
 
             setIsLoading(false);
         });
+
+        sceneRef.current.robotObjectGroup.position.set(0, 0, 0);
+        // sceneRef.current.robotObjectGroup.rotation.set(0, Math.PI/2, 0);
 
         const terrain = createTerrainMesh(58.7, 46.7, 50);
         scene.add(terrain);
