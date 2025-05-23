@@ -167,7 +167,7 @@ export default function RobotContextProvider({ children }: { children: ReactNode
                 // console.log("globPoints", globPoints);
                 // Only take every 6th point so we don't overload the system
                 const everyThrid = globPoints.filter((_, index) => index % 20 === 0);
-                setLidarData(prevState => [...prevState, globPoints].splice(-100));
+                setLidarData(prevState => [...prevState, globPoints].splice(-1));
             } else if (message.type === "position") {
                 const data = message?.message || {};
                 setRobot(prev => ({ ...prev, x: data.x, y: data.y }));

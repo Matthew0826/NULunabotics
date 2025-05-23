@@ -11,6 +11,7 @@ from lunabotics_interfaces.msg import Point, Motors, Excavator, PathVisual, Exca
 from lunabotics_interfaces.action import SelfDriver
 from lunabotics_interfaces.srv import TunePID
 from navigation.pathfinding import distance
+import rclpy.time
 from sensors.spin_node_helper import spin_nodes
 
 from navigation.pid import PIDController
@@ -126,7 +127,7 @@ class Odometry(Node):
             # Corrects based on the rate of change of error (slows down before overshooting).
             # High Kd = dampens oscillations, slows final approach.
             # Too much = system becomes unresponsive.
-        self.orientation_pid = PIDController(Kp=0.011, Ki=0.0005, Kd=0.002, output_limits=(-0.5, 0.5))
+        self.orientation_pid = PIDController(Kp=0.011, Ki=0.0005, Kd=0.001, output_limits=(-0.5, 0.5))
         self.linear_drive_pid = PIDController(Kp=0.018, Ki=0.001, Kd=0.01, output_limits=(-0.55, 0.55))
         # for some reason this one starts doing big loops around the target when you give it some Ki and Kd on the simulation
         # especially when the speed of the simulation is increased
@@ -494,7 +495,7 @@ class Odometry(Node):
         """Rotates to a given orientation with PID control."""
         # reset the PID controller
         self.orientation_pid.reset()
-        self.get_logger().info(f"want to rotate to {int(final_orientation)} degrees")
+        self.get_logger().info(f"want to rotate to {int(final_orientation)} degrees, at {int(self.orientation)} degrees")
         
         while True:
             # find error for PID
@@ -527,13 +528,14 @@ class Odometry(Node):
         # flip robot around if going reverse
         deg_offset = 0.0
         if (go_reverse):
+            self.get_logger().info(f"going in reverse")
             deg_offset = 180.0
 
         # return early if already at the position
         initial_error = distance(self.position, destination)
         if initial_error < self.dist_tolerance: return True
         
-        # await self.face_position(destination, deg_offset)
+        await self.face_position(destination, deg_offset)
         after_orientation_time = self.get_clock().now()
         
         # reset the PID controllers
@@ -556,8 +558,9 @@ class Odometry(Node):
             if error > initial_error * 1.5:
                 return False
             # update pid
-            now = self.get_clock().now() - self.total_pause_time
-            forward_power = self.linear_drive_pid.update(error, now)
+            now = self.get_clock().now()
+            now_seconds = now.nanoseconds / 1e9
+            forward_power = self.linear_drive_pid.update(error, now, self.total_pause_time)
             turn_power = 0.0  # self.angular_drive_pid.update(orientation_error, now)
             # adjust motor power based on turn power from PID
             left_power = clamp(forward_power - turn_power, -1.0, 1.0)
@@ -566,10 +569,12 @@ class Odometry(Node):
             if (go_reverse):
                 left_power = -left_power
                 right_power = -right_power
-            if (int((now - self.start_time).nanoseconds // 1_000_000) % (PAUSE_TIME * 2)) < PAUSE_TIME:
+            if (int(now_seconds - self.start_time.nanoseconds/1e9) % (PAUSE_TIME * 2)) < PAUSE_TIME:
                 await self.drive(left_power, right_power, seconds=0.2)
             else:
-                self.total_pause_time += (now - self.prev_time).nanoseconds // 1_000_000
+                self.set_motor_power(0.0, 0.0)
+                dt = now_seconds - self.prev_time.nanoseconds/1e9
+                self.total_pause_time += dt
             self.prev_time = now
             await self.yield_once()
             
@@ -639,7 +644,7 @@ class Odometry(Node):
         start_position = self.position
         start_orientation = self.orientation
         # drive forwards a bit
-        drive_target = 35  # cm
+        drive_target = 30  # cm
         while True:
             # check if we have driven far enough
             error = distance(start_position, self.position)

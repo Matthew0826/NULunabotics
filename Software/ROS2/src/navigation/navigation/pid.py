@@ -17,12 +17,12 @@ class PIDController:
     def clamp(self, value, min_value, max_value):
         return max(min_value, min(max_value, value))
 
-    def update(self, error, current_time):
+    def update(self, error, current_time, pause_time=0.0):
         if self.last_time is None:
-            self.last_time = current_time
+            self.last_time = current_time.nanoseconds / 1e9 + pause_time
             return 0.0
 
-        dt = (current_time - self.last_time).nanoseconds / 1e9
+        dt = current_time.nanoseconds/1e9 + pause_time - self.last_time
         if dt <= 0.0:
             return 0.0
 
@@ -36,6 +36,6 @@ class PIDController:
         output = self.clamp(output, self.output_limits[0], self.output_limits[1])
 
         self.last_error = error
-        self.last_time = current_time
+        self.last_time = current_time.nanoseconds/1e9 + pause_time
 
         return output

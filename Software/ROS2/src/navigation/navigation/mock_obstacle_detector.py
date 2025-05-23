@@ -18,7 +18,7 @@ ROBOT_LIDAR_OFFSET = (30, 0, 20) # X, Y, Z (in cm)
 LIDAR_VIEW_DISTANCE = 100 # cm
 LIDAR_VIEW_SIZE = 120 # cm
 # how many obstacles to generate
-MOCK_OBSTACLE_COUNT = 4
+MOCK_OBSTACLE_COUNT = 0
 
 
 def rotate_vector_2d(vector, angle_degrees):

@@ -53,7 +53,7 @@ class SpacialDataPublisher(Node):
         self.x = 448
         self.y = 100.0
         self.orientation = float(random.randint(0, 360))
-        self.initial_orientation = 0.0#-self.orientation
+        self.initial_orientation = -self.orientation
         
         # to cause a delay in the simulation to mirror real kalman filter delay
         self.position_history_length = 5
@@ -123,7 +123,7 @@ class SpacialDataPublisher(Node):
     def timer_callback(self):
         self.update_simulation()
         msg = Float32()
-        msg.data = float((self.orientation + self.initial_orientation + 360.0) % 360.0)
+        msg.data = float(((self.orientation + self.initial_orientation + 360.0) % 360.0))
         # publish mock orientation based on motor power
         self.orientation_pub.publish(msg)
         
