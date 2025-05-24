@@ -34,7 +34,7 @@ void setup() {
 
 void onMotorData(const MotorData& data) {
   // process the incoming data
-  float speeds[MOTOR_COUNT] = {data.leftFrontSpeed, data.leftFrontSpeed, -data.rightFrontSpeed, -data.rightFrontSpeed};
+  float speeds[MOTOR_COUNT] = {data.leftFrontSpeed, data.leftFrontSpeed, data.rightFrontSpeed, -data.rightFrontSpeed};
   for (int i = 0; i < MOTOR_COUNT; i++) {
     // Map the speed to the pulse width
     int speedByte = (int)(((speeds[i] + 1.0) * 127.5));

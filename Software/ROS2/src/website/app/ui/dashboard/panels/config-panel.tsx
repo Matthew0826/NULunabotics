@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import {ConfigType, Profiles} from "@/app/types/config";
-import {useWebSocketContext} from "@/app/contexts/web-socket-context";
+import { ConfigType, Profiles } from "@/app/types/config";
+import { useWebSocketContext } from "@/app/contexts/web-socket-context";
 import Config from "@/app/ui/dashboard/components/config";
 
 export default function ConfigPanel() {
@@ -10,7 +10,11 @@ export default function ConfigPanel() {
     const [loadedConfigState, setLoadedConfigState] = useState<Profiles | null>(null);
     const [profileState, setProfileState] = useState<string | null>(null);
 
-    const { latestMessages, allMessages, sendToServer } = useWebSocketContext();
+    const {
+        obstacleMessages,
+        batteryMessages,
+        latestMessages,
+        sendToServer } = useWebSocketContext();
 
     // using this to listen to the messages from the server
     useEffect(() => {
@@ -89,7 +93,7 @@ export default function ConfigPanel() {
     return (
         <div className="flex flex-col gap-4 p-6 h-full w-full">
             <p className="text-xs">Note: DOES save! Remember to press "save config."</p>
-            
+
             {/* Profile Load */}
             <div className="flex items-center gap-2">
                 <input
