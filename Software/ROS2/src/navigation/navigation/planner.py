@@ -59,6 +59,7 @@ class Planner(Node):
         
         self.start = start_zone.get_center()
         self.previous_position = self.start
+        self.previous_target = None
         self.current_target = None
         self.was_travel_successful = False 
         self.was_cancelled = False
@@ -116,6 +117,10 @@ class Planner(Node):
             result.time_elapsed_millis = 0
             return
         self.current_target = zone.pop_next_point()
+        if should_excavate:
+            self.previous_target = self.current_target
+        elif should_dump:
+            self.current_target.y = self.previous_target.y if self.previous_target else self.current_target.y
         # self.get_logger().info(f"zone: {zone.x}, {zone.y}, {zone.x + zone.width}, {zone.y + zone.height} n = {zone.n}")
         # self.get_logger().info(f"Current target: {self.current_target.x}, {self.current_target.y}")
         

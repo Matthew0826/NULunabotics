@@ -61,18 +61,18 @@ class Pathfinder(Node):
     
     def init_grid(self):
         # begin with all obstacles, then clear the center of the map. this is because the robot should not drive near the edges
-        self.grid = [[1 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+        self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
         # remove everything that is ROBOT_RADIUS cm away from the edges
-        for i in range(int(ROBOT_RADIUS), int(MAP_WIDTH - ROBOT_RADIUS)):
-            for j in range(int(ROBOT_RADIUS), int(MAP_HEIGHT - ROBOT_RADIUS)):
-                grid_x, grid_y = world_to_grid(i, j)
-                self.grid[grid_y][grid_x] = 0
+        # for i in range(int(ROBOT_RADIUS), int(MAP_WIDTH - ROBOT_RADIUS)):
+        #     for j in range(int(ROBOT_RADIUS), int(MAP_HEIGHT - ROBOT_RADIUS)):
+        #         grid_x, grid_y = world_to_grid(i, j)
+        #         self.grid[grid_y][grid_x] = 0
         # clear all points in berm zone
-        for i in range(MAP_WIDTH):
-            for j in range(MAP_HEIGHT):
-                if get_zone(i, j) == BERM_ZONE:
-                    grid_x, grid_y = world_to_grid(i, j)
-                    self.grid[grid_y][grid_x] = 0
+        # for i in range(MAP_WIDTH):
+        #     for j in range(MAP_HEIGHT):
+        #         if get_zone(i, j) == BERM_ZONE:
+        #             grid_x, grid_y = world_to_grid(i, j)
+        #             self.grid[grid_y][grid_x] = 0
 
     def calculate_path(self, start, end, confidence_threshold):
         """Finds a path from start to end using the A* algorithm."""

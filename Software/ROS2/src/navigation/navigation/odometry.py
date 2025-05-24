@@ -22,7 +22,7 @@ from navigation.pid_tuner2 import PIDTuner
 from std_msgs.msg import Float32
 import math
 
-MAX_ACTUATOR_PERCENT = 0.98
+MAX_ACTUATOR_PERCENT = 0.69
 MIN_ACTUATOR_PERCENT = 0.2
 
 # when the excavator lifter motor is at this %, the distance sensor can be used to detect the ground
@@ -30,8 +30,8 @@ DISTANCE_SENSOR_ENABLE_THRESHOLD = 0.7
 # when the distance sensor is this far away, the excavator should stop and start digging
 DISTANCE_SENSOR_TOLERANCE = 8  # cm
 
-MAX_EXCAVATOR_LIFTER_PERCENT = 0.9
-MIN_EXCAVATOR_LIFTER_PERCENT = 0.1
+MAX_EXCAVATOR_LIFTER_PERCENT = 0.4
+MIN_EXCAVATOR_LIFTER_PERCENT = 0.7
 
 CONVEYOR_SPEED = 0.6
 
@@ -39,7 +39,7 @@ EXCAVATION_TIME = 10.0
 BIN_TIME = 3.0
 
 # seconds of time it waits to allow for positioning to update
-PAUSE_TIME = 1.0
+PAUSE_TIME = 1.5
 
 class Odometry(Node):
     """
@@ -75,9 +75,9 @@ class Odometry(Node):
         self.total_pause_time = 0.0
 
         # margin of error for rotation (degrees)
-        self.deg_tolerance = 3.0 
+        self.deg_tolerance = 7.0 
         # margin of error for movement (centimeters)
-        self.dist_tolerance = 15.0
+        self.dist_tolerance = 25.0
         # margin of error for excavator actuators (percent)
         self.actuator_tolerance_percent = 0.03
 
@@ -128,10 +128,10 @@ class Odometry(Node):
             # High Kd = dampens oscillations, slows final approach.
             # Too much = system becomes unresponsive.
         self.orientation_pid = PIDController(Kp=0.011, Ki=0.0005, Kd=0.001, output_limits=(-0.5, 0.5))
-        self.linear_drive_pid = PIDController(Kp=0.018, Ki=0.001, Kd=0.01, output_limits=(-0.55, 0.55))
+        self.linear_drive_pid = PIDController(Kp=0.013, Ki=0.001, Kd=0.01, output_limits=(-0.55, 0.55))
         # for some reason this one starts doing big loops around the target when you give it some Ki and Kd on the simulation
         # especially when the speed of the simulation is increased
-        self.angular_drive_pid = PIDController(Kp=0.008, Ki=0.0, Kd=0.0, output_limits=(-0.25, 0.25))
+        self.angular_drive_pid = PIDController(Kp=0.004, Ki=0.0, Kd=0.0001, output_limits=(-0.19, 0.19))
         
         self.bin_actuator_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-0.5, 0.5))
         self.excavator_lifter_pid = PIDController(Kp=0.6, Ki=0.0, Kd=0.001, output_limits=(-0.5, 0.5))
@@ -432,9 +432,9 @@ class Odometry(Node):
 
     async def run_conveyor(self):
         # in position, now turn on conveyor
-        self.set_excavator_power(0.0, 0.0, CONVEYOR_SPEED)
-        # wait to excavate
-        await self.yield_once(EXCAVATION_TIME)
+        # self.set_excavator_power(0.0, 0.0, CONVEYOR_SPEED)
+        # # wait to excavate
+        # await self.yield_once(EXCAVATION_TIME)
         # stop the conveyor
         self.stop_excavator()
 
@@ -533,9 +533,10 @@ class Odometry(Node):
 
         # return early if already at the position
         initial_error = distance(self.position, destination)
+        initial_x_error = destination.x - self.position.x
         if initial_error < self.dist_tolerance: return True
         
-        await self.face_position(destination, deg_offset)
+        # await self.face_position(destination, deg_offset)
         after_orientation_time = self.get_clock().now()
         
         # reset the PID controllers
@@ -553,7 +554,7 @@ class Odometry(Node):
                 orientation_error = (orientation_error + 180.0) % (360.0) - 180.0
 
             # check if completed
-            if error < self.dist_tolerance: break
+            if error < self.dist_tolerance or abs(self.position.x - destination.x) > abs(initial_x_error): break
             # check if something has gone horribly wrong
             if error > initial_error * 1.5:
                 return False
@@ -561,7 +562,7 @@ class Odometry(Node):
             now = self.get_clock().now()
             now_seconds = now.nanoseconds / 1e9
             forward_power = self.linear_drive_pid.update(error, now, self.total_pause_time)
-            turn_power = 0.0  # self.angular_drive_pid.update(orientation_error, now)
+            turn_power = self.angular_drive_pid.update(orientation_error, now)
             # adjust motor power based on turn power from PID
             left_power = clamp(forward_power - turn_power, -1.0, 1.0)
             right_power = clamp(forward_power + turn_power, -1.0, 1.0)
