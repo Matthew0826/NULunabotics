@@ -536,7 +536,7 @@ class Odometry(Node):
         initial_x_error = destination.x - self.position.x
         if initial_error < self.dist_tolerance: return True
         
-        # await self.face_position(destination, deg_offset)
+        await self.face_position(destination, deg_offset)
         after_orientation_time = self.get_clock().now()
         
         # reset the PID controllers

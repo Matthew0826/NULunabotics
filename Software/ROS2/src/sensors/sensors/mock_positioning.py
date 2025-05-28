@@ -50,13 +50,13 @@ class SpacialDataPublisher(Node):
         self.orientation_correction_sub = self.create_subscription(AccelerometerCorrection, '/sensors/accelerometer_correction', self.on_orientation_correction, 10)
         
         # keep track of positions
-        self.x = 140
-        self.y = 370.0
+        self.x = 448.0
+        self.y = 100.0
         self.orientation = 255.0#float(random.randint(0, 360))
         self.initial_orientation = 0.0# -self.orientation
         
         # to cause a delay in the simulation to mirror real kalman filter delay
-        self.position_history_length = 23
+        self.position_history_length = 5
         self.position_history = deque(maxlen=self.position_history_length)
         
         self.motor_power_left = 0.0
