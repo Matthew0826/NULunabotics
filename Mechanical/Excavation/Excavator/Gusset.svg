@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_x30_" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 1728 864">
+  <!-- Generator: Adobe Illustrator 29.4.0, SVG Export Plug-In . SVG Version: 2.1.0 Build 152)  -->
+  <defs>
+    <style>
+      .st0 {
+        stroke-miterlimit: 10;
+        stroke-width: .71px;
+      }
+
+      .st0, .st1 {
+        stroke: #000;
+      }
+
+      .st1 {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: .71px;
+      }
+    </style>
+  </defs>
+  <g id="CIRCLE">
+    <circle class="st1" cx="834.1" cy="482.5" r="6.38"/>
+  </g>
+  <g id="LINE">
+    <line class="st1" x1="870.1" y1="500.5" x2="870.1" y2="320.5"/>
+  </g>
+  <g id="ARC">
+    <path class="st1" d="M870.1,320.5c0-9.94-8.06-18-18-18"/>
+  </g>
+  <g id="LINE1" data-name="LINE">
+    <line class="st1" x1="744.1" y1="302.5" x2="852.1" y2="302.5"/>
+  </g>
+  <g id="ARC1" data-name="ARC">
+    <path class="st1" d="M744.1,302.5c-9.94,0-18,8.06-18,18"/>
+  </g>
+  <g id="LINE2" data-name="LINE">
+    <line class="st1" x1="726.1" y1="500.5" x2="726.1" y2="320.5"/>
+  </g>
+  <g id="ARC2" data-name="ARC">
+    <path class="st1" d="M726.1,500.5c0,9.94,8.06,18,18,18"/>
+  </g>
+  <g id="LINE3" data-name="LINE">
+    <line class="st1" x1="744.1" y1="518.5" x2="852.1" y2="518.5"/>
+  </g>
+  <g id="ARC3" data-name="ARC">
+    <path class="st1" d="M852.1,518.5c9.94,0,18-8.06,18-18"/>
+  </g>
+  <g id="CIRCLE1" data-name="CIRCLE">
+    <circle class="st1" cx="762.1" cy="482.5" r="6.38"/>
+  </g>
+  <g id="CIRCLE2" data-name="CIRCLE">
+    <circle class="st1" cx="834.1" cy="338.5" r="6.38"/>
+  </g>
+  <g id="CIRCLE3" data-name="CIRCLE">
+    <circle class="st1" cx="762.1" cy="338.5" r="6.38"/>
+  </g>
+  <line class="st0" x1="798.1" y1="302.5" x2="798.1" y2="518.5"/>
+</svg>

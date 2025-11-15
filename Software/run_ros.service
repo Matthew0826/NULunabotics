@@ -1,0 +1,14 @@
+[Unit]
+Description=Runs the Lunabotics ROS2 nodes.
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=no
+RestartSec=1
+User=selene
+ExecStart=/home/selene/NULunabotics/Software/run_ros.sh
+
+[Install]
+WantedBy=multi-user.target

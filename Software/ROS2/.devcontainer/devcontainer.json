@@ -1,0 +1,41 @@
+{
+    "name": "ROS 2 Development Container",
+    "privileged": true,
+    "remoteUser": "halgendy",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "args": {
+            "USERNAME": "halgendy"
+        }
+    },
+    "workspaceFolder": "/home/halgendy/Documents/programming/university/NULunabotics/Software/ROS2",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/halgendy/Documents/programming/university/NULunabotics/Software/ROS2,type=bind",
+    "customizations": {
+        "vscode": {
+            "extensions":[
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-themes",
+                "twxs.cmake",
+                "donjayamanne.python-extension-pack",
+                "eamodio.gitlens",
+                "ms-iot.vscode-ros"
+            ]
+        }
+    },
+    "containerEnv": {
+        "DISPLAY": "unix:0",
+        "ROS_AUTOMATIC_DISCOVERY_RANGE": "LOCALHOST",
+        "ROS_DOMAIN_ID": "42"
+    },
+    "runArgs": [
+        "--net=host",
+        "--pid=host",
+        "--ipc=host",
+        "-e", "DISPLAY=${env:DISPLAY}"
+    ],
+    "mounts": [
+       "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
+       "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached"
+    ],
+    "postCreateCommand": "source /opt/ros/jazzy/setup.bash && colcon build || echo 'Colcon build failed or already built'"
+}

@@ -1,0 +1,3 @@
+float32 excavator_lifter_speed
+float32 conveyor_speed
+float32 actuator_speed

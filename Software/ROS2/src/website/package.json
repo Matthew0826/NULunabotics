@@ -1,0 +1,38 @@
+{
+    "private": true,
+    "scripts": {
+        "build": "next build",
+        "dev": "next dev",
+        "start": "next start",
+        "prepare": "next-ws patch",
+        "deploy": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/"
+    },
+    "dependencies": {
+        "@heroicons/react": "^2.2.0",
+        "@tailwindcss/forms": "^0.5.10",
+        "@tailwindcss/postcss": "^4.0.7",
+        "@types/three": "^0.176.0",
+        "@vercel/postgres": "^0.10.0",
+        "autoprefixer": "10.4.20",
+        "chart.js": "^4.4.7",
+        "clsx": "^2.1.1",
+        "next": "15.1.6",
+        "next-ws": "2.0.0",
+        "postcss": "8.5.1",
+        "rclnodejs": "^0.32.5",
+        "react": "19.0.0",
+        "react-dom": "19.0.0",
+        "tailwindcss": "3.4.17",
+        "three": "^0.176.0",
+        "typescript": "5.7.3",
+        "use-debounce": "^10.0.4",
+        "ws": "^8.18.0"
+    },
+    "devDependencies": {
+        "@types/bcrypt": "^5.0.2",
+        "@types/node": "22.10.7",
+        "@types/react": "19.0.0",
+        "@types/react-dom": "19.0.0",
+        "@types/ws": "^8.5.14"
+    }
+}

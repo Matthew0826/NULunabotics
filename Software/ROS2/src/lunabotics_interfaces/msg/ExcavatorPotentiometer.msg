@@ -1,0 +1,2 @@
+float32 excavator_lifter_percent
+float32 actuator_percent

@@ -1,0 +1,26 @@
+# This is the network configuration on the raspberry pi for netplan
+# It goes in /etc/netplan/50-cloud-init.yaml
+# Then changes can be applied with "sudo netplan apply"
+
+network:
+  version: 2
+  renderer: NetworkManager
+
+  ethernets:
+    eth0:
+      optional: true
+      dhcp4: no
+      dhcp6: no
+      addresses:
+        - 192.168.10.100/24
+
+  wifis:
+    wlan0:
+      optional: true
+      dhcp4: no
+      dhcp6: no
+      addresses:
+        - 192.168.1.100/24
+      access-points:
+        "roverweb":
+          password: "rover2024"

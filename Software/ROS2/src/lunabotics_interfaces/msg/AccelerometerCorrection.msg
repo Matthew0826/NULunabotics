@@ -1,0 +1,2 @@
+float32 initial_angle
+int32 should_reset
